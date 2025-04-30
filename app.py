@@ -23,6 +23,12 @@ df['carbonEmissionsThisFlight'] = pd.to_numeric(df.get('carbonEmissionsThisFligh
 # Derived column
 df['pricePerMinute'] = df['price'] / df['durationMinutes']
 
+# Subset
+directFlights = df[
+    (df["departureAirportID"].isin(nycAirports)) &
+    (df["arrivalAirportID"].isin(swissAirports))
+].copy()
+
 directFlights['legroom'] = directFlights['legroom'].fillna("Extra reclining seat")
 if "recliningAndLegroom" in directFlights.columns:
     directFlights.drop(columns=["recliningAndLegroom"], inplace=True)
