@@ -392,7 +392,7 @@ st.subheader("DIRECT FLIGHTS: Flight Duration vs Airline (Bubble Size = Count)")
 plotBubbleChart(
     df=directFlights,
     airline_col='airline',
-    metric_col='durationTime',
+    metric_col='durationMinutes',
     yaxis_title='Duration (min)',
     width=1000
 )
