@@ -231,13 +231,13 @@ plotlyStackedBars(
     colors=customColors
 )
 
-# WiFi (robust error handling included)
-st.subheader("WiFi Availability by Airline")
-plotlyStackedBars(
-    df=directFlights,
-    group_col='airline',
-    sub_col='wifi',
-    title='Flight WiFi by Airline',
-    legend_title='WiFi Availability',
-    colors=customColors
-)
+# # WiFi (robust error handling included)
+# st.subheader("WiFi Availability by Airline")
+# plotlyStackedBars(
+#     df=directFlights,
+#     group_col='airline',
+#     sub_col='wifi',
+#     title='Flight WiFi by Airline',
+#     legend_title='WiFi Availability',
+#     colors=customColors
+# )
