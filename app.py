@@ -41,7 +41,7 @@ def classify_flight_type(row):
 
 directFlights['flightType'] = directFlights.apply(classify_flight_type, axis=1)
 
-st.title("Direct Flights from NYC to CH")
+st.title("Flights from NYC to CH")
 
 # Filtered data
 filtered = directFlights.copy()
@@ -52,9 +52,9 @@ filtered = filtered.sort_values('departureTime')
 
 # Define airline colors
 airline_colors = {
-    'Delta': 'navy',
+    'Delta': 'lightblue',
     'SWISS': 'red',
-    'United': 'blue'
+    'United': 'navy'
 }
 
 # Split by flight type
