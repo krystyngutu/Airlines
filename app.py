@@ -144,13 +144,12 @@ for airline in filtered['airline'].unique():
         mode='markers',
         name=airline,
         hovertext=df_airline['flightNumber'],
-        marker=dict(size=8)
+        marker=dict(color=airline_colors.get(airline, 'gray'))
     ))
 
 carbon_fig.update_layout(
     xaxis_title="Carbon Emissions (kg CO₂)",
     yaxis_title="Price (USD)",
-    title="Carbon Emissions vs Price",
     legend_title_text="Airline",
     hovermode="closest",
     height=600,
@@ -176,13 +175,12 @@ for airline in filtered['airline'].unique():
         y=df_airline['pricePerMinute'],
         mode='lines+markers',
         name=airline,
-        hovertext=df_airline['flightNumber']
+        marker=dict(color=airline_colors.get(airline, 'gray'))
     ))
 
 ppm_fig.update_layout(
     xaxis_title="Departure Time",
     yaxis_title="Price per Minute (USD)",
-    title="Price Per Minute Over Time",
     legend_title_text="Airline",
     hovermode="closest",
     height=600,
