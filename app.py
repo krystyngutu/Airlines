@@ -181,47 +181,62 @@ ppm_fig.update_layout(
 )
 st.plotly_chart(ppm_fig, use_container_width=True)
 
-# Histograms
-col1, col2 = st.columns(2)
-with col1:
-    st.subheader("Histogram: Prices")
-    fig4 = px.histogram(df, x='price')
-    st.plotly_chart(fig4, use_container_width=True)
+def plotlyStackedBars(df, group_col, sub_col, title, legend_title, colors):
+    """Helper function to group, sort, and plot stacked bar chart using Plotly."""
+    countDF = df.groupby([group_col, sub_col]).size().unstack(fill_value=0)
+    countDF = countDF.loc[countDF.sum(axis=1).sort_values(ascending=False).index]
 
-with col2:
-    st.subheader("Histogram: Duration")
-    fig5 = px.histogram(df, x='durationMinutes')
-    st.plotly_chart(fig5, use_container_width=True)
+    fig = go.Figure()
+    for i, sub_category in enumerate(countDF.columns):
+        fig.add_trace(go.Bar(
+            x=countDF.index,
+            y=countDF[sub_category],
+            name=sub_category,
+            marker_color=colors[i % len(colors)],
+        ))
 
-# Airplane Types
+    fig.update_layout(
+        title=title,
+        barmode='stack',
+        xaxis_title=group_col.capitalize(),
+        yaxis_title='Number of Flights',
+        legend_title=legend_title,
+        xaxis_tickangle=0,
+        plot_bgcolor='white',
+        bargap=0.2,
+        font=dict(size=12),
+        height=500
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+# --- Run EDA Plots for Direct Flights ---
 st.subheader("Airplane Types by Airline")
-airplane_count = directFlights.groupby(['airline', 'airplane']).size().unstack(fill_value=0)
-airplane_count = airplane_count.loc[airplane_count.sum(axis=1).sort_values(ascending=False).index]
-fig6 = go.Figure()
-for i, col in enumerate(airplane_count.columns):
-    fig6.add_trace(go.Bar(x=airplane_count.index, y=airplane_count[col], name=col,
-                          marker_color=customColors[i % len(customColors)]))
-fig6.update_layout(barmode='stack', title="Airplane Type by Airline", plot_bgcolor='white')
-st.plotly_chart(fig6, use_container_width=True)
+plotlyStackedBars(
+    df=directFlights,
+    group_col='airline',
+    sub_col='airplane',
+    title='Total Flights by Airline and Airplane Type',
+    legend_title='Airplane Type',
+    colors=customColors
+)
 
-# Legroom
 st.subheader("Legroom by Airline")
-legroom_count = directFlights.groupby(['airline', 'legroom']).size().unstack(fill_value=0)
-legroom_count = legroom_count.loc[legroom_count.sum(axis=1).sort_values(ascending=False).index]
-fig7 = go.Figure()
-for i, col in enumerate(legroom_count.columns):
-    fig7.add_trace(go.Bar(x=legroom_count.index, y=legroom_count[col], name=col,
-                          marker_color=customColors[i % len(customColors)]))
-fig7.update_layout(barmode='stack', title="Legroom by Airline", plot_bgcolor='white')
-st.plotly_chart(fig7, use_container_width=True)
+plotlyStackedBars(
+    df=directFlights,
+    group_col='airline',
+    sub_col='legroom',
+    title='Flight Legroom by Airline',
+    legend_title='Legroom',
+    colors=customColors
+)
 
-# WiFi
 st.subheader("WiFi Availability by Airline")
-wifi_count = directFlights.groupby(['airline', 'wifi']).size().unstack(fill_value=0)
-wifi_count = wifi_count.loc[wifi_count.sum(axis=1).sort_values(ascending=False).index]
-fig8 = go.Figure()
-for i, col in enumerate(wifi_count.columns):
-    fig8.add_trace(go.Bar(x=wifi_count.index, y=wifi_count[col], name=col,
-                          marker_color=customColors[i % len(customColors)]))
-fig8.update_layout(barmode='stack', title="WiFi by Airline", plot_bgcolor='white')
-st.plotly_chart(fig8, use_container_width=True)
+plotlyStackedBars(
+    df=directFlights,
+    group_col='airline',
+    sub_col='wifi',
+    title='Flight WiFi by Airline',
+    legend_title='WiFi Availability',
+    colors=customColors
+)
