@@ -42,9 +42,6 @@ connectingFlights = df[df['flightType'] == 'Connecting'].copy()
 
 st.title("Flights from NYC to CH")
 
-# Use all data for toggleable airline plots
-filtered = df.sort_values('departureTime')
-
 # Define airline colors
 airline_colors = {
     'Delta': 'navy',
@@ -71,10 +68,8 @@ def create_traces(df):
 direct_traces = create_traces(directFlights)
 connecting_traces = create_traces(connectingFlights)
 
-# Build figure
+# Build interactive figure
 fig = go.Figure(data=direct_traces + connecting_traces)
-
-# Toggle menu
 fig.update_layout(
     updatemenus=[
         dict(
@@ -151,7 +146,7 @@ carbon_fig.update_layout(
 )
 st.plotly_chart(carbon_fig, use_container_width=True)
 
-# Price Per Minute by Airline
+# Price Per Minute
 st.subheader("Price Per Minute by Airline")
 ppm_fig = go.Figure()
 for airline in df['airline'].unique():
@@ -181,8 +176,12 @@ ppm_fig.update_layout(
 )
 st.plotly_chart(ppm_fig, use_container_width=True)
 
+# Bar chart helper
 def plotlyStackedBars(df, group_col, sub_col, title, legend_title, colors):
-    """Helper function to group, sort, and plot stacked bar chart using Plotly."""
+    if sub_col not in df.columns or df[sub_col].dropna().empty:
+        st.warning(f"No valid data available for '{sub_col}'. Skipping chart.")
+        return
+
     countDF = df.groupby([group_col, sub_col]).size().unstack(fill_value=0)
     countDF = countDF.loc[countDF.sum(axis=1).sort_values(ascending=False).index]
 
@@ -210,7 +209,7 @@ def plotlyStackedBars(df, group_col, sub_col, title, legend_title, colors):
 
     st.plotly_chart(fig, use_container_width=True)
 
-# --- Run EDA Plots for Direct Flights ---
+# Airplane Types
 st.subheader("Airplane Types by Airline")
 plotlyStackedBars(
     df=directFlights,
@@ -221,6 +220,7 @@ plotlyStackedBars(
     colors=customColors
 )
 
+# Legroom
 st.subheader("Legroom by Airline")
 plotlyStackedBars(
     df=directFlights,
@@ -231,6 +231,7 @@ plotlyStackedBars(
     colors=customColors
 )
 
+# WiFi (robust error handling included)
 st.subheader("WiFi Availability by Airline")
 plotlyStackedBars(
     df=directFlights,
