@@ -137,10 +137,6 @@ fig.update_layout(
         borderwidth=1,
         itemclick='toggle',
         itemdoubleclick='toggleothers'
-    ),
-    xaxis=dict(
-        tickformat="%b %d",
-        tickvals=tick_dates
     )
 )
 
