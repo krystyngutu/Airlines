@@ -33,7 +33,7 @@ directFlights['legroom'] = directFlights['legroom'].fillna("Extra reclining seat
 if "recliningAndLegroom" in directFlights.columns:
     directFlights.drop(columns=["recliningAndLegroom"], inplace=True)
 
-st.title("Flight Data Dashboard")
+st.title("Direct Flights from NYC to CH")
 
 # Dropdown
 selected_airline = st.selectbox("Select Airline", directFlights['airline'].dropna().unique())
