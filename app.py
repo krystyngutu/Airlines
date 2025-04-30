@@ -25,7 +25,7 @@ includedAirlines = ['SWISS', 'Delta', 'United', 'Lufthansa', 'British Airways',
                     'Air Canada', 'Air France', 'KLM', 'American', 'Scandinavian Airlines']
 
 # Filter to only include selected airlines
-df = df[df['airline'].isin(included_airlines)].copy()
+df = df[df['airline'].isin(includedAirlines)].copy()
 
 # Define new airline colors
 airline_colors = {
@@ -62,13 +62,6 @@ directFlights = df[df['flightType'] == 'Direct'].copy()
 connectingFlights = df[df['flightType'] == 'Connecting'].copy()
 
 st.title("Flights from NYC to CH")
-
-# Define airline colors
-airline_colors = {
-    'Delta': 'navy',
-    'SWISS': 'red',
-    'United': 'lightblue'
-}
 
 # Helper to create traces
 def create_traces(df):
