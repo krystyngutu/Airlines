@@ -30,11 +30,12 @@ directFlights = df[
 ].copy()
 
 directFlights['legroom'] = directFlights['legroom'].fillna("Extra reclining seat")
+
 if "recliningAndLegroom" in directFlights.columns:
     directFlights.drop(columns=["recliningAndLegroom"], inplace=True)
 
 def classify_flight_type(row):
-    if row['airline'] in ['Delta', 'United', 'SWISS']:
+    if row['departureAirportID'] in [nycAirports] and row['arrivalAirportID'] in [swissAirports]:
         return 'Direct'
     return 'Connecting'
 
