@@ -23,17 +23,6 @@ df['carbonEmissionsThisFlight'] = pd.to_numeric(df.get('carbonEmissionsThisFligh
 # Derived column
 df['pricePerMinute'] = df['price'] / df['durationMinutes']
 
-# Subset
-directFlights = df[
-    (df["departureAirportID"].isin(nycAirports)) &
-    (df["arrivalAirportID"].isin(swissAirports))
-].copy()
-
-directFlights['legroom'] = directFlights['legroom'].fillna("Extra reclining seat")
-
-if "recliningAndLegroom" in directFlights.columns:
-    directFlights.drop(columns=["recliningAndLegroom"], inplace=True)
-
 # Label flights as direct or connecting
 def classify_flight_type(row):
     if row['departureAirportID'] in nycAirports and row['arrivalAirportID'] in swissAirports:
@@ -45,6 +34,27 @@ df['flightType'] = df.apply(classify_flight_type, axis=1)
 
 # Filter only direct flights for subset
 directFlights = df[df['flightType'] == 'Direct'].copy()
+connectingFlights = df[df['flightType'] == 'Connecting'].copy()
+
+# Clean up legroom field in both
+for subset in [directFlights]:
+    subset['legroom'] = subset['legroom'].fillna("Extra reclining seat")
+    if "recliningAndLegroom" in subset.columns:
+        subset.drop(columns=["recliningAndLegroom"], inplace=True)
+
+# # Subset
+# directFlights = df[
+#     (df["departureAirportID"].isin(nycAirports)) &
+#     (df["arrivalAirportID"].isin(swissAirports))
+# ].copy()
+
+# directFlights['legroom'] = directFlights['legroom'].fillna("Extra reclining seat")
+
+# if "recliningAndLegroom" in directFlights.columns:
+#     directFlights.drop(columns=["recliningAndLegroom"], inplace=True)
+
+
+____
 
 # Clean extra fields
 directFlights['legroom'] = directFlights['legroom'].fillna("Extra reclining seat")
