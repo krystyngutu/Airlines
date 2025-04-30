@@ -34,12 +34,22 @@ directFlights['legroom'] = directFlights['legroom'].fillna("Extra reclining seat
 if "recliningAndLegroom" in directFlights.columns:
     directFlights.drop(columns=["recliningAndLegroom"], inplace=True)
 
+# Label flights as direct or connecting
 def classify_flight_type(row):
-    if row['departureAirportID'] in [nycAirports] and row['arrivalAirportID'] in [swissAirports]:
+    if row['departureAirportID'] in nycAirports and row['arrivalAirportID'] in swissAirports:
         return 'Direct'
     return 'Connecting'
 
-directFlights['flightType'] = directFlights.apply(classify_flight_type, axis=1)
+# Apply to DataFrame
+df['flightType'] = df.apply(classify_flight_type, axis=1)
+
+# Filter only direct flights for subset
+directFlights = df[df['flightType'] == 'Direct'].copy()
+
+# Clean extra fields
+directFlights['legroom'] = directFlights['legroom'].fillna("Extra reclining seat")
+if "recliningAndLegroom" in directFlights.columns:
+    directFlights.drop(columns=["recliningAndLegroom"], inplace=True)
 
 st.title("Flights from NYC to CH")
 
