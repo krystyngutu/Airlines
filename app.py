@@ -39,10 +39,33 @@ st.title("Direct Flights from NYC to CH")
 selected_airline = st.selectbox("Select Airline", directFlights['airline'].dropna().unique())
 filtered = directFlights[directFlights['airline'] == selected_airline]
 
-# Price Over Time
-st.subheader("Price Over Time")
-fig1 = px.bar(filtered, x='departureTime', y='price', hover_data=['flightNumber'])
-st.plotly_chart(fig1, use_container_width=True)
+# Price Over Time By Airline
+st.subheader("Price Over Time by Airline")
+filtered = filtered.sort_values('departureTime')
+
+# Create figure
+fig = go.Figure()
+
+# Add a trace for each airline
+for airline in filtered['airline'].unique():
+    airline_data = filtered[filtered['airline'] == airline]
+    fig.add_trace(go.Scatter(
+        x=airline_data['departureTime'],
+        y=airline_data['price'],
+        mode='lines+markers',
+        name=airline,
+        hovertext=airline_data['flightNumber']
+    ))
+
+# Update layout
+fig.update_layout(
+    xaxis_title="Departure Time",
+    yaxis_title="Price (USD)",
+    legend_title="Airline",
+    hovermode='closest'
+)
+
+st.plotly_chart(fig, use_container_width=True)
 
 # Carbon Emissions vs Price
 st.subheader("Carbon Emissions vs Price")
