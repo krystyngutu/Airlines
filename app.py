@@ -82,8 +82,18 @@ def create_traces(df):
 direct_traces = create_traces(directFlights)
 connecting_traces = create_traces(connectingFlights)
 
-# Build interactive figure
-fig = go.Figure(data=direct_traces + connecting_traces)
+fig = go.Figure()
+
+# Add direct traces (visible)
+for trace in direct_traces:
+    trace.visible = True
+    fig.add_trace(trace)
+
+# Add connecting traces (hidden)
+for trace in connecting_traces:
+    trace.visible = False
+    fig.add_trace(trace)
+
 fig.update_layout(
     updatemenus=[
         dict(
@@ -160,7 +170,17 @@ for airline in df['airline'].unique():
     ))
 
 # Combine into figure
-carbon_fig = go.Figure(data=carbon_direct_traces + carbon_connecting_traces)
+carbon_fig = go.Figure()
+
+# Add direct traces (visible)
+for trace in carbon_direct_traces:
+    trace.visible = True
+    carbon_fig.add_trace(trace)
+
+# Add connecting traces (hidden initially)
+for trace in carbon_connecting_traces:
+    trace.visible = False
+    carbon_fig.add_trace(trace)
 
 carbon_fig.update_layout(
     updatemenus=[
@@ -230,7 +250,14 @@ for airline in df['airline'].unique():
     ))
 
 # Combine into figure
-ppm_fig = go.Figure(data=ppm_direct_traces + ppm_connecting_traces)
+ppm_fig = go.Figure()
+for trace in ppm_direct_traces:
+    trace.visible = True
+    ppm_fig.add_trace(trace)
+  
+for trace in ppm_connecting_traces:
+    trace.visible = False
+    ppm_fig.add_trace(trace)
 
 ppm_fig.update_layout(
     updatemenus=[
