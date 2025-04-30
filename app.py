@@ -42,16 +42,16 @@ for subset in [directFlights]:
     if "recliningAndLegroom" in subset.columns:
         subset.drop(columns=["recliningAndLegroom"], inplace=True)
 
-# # Subset
-# directFlights = df[
-#     (df["departureAirportID"].isin(nycAirports)) &
-#     (df["arrivalAirportID"].isin(swissAirports))
-# ].copy()
+# Subset
+directFlights = df[
+    (df["departureAirportID"].isin(nycAirports)) &
+    (df["arrivalAirportID"].isin(swissAirports))
+].copy()
 
-# directFlights['legroom'] = directFlights['legroom'].fillna("Extra reclining seat")
+directFlights['legroom'] = directFlights['legroom'].fillna("Extra reclining seat")
 
-# if "recliningAndLegroom" in directFlights.columns:
-#     directFlights.drop(columns=["recliningAndLegroom"], inplace=True)
+if "recliningAndLegroom" in directFlights.columns:
+    directFlights.drop(columns=["recliningAndLegroom"], inplace=True)
 
 
 ____
