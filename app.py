@@ -54,7 +54,7 @@ filtered = filtered.sort_values('departureTime')
 airline_colors = {
     'Delta': 'navy',
     'SWISS': 'red',
-    'United': 'darkgreen'
+    'United': 'gold'
 }
 
 # Split by flight type
@@ -113,9 +113,22 @@ fig.update_layout(
 fig.update_layout(
     xaxis_title="Departure Time",
     yaxis_title="Price (USD)",
-    legend_title="Airline",
+    legend_title_text="Toggle Airlines",
     hovermode="closest",
-    height=600
+    height=600,
+    legend=dict(
+        title_font=dict(size=12),
+        font=dict(size=11),
+        orientation="v",
+        x=1.02,
+        y=1,
+        xanchor='left',
+        yanchor='top',
+        bordercolor="LightGray",
+        borderwidth=1,
+        itemclick='toggle',
+        itemdoubleclick='toggleothers'
+    )
 )
 
 st.plotly_chart(fig, use_container_width=True)
