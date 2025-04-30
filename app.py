@@ -52,9 +52,9 @@ filtered = filtered.sort_values('departureTime')
 
 # Define airline colors
 airline_colors = {
-    'Delta': 'lightblue',
+    'Delta': 'navy',
     'SWISS': 'red',
-    'United': 'navy'
+    'United': 'lightblue'
 }
 
 # Split by flight type
