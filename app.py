@@ -23,52 +23,27 @@ df['carbonEmissionsThisFlight'] = pd.to_numeric(df.get('carbonEmissionsThisFligh
 # Derived column
 df['pricePerMinute'] = df['price'] / df['durationMinutes']
 
-# Label flights as direct or connecting
+# Label flights as Direct or Connecting
 def classify_flight_type(row):
     if row['departureAirportID'] in nycAirports and row['arrivalAirportID'] in swissAirports:
         return 'Direct'
     return 'Connecting'
 
-# Apply to DataFrame
 df['flightType'] = df.apply(classify_flight_type, axis=1)
 
-# Filter only direct flights for subset
+# Clean legroom and drop unused columns
+df['legroom'] = df['legroom'].fillna("Extra reclining seat")
+if "recliningAndLegroom" in df.columns:
+    df.drop(columns=["recliningAndLegroom"], inplace=True)
+
+# Split into direct and connecting flights
 directFlights = df[df['flightType'] == 'Direct'].copy()
 connectingFlights = df[df['flightType'] == 'Connecting'].copy()
 
-# Clean up legroom field in both
-for subset in [directFlights]:
-    subset['legroom'] = subset['legroom'].fillna("Extra reclining seat")
-    if "recliningAndLegroom" in subset.columns:
-        subset.drop(columns=["recliningAndLegroom"], inplace=True)
-
-# Subset
-directFlights = df[
-    (df["departureAirportID"].isin(nycAirports)) &
-    (df["arrivalAirportID"].isin(swissAirports))
-].copy()
-
-directFlights['legroom'] = directFlights['legroom'].fillna("Extra reclining seat")
-
-if "recliningAndLegroom" in directFlights.columns:
-    directFlights.drop(columns=["recliningAndLegroom"], inplace=True)
-
-
-____
-
-# Clean extra fields
-directFlights['legroom'] = directFlights['legroom'].fillna("Extra reclining seat")
-if "recliningAndLegroom" in directFlights.columns:
-    directFlights.drop(columns=["recliningAndLegroom"], inplace=True)
-
 st.title("Flights from NYC to CH")
 
-# Filtered data
-filtered = directFlights.copy()
-
-# Price over time, by airline and flight time
-st.subheader("Price Over Time by Airline and Flight Type")
-filtered = filtered.sort_values('departureTime')
+# Use all data for toggleable airline plots
+filtered = df.sort_values('departureTime')
 
 # Define airline colors
 airline_colors = {
@@ -76,10 +51,6 @@ airline_colors = {
     'SWISS': 'red',
     'United': 'lightblue'
 }
-
-# Split by flight type
-direct_df = filtered[filtered['flightType'] == 'Direct']
-connecting_df = filtered[filtered['flightType'] == 'Connecting']
 
 # Helper to create traces
 def create_traces(df):
@@ -96,16 +67,14 @@ def create_traces(df):
         ))
     return traces
 
-# Create traces
-direct_traces = create_traces(direct_df)
-connecting_traces = create_traces(connecting_df)
+# Create traces for both flight types
+direct_traces = create_traces(directFlights)
+connecting_traces = create_traces(connectingFlights)
 
 # Build figure
-fig = go.Figure(data=direct_traces)
-for trace in connecting_traces:
-    fig.add_trace(trace)
+fig = go.Figure(data=direct_traces + connecting_traces)
 
-# Dropdown toggle for flight type
+# Toggle menu
 fig.update_layout(
     updatemenus=[
         dict(
@@ -127,10 +96,7 @@ fig.update_layout(
             y=1.1,
             yanchor="top"
         )
-    ]
-)
-
-fig.update_layout(
+    ],
     xaxis_title="Departure Time",
     yaxis_title="Price (USD)",
     legend_title_text="Toggle Airlines",
@@ -151,13 +117,14 @@ fig.update_layout(
     )
 )
 
+st.subheader("Price Over Time by Airline and Flight Type")
 st.plotly_chart(fig, use_container_width=True)
 
 # Carbon Emissions vs Price
 st.subheader("Carbon Emissions vs Price by Airline")
 carbon_fig = go.Figure()
-for airline in filtered['airline'].unique():
-    df_airline = filtered[filtered['airline'] == airline]
+for airline in df['airline'].unique():
+    df_airline = df[df['airline'] == airline]
     carbon_fig.add_trace(go.Scatter(
         x=df_airline['carbonEmissionsThisFlight'],
         y=df_airline['price'],
@@ -182,14 +149,13 @@ carbon_fig.update_layout(
         borderwidth=1
     )
 )
-
 st.plotly_chart(carbon_fig, use_container_width=True)
 
 # Price Per Minute by Airline
 st.subheader("Price Per Minute by Airline")
 ppm_fig = go.Figure()
-for airline in filtered['airline'].unique():
-    df_airline = filtered[filtered['airline'] == airline].sort_values('departureTime')
+for airline in df['airline'].unique():
+    df_airline = df[df['airline'] == airline].sort_values('departureTime')
     ppm_fig.add_trace(go.Scatter(
         x=df_airline['departureTime'],
         y=df_airline['pricePerMinute'],
@@ -213,19 +179,18 @@ ppm_fig.update_layout(
         borderwidth=1
     )
 )
-
 st.plotly_chart(ppm_fig, use_container_width=True)
 
 # Histograms
 col1, col2 = st.columns(2)
 with col1:
     st.subheader("Histogram: Prices")
-    fig4 = px.histogram(filtered, x='price')
+    fig4 = px.histogram(df, x='price')
     st.plotly_chart(fig4, use_container_width=True)
 
 with col2:
     st.subheader("Histogram: Duration")
-    fig5 = px.histogram(filtered, x='durationMinutes')
+    fig5 = px.histogram(df, x='durationMinutes')
     st.plotly_chart(fig5, use_container_width=True)
 
 # Airplane Types
