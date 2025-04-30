@@ -21,8 +21,7 @@ df['durationMinutes'] = pd.to_numeric(df['durationTime'], errors='coerce')
 df['carbonEmissionsThisFlight'] = pd.to_numeric(df.get('carbonEmissionsThisFlight'), errors='coerce')
 
 # Define  airlines to include
-includedAirlines = ['SWISS', 'Delta', 'United', 'Lufthansa', 'British Airways',
-                    'Air Canada', 'Air France', 'KLM', 'American', 'Scandinavian Airlines']
+includedAirlines = ['SWISS', 'Delta', 'United', 'Lufthansa']
 
 # Filter to only include selected airlines
 df = df[df['airline'].isin(includedAirlines)].copy()
@@ -33,12 +32,6 @@ airline_colors = {
     'SWISS': '#d71920',               # red
     'Delta': '#00235f',               # dark blue
     'United': '#1a75ff',              # light blue
-    'British Airways': '#660000',     # dark red
-    'Air Canada': '#000000',          # black
-    'Air France': '#3366ff',          # royal blue
-    'KLM': '#00BFFF',                 # sky blue
-    'American': '#8B0000',            # deep red
-    'Scandinavian Airlines': '#708090' # slate gray
 }
 
 # Derived column
