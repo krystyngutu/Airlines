@@ -33,36 +33,89 @@ directFlights['legroom'] = directFlights['legroom'].fillna("Extra reclining seat
 if "recliningAndLegroom" in directFlights.columns:
     directFlights.drop(columns=["recliningAndLegroom"], inplace=True)
 
+# Classify flight type
+def classify_flight_type(row):
+    if row['airline'] in ['Delta', 'United', 'SWISS']:
+        return 'Direct'
+    return 'Connecting'
+
+directFlights['flightType'] = directFlights.apply(classify_flight_type, axis=1)
+
 st.title("Direct Flights from NYC to CH")
 
-# Dropdown
-selected_airline = st.selectbox("Select Airline", directFlights['airline'].dropna().unique())
-filtered = directFlights[directFlights['airline'] == selected_airline]
+# Filtered data
+filtered = directFlights.copy()
 
-# Price Over Time By Airline
-st.subheader("Price Over Time by Airline")
+# PRICE OVER TIME - BY AIRLINE & FLIGHT TYPE
+st.subheader("Price Over Time by Airline and Flight Type")
 filtered = filtered.sort_values('departureTime')
 
-# Create figure
-fig = go.Figure()
+# Define airline colors
+airline_colors = {
+    'Delta': 'navy',
+    'SWISS': 'red',
+    'United': 'darkgreen'
+}
 
-# Add a trace for each airline
-for airline in filtered['airline'].unique():
-    airline_data = filtered[filtered['airline'] == airline]
-    fig.add_trace(go.Scatter(
-        x=airline_data['departureTime'],
-        y=airline_data['price'],
-        mode='lines+markers',
-        name=airline,
-        hovertext=airline_data['flightNumber']
-    ))
+# Split by flight type
+direct_df = filtered[filtered['flightType'] == 'Direct']
+connecting_df = filtered[filtered['flightType'] == 'Connecting']
 
-# Update layout
+# Helper to create traces
+def create_traces(df):
+    traces = []
+    for airline in df['airline'].unique():
+        data = df[df['airline'] == airline]
+        traces.append(go.Scatter(
+            x=data['departureTime'],
+            y=data['price'],
+            mode='markers+lines',
+            name=airline,
+            hovertext=data['flightNumber'],
+            marker=dict(color=airline_colors.get(airline, 'gray'))
+        ))
+    return traces
+
+# Create traces
+direct_traces = create_traces(direct_df)
+connecting_traces = create_traces(connecting_df)
+
+# Build figure
+fig = go.Figure(data=direct_traces)
+for trace in connecting_traces:
+    fig.add_trace(trace)
+
+# Dropdown toggle for flight type
+fig.update_layout(
+    updatemenus=[
+        dict(
+            active=0,
+            buttons=[
+                dict(label="Direct Flights",
+                     method="update",
+                     args=[{"visible": [True]*len(direct_traces) + [False]*len(connecting_traces)},
+                           {"title": "Price Over Time (Direct Flights)"}]),
+                dict(label="Connecting Flights",
+                     method="update",
+                     args=[{"visible": [False]*len(direct_traces) + [True]*len(connecting_traces)},
+                           {"title": "Price Over Time (Connecting Flights)"}])
+            ],
+            direction="down",
+            showactive=True,
+            x=0.5,
+            xanchor="center",
+            y=1.1,
+            yanchor="top"
+        )
+    ]
+)
+
 fig.update_layout(
     xaxis_title="Departure Time",
     yaxis_title="Price (USD)",
     legend_title="Airline",
-    hovermode='closest'
+    hovermode="closest",
+    height=600
 )
 
 st.plotly_chart(fig, use_container_width=True)
