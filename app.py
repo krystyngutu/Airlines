@@ -346,6 +346,8 @@ plotlyStackedBars(
     colors=customColors
 )
 
+st.write("Columns in DataFrame:", df.columns.tolist())
+
 # WiFi (robust error handling included)
 st.subheader("WiFi Availability by Airline")
 plotlyStackedBars(
