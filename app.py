@@ -325,56 +325,26 @@ def plotlyStackedBars(df, group_col, sub_col, title, legend_title, colors):
     st.plotly_chart(fig, use_container_width=True)
 
 # Airplane Types
-st.subheader("Airplane Types by Airline")
+st.subheader("DIRECT FLIGHTS: Airplane Types by Airline")
 plotlyStackedBars(
     df=directFlights,
     group_col='airline',
     sub_col='airplane',
-    title='Total Flights by Airline and Airplane Type',
+    title='Total Direct Flights by Airline and Airplane Type',
     legend_title='Airplane Type',
     colors=customColors
 )
 
 # Legroom
-st.subheader("Legroom by Airline")
+st.subheader("DIRECT FLIGHTS: Legroom by Airline")
 plotlyStackedBars(
     df=directFlights,
     group_col='airline',
     sub_col='legroom',
-    title='Flight Legroom by Airline',
+    title='Total Direct Flights by Airline and Legroom',
     legend_title='Legroom',
     colors=customColors
 )
-
-# WiFi (robust error handling included)
-st.subheader("WiFi Availability by Airline")
-plotlyStackedBars(
-    df=directFlights,
-    group_col='airline',
-    sub_col='wifi',
-    title='Flight WiFi by Airline',
-    legend_title='WiFi Availability',
-    colors=customColors
-)
-
-# Heatmap helper function
-def plotHeatmap(df, x_col, y_col, z_col, title):
-    heatmap_df = df.groupby([x_col, y_col])[z_col].mean().reset_index()
-    heatmap_pivot = heatmap_df.pivot(index=y_col, columns=x_col, values=z_col)
-    fig = px.imshow(
-        heatmap_pivot,
-        color_continuous_scale='RdBu_r',
-        labels=dict(color=z_col),
-        title=title
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
-# Insert heatmaps here
-st.subheader("Heatmap: Price by Airline and Legroom")
-plotHeatmap(directFlights, x_col='airline', y_col='legroom', z_col='price', title='Average Price by Airline and Legroom')
-
-st.subheader("Heatmap: Carbon Emissions by Airline and Airplane")
-plotHeatmap(directFlights, x_col='airline', y_col='airplane', z_col='carbonEmissionsThisFlight', title='Carbon Emissions by Airline and Airplane')
 
 # Bubble chart helper function
 def plotBubbleChart(df, airline_col, metric_col, yaxis_title, chart_title, 
@@ -419,39 +389,95 @@ def plotBubbleChart(df, airline_col, metric_col, yaxis_title, chart_title,
     st.plotly_chart(fig, use_container_width=True)
 
 # Bubble charts section
-st.subheader("Flight Duration vs Airline (Bubble Size = Count)")
+st.subheader("DIRECT FLIGHTS: Flight Duration vs Airline (Bubble Size = Count)")
 plotBubbleChart(
     df=directFlights,
     airline_col='airline',
     metric_col='durationTime',
     yaxis_title='Duration (min)',
-    chart_title='Flight Duration vs Airline (Bubble Size = Count)',
     width=1000
 )
 
-st.subheader("Flight Prices vs Airline (Bubble Size = Count)")
+st.subheader("DIRECT FLIGHTS: Flight Prices vs Airline (Bubble Size = Count)")
 plotBubbleChart(
     df=directFlights,
     airline_col='airline',
     metric_col='price',
-    yaxis_title='Price (USD)',
-    chart_title='Flight Prices vs Airline (Bubble Size = Count)'
+    yaxis_title='Price (USD)'
 )
 
-st.subheader("Flight Carbon Emissions vs Airline (Bubble Size = Count)")
+st.subheader("DIRECT FLIGHTS: Flight Carbon Emissions vs Airline (Bubble Size = Count)")
 plotBubbleChart(
     df=directFlights,
     airline_col='airline',
     metric_col='carbonEmissionsThisFlight',
-    yaxis_title='Carbon Emissions This Flight',
-    chart_title='Flight Carbon Emissions vs Airline (Bubble Size = Count)'
+    yaxis_title='Carbon Emissions This Flight'
 )
 
-st.subheader("Carbon Percent Difference vs Airline (Bubble Size = Count)")
+st.subheader("DIRECT FLIGHTS: Carbon Percent Difference vs Airline (Bubble Size = Count)")
 plotBubbleChart(
     df=directFlights,
     airline_col='airline',
     metric_col='carbonDifferencePercent',
-    yaxis_title='Carbon Difference Percent This Flight',
-    chart_title='Carbon Percent Difference (to the Average) vs Airline (Bubble Size = Count)'
+    yaxis_title='Carbon Difference Percent This Flight'
+)
+
+def plotHeatmap(df, valueCol, title, xaxisTitle, colorscale='Blues', width=800, height=500):
+    import plotly.graph_objects as go
+    import streamlit as st
+
+    # Create pivot table: count of flights grouped by airline and binned valueCol
+    df_clean = df[[valueCol, 'airline']].dropna()
+    binned_col = pd.cut(df_clean[valueCol], bins=10)  # bin values to avoid too many columns
+    pivot = df_clean.groupby(['airline', binned_col]).size().unstack(fill_value=0)
+
+    # Sort by total volume
+    pivot['Total'] = pivot.sum(axis=1)
+    pivot = pivot.sort_values("Total", ascending=False).drop(columns="Total")
+
+    # Create heatmap
+    fig = go.Figure(data=go.Heatmap(
+        z=pivot.values,
+        x=[str(interval) for interval in pivot.columns],
+        y=pivot.index,
+        colorscale=colorscale,
+        colorbar=dict(title='Number of Flights')
+    ))
+
+    fig.update_layout(
+        title=dict(text=title, x=0.5, xanchor='center'),
+        xaxis_title=xaxisTitle,
+        yaxis_title='Airline',
+        template='plotly_white',
+        width=width,
+        height=height
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+st.subheader("Heatmap: Carbon Difference Percent by Airline")
+plotHeatmap(
+    directFlights,
+    valueCol='carbonDifferencePercent',
+    title='Carbon Difference Percent by Airline',
+    xaxisTitle='Carbon Difference Percent',
+    colorscale='Reds'
+)
+
+st.subheader("Heatmap: Price by Airline")
+plotHeatmap(
+    directFlights,
+    valueCol='price',
+    title='Price by Airline',
+    xaxisTitle='Price (USD)',
+    colorscale='Reds'
+)
+
+st.subheader("Heatmap: Duration Time by Airline")
+plotHeatmap(
+    directFlights,
+    valueCol='durationTime',
+    title='Duration Time by Airline',
+    xaxisTitle='Duration (min)',
+    colorscale='Reds'
 )
