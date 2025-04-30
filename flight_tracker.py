@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import json
 import os
 
-# API keys
+# API key
 hasdata_API = '193e9ef1-70f7-4c68-8c33-11b4e155916a'
 
 # Airport codes
