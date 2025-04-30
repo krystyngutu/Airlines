@@ -14,30 +14,34 @@ df = pd.read_csv("all_flights.csv")
 nycAirports = ["JFK", "EWR", "LGA"]
 swissAirports = ["ZRH", "GVA", "BSL"]
 
+# Parse and convert fields
 df['departureTime'] = pd.to_datetime(df['departureTime'], errors='coerce')
 df['arrivalAirportTime'] = pd.to_datetime(df['arrivalAirportTime'], errors='coerce')
 df['price'] = pd.to_numeric(df['price'], errors='coerce')
 df['durationMinutes'] = pd.to_numeric(df['durationTime'], errors='coerce')
 df['carbonEmissionsThisFlight'] = pd.to_numeric(df.get('carbonEmissionsThisFlight'), errors='coerce')
 
-# Define  airlines to include
-includedAirlines = ['SWISS', 'Delta', 'United', 'Lufthansa']
-
 # Filter to only include selected airlines
-df = df[df['airline'].isin(includedAirlines)].copy()
+included_airlines = ['SWISS', 'Delta', 'United', 'Lufthansa']
+df = df[df['airline'].isin(included_airlines)].copy()
 
-# Define new airline colors
+# Define airline colors
 airline_colors = {
-    'Lufthansa': '#FFD700',           # gold
-    'SWISS': '#d71920',               # red
-    'Delta': '#00235f',               # dark blue
-    'United': '#1a75ff',              # light blue
+    'Lufthansa': '#FFD700',
+    'SWISS': '#d71920',
+    'Delta': '#00235f',
+    'United': '#1a75ff',
 }
 
-# Derived column
+# Derived columns
 df['pricePerMinute'] = df['price'] / df['durationMinutes']
 
-# Label flights as Direct or Connecting
+# Optional carbon difference percent
+df['carbonDifferencePercent'] = ((df['carbonEmissionsThisFlight'] - df['carbonEmissionsThisFlight'].mean()) /
+                                 df['carbonEmissionsThisFlight'].mean()) * 100
+
+# Label flights
+
 def classify_flight_type(row):
     if row['departureAirportID'] in nycAirports and row['arrivalAirportID'] in swissAirports:
         return 'Direct'
@@ -45,317 +49,95 @@ def classify_flight_type(row):
 
 df['flightType'] = df.apply(classify_flight_type, axis=1)
 
-# Clean legroom and drop unused columns
+# Clean columns
 df['legroom'] = df['legroom'].fillna("Extra reclining seat")
 if "recliningAndLegroom" in df.columns:
     df.drop(columns=["recliningAndLegroom"], inplace=True)
 
-# Split into direct and connecting flights
+# Subsets
 directFlights = df[df['flightType'] == 'Direct'].copy()
 connectingFlights = df[df['flightType'] == 'Connecting'].copy()
 
 st.title("Flights from NYC to CH")
 
-# Helper to create traces
-def create_traces(df):
-    traces = []
-    for airline in df['airline'].unique():
-        data = df[df['airline'] == airline]
-        traces.append(go.Scatter(
-            x=data['departureTime'],
-            y=data['price'],
-            mode='markers+lines',
-            name=airline,
-            hovertext=data['flightNumber'],
-            marker=dict(color=airline_colors.get(airline, 'gray'))
-        ))
-    return traces
+# -------- Bubble Chart Helper --------
+def plotBubbleChart(df, airline_col, metric_col, yaxis_title, chart_title, 
+                    width=800, height=500):
+    countDF = df.groupby([airline_col, metric_col]).size().reset_index(name='count')
+    countDF = countDF.sort_values('count', ascending=False)
 
-# Create traces for both flight types
-direct_traces = create_traces(directFlights)
-connecting_traces = create_traces(connectingFlights)
+    priorityOrder = ['SWISS', 'United', 'Delta']
+    allAirlines = countDF[airline_col].unique()
+    remainingAirlines = sorted([a for a in allAirlines if a not in priorityOrder])
+    fullOrder = priorityOrder + remainingAirlines
 
-fig = go.Figure()
-
-# Add direct traces (visible)
-for trace in direct_traces:
-    trace.visible = True
-    fig.add_trace(trace)
-
-# Add connecting traces (hidden)
-for trace in connecting_traces:
-    trace.visible = False
-    fig.add_trace(trace)
-
-fig.update_layout(
-    updatemenus=[
-        dict(
-            active=0,
-            buttons=[
-                dict(label="Direct Flights",
-                     method="update",
-                     args=[{"visible": [True]*len(direct_traces) + [False]*len(connecting_traces)},
-                           {"title": "Price Over Time (Direct Flights)"}]),
-                dict(label="Connecting Flights",
-                     method="update",
-                     args=[{"visible": [False]*len(direct_traces) + [True]*len(connecting_traces)},
-                           {"title": "Price Over Time (Connecting Flights)"}])
-            ],
-            direction="down",
-            showactive=True,
-            x=0.5,
-            xanchor="center",
-            y=1.1,
-            yanchor="top"
-        )
-    ],
-    xaxis_title="Departure Time",
-    yaxis_title="Price (USD)",
-    legend_title_text="Toggle Airlines",
-    hovermode="closest",
-    height=600,
-    legend=dict(
-        title_font=dict(size=12),
-        font=dict(size=11),
-        orientation="v",
-        x=1.02,
-        y=1,
-        xanchor='left',
-        yanchor='top',
-        bordercolor="LightGray",
-        borderwidth=1,
-        itemclick='toggle',
-        itemdoubleclick='toggleothers'
-    )
-)
-
-st.subheader("Price Over Time by Airline and Flight Type")
-st.plotly_chart(fig, use_container_width=True)
-
-# ---------- Carbon Emissions vs Price ----------
-st.subheader("Carbon Emissions vs Price by Airline and Flight Type")
-
-# Prepare traces
-carbon_direct_traces = []
-carbon_connecting_traces = []
-
-for airline in df['airline'].unique():
-    # Direct
-    data_direct = directFlights[directFlights['airline'] == airline]
-    carbon_direct_traces.append(go.Scatter(
-        x=data_direct['carbonEmissionsThisFlight'],
-        y=data_direct['price'],
-        mode='markers',
-        name=airline,
-        hovertext=data_direct['flightNumber'],
-        marker=dict(color=airline_colors.get(airline, 'gray'))
-    ))
-
-    # Connecting
-    data_connecting = connectingFlights[connectingFlights['airline'] == airline]
-    carbon_connecting_traces.append(go.Scatter(
-        x=data_connecting['carbonEmissionsThisFlight'],
-        y=data_connecting['price'],
-        mode='markers',
-        name=airline,
-        hovertext=data_connecting['flightNumber'],
-        marker=dict(color=airline_colors.get(airline, 'gray'))
-    ))
-
-# Combine into figure
-carbon_fig = go.Figure()
-
-# Add direct traces (visible)
-for trace in carbon_direct_traces:
-    trace.visible = True
-    carbon_fig.add_trace(trace)
-
-# Add connecting traces (hidden initially)
-for trace in carbon_connecting_traces:
-    trace.visible = False
-    carbon_fig.add_trace(trace)
-
-carbon_fig.update_layout(
-    updatemenus=[
-        dict(
-            active=0,
-            buttons=[
-                dict(label="Direct Flights",
-                     method="update",
-                     args=[{"visible": [True]*len(carbon_direct_traces) + [False]*len(carbon_connecting_traces)},
-                           {"title": "Carbon Emissions vs Price (Direct Flights)"}]),
-                dict(label="Connecting Flights",
-                     method="update",
-                     args=[{"visible": [False]*len(carbon_direct_traces) + [True]*len(carbon_connecting_traces)},
-                           {"title": "Carbon Emissions vs Price (Connecting Flights)"}])
-            ],
-            direction="down",
-            showactive=True,
-            x=0.5,
-            xanchor="center",
-            y=1.1,
-            yanchor="top"
-        )
-    ],
-    xaxis_title="Carbon Emissions (kg CO₂)",
-    yaxis_title="Price (USD)",
-    legend_title_text="Airline",
-    hovermode="closest",
-    height=600,
-    legend=dict(
-        itemclick="toggle",
-        itemdoubleclick="toggleothers",
-        x=1.02,
-        y=1,
-        bordercolor="LightGray",
-        borderwidth=1
-    )
-)
-
-st.plotly_chart(carbon_fig, use_container_width=True)
-
-# ---------- Price Per Minute ----------
-st.subheader("Price Per Minute by Airline and Flight Type")
-
-# Prepare traces
-ppm_direct_traces = []
-ppm_connecting_traces = []
-
-for airline in df['airline'].unique():
-    # Direct
-    data_direct = directFlights[directFlights['airline'] == airline].sort_values('departureTime')
-    ppm_direct_traces.append(go.Scatter(
-        x=data_direct['departureTime'],
-        y=data_direct['pricePerMinute'],
-        mode='lines+markers',
-        name=airline,
-        marker=dict(color=airline_colors.get(airline, 'gray'))
-    ))
-
-    # Connecting
-    data_connecting = connectingFlights[connectingFlights['airline'] == airline].sort_values('departureTime')
-    ppm_connecting_traces.append(go.Scatter(
-        x=data_connecting['departureTime'],
-        y=data_connecting['pricePerMinute'],
-        mode='lines+markers',
-        name=airline,
-        marker=dict(color=airline_colors.get(airline, 'gray'))
-    ))
-
-# Combine into figure
-ppm_fig = go.Figure()
-for trace in ppm_direct_traces:
-    trace.visible = True
-    ppm_fig.add_trace(trace)
-  
-for trace in ppm_connecting_traces:
-    trace.visible = False
-    ppm_fig.add_trace(trace)
-
-ppm_fig.update_layout(
-    updatemenus=[
-        dict(
-            active=0,
-            buttons=[
-                dict(label="Direct Flights",
-                     method="update",
-                     args=[{"visible": [True]*len(ppm_direct_traces) + [False]*len(ppm_connecting_traces)},
-                           {"title": "Price Per Minute (Direct Flights)"}]),
-                dict(label="Connecting Flights",
-                     method="update",
-                     args=[{"visible": [False]*len(ppm_direct_traces) + [True]*len(ppm_connecting_traces)},
-                           {"title": "Price Per Minute (Connecting Flights)"}])
-            ],
-            direction="down",
-            showactive=True,
-            x=0.5,
-            xanchor="center",
-            y=1.1,
-            yanchor="top"
-        )
-    ],
-    xaxis_title="Departure Time",
-    yaxis_title="Price per Minute (USD)",
-    legend_title_text="Airline",
-    hovermode="closest",
-    height=600,
-    legend=dict(
-        itemclick="toggle",
-        itemdoubleclick="toggleothers",
-        x=1.02,
-        y=1,
-        bordercolor="LightGray",
-        borderwidth=1
-    )
-)
-
-st.plotly_chart(ppm_fig, use_container_width=True)
-
-# Bar chart helper
-def plotlyStackedBars(df, group_col, sub_col, title, legend_title, colors):
-    if sub_col not in df.columns or df[sub_col].dropna().empty:
-        st.warning(f"No valid data available for '{sub_col}'. Skipping chart.")
-        return
-
-    countDF = df.groupby([group_col, sub_col]).size().unstack(fill_value=0)
-    countDF = countDF.loc[countDF.sum(axis=1).sort_values(ascending=False).index]
+    countDF[airline_col] = pd.Categorical(countDF[airline_col], categories=fullOrder, ordered=True)
+    countDF = countDF.sort_values(airline_col)
 
     fig = go.Figure()
-    for i, sub_category in enumerate(countDF.columns):
-        fig.add_trace(go.Bar(
-            x=countDF.index,
-            y=countDF[sub_category],
-            name=sub_category,
-            marker_color=colors[i % len(colors)],
-        ))
+    fig.add_trace(go.Scatter(
+        x=countDF[airline_col],
+        y=countDF[metric_col],
+        mode='markers+text' if metric_col == 'durationTime' else 'markers',
+        text=countDF['count'],
+        marker=dict(
+            size=countDF['count'],
+            color=countDF[metric_col],
+            colorscale='RdBu',
+            showscale=True,
+            sizemode='area',
+            sizeref=2. * countDF['count'].max() / (100 ** 2),
+            sizemin=4
+        )
+    ))
 
     fig.update_layout(
-        title=title,
-        barmode='stack',
-        xaxis_title=group_col.capitalize(),
-        yaxis_title='Number of Flights',
-        legend_title=legend_title,
+        title=dict(text=chart_title, x=0.5, xanchor='center'),
+        xaxis_title='Airline',
+        yaxis_title=yaxis_title,
         xaxis_tickangle=0,
-        plot_bgcolor='white',
-        bargap=0.2,
-        font=dict(size=12),
-        height=500
+        template='plotly_white',
+        showlegend=False,
+        width=width,
+        height=height
     )
 
     st.plotly_chart(fig, use_container_width=True)
 
-# Airplane Types
-st.subheader("Airplane Types by Airline")
-plotlyStackedBars(
+# --------- Bubble Charts Section ---------
+st.subheader("Flight Duration vs Airline (Bubble Size = Count)")
+plotBubbleChart(
     df=directFlights,
-    group_col='airline',
-    sub_col='airplane',
-    title='Total Flights by Airline and Airplane Type',
-    legend_title='Airplane Type',
-    colors=customColors
+    airline_col='airline',
+    metric_col='durationTime',
+    yaxis_title='Duration (min)',
+    chart_title='Flight Duration vs Airline (Bubble Size = Count)',
+    width=1000
 )
 
-# Legroom
-st.subheader("Legroom by Airline")
-plotlyStackedBars(
+st.subheader("Flight Prices vs Airline (Bubble Size = Count)")
+plotBubbleChart(
     df=directFlights,
-    group_col='airline',
-    sub_col='legroom',
-    title='Flight Legroom by Airline',
-    legend_title='Legroom',
-    colors=customColors
+    airline_col='airline',
+    metric_col='price',
+    yaxis_title='Price (USD)',
+    chart_title='Flight Prices vs Airline (Bubble Size = Count)'
 )
 
-st.write("Columns in DataFrame:", df.columns.tolist())
-
-# WiFi (robust error handling included)
-st.subheader("WiFi Availability by Airline")
-plotlyStackedBars(
+st.subheader("Flight Carbon Emissions vs Airline (Bubble Size = Count)")
+plotBubbleChart(
     df=directFlights,
-    group_col='airline',
-    sub_col='wifi',
-    title='Flight WiFi by Airline',
-    legend_title='WiFi Availability',
-    colors=customColors
+    airline_col='airline',
+    metric_col='carbonEmissionsThisFlight',
+    yaxis_title='Carbon Emissions This Flight',
+    chart_title='Flight Carbon Emissions vs Airline (Bubble Size = Count)'
 )
 
+st.subheader("Carbon Percent Difference vs Airline (Bubble Size = Count)")
+plotBubbleChart(
+    df=directFlights,
+    airline_col='airline',
+    metric_col='carbonDifferencePercent',
+    yaxis_title='Carbon Difference Percent This Flight',
+    chart_title='Carbon Percent Difference (to the Average) vs Airline (Bubble Size = Count)'
+)
