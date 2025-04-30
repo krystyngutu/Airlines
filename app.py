@@ -134,14 +134,69 @@ fig.update_layout(
 st.plotly_chart(fig, use_container_width=True)
 
 # Carbon Emissions vs Price
-st.subheader("Carbon Emissions vs Price")
-fig2 = px.scatter(filtered, x='carbonEmissionsThisFlight', y='price', hover_data=['departureTime'])
-st.plotly_chart(fig2, use_container_width=True)
+st.subheader("Carbon Emissions vs Price by Airline")
+carbon_fig = go.Figure()
+for airline in filtered['airline'].unique():
+    df_airline = filtered[filtered['airline'] == airline]
+    carbon_fig.add_trace(go.Scatter(
+        x=df_airline['carbonEmissionsThisFlight'],
+        y=df_airline['price'],
+        mode='markers',
+        name=airline,
+        hovertext=df_airline['flightNumber'],
+        marker=dict(size=8)
+    ))
 
-# Price Per Minute
-st.subheader("Price Per Minute")
-fig3 = px.line(filtered.sort_values('departureTime'), x='departureTime', y='pricePerMinute')
-st.plotly_chart(fig3, use_container_width=True)
+carbon_fig.update_layout(
+    xaxis_title="Carbon Emissions (kg CO₂)",
+    yaxis_title="Price (USD)",
+    title="Carbon Emissions vs Price",
+    legend_title_text="Airline",
+    hovermode="closest",
+    height=600,
+    legend=dict(
+        itemclick="toggle",
+        itemdoubleclick="toggleothers",
+        x=1.02,
+        y=1,
+        bordercolor="LightGray",
+        borderwidth=1
+    )
+)
+
+st.plotly_chart(carbon_fig, use_container_width=True)
+
+# Price Per Minute by Airline
+st.subheader("Price Per Minute by Airline")
+ppm_fig = go.Figure()
+for airline in filtered['airline'].unique():
+    df_airline = filtered[filtered['airline'] == airline].sort_values('departureTime')
+    ppm_fig.add_trace(go.Scatter(
+        x=df_airline['departureTime'],
+        y=df_airline['pricePerMinute'],
+        mode='lines+markers',
+        name=airline,
+        hovertext=df_airline['flightNumber']
+    ))
+
+ppm_fig.update_layout(
+    xaxis_title="Departure Time",
+    yaxis_title="Price per Minute (USD)",
+    title="Price Per Minute Over Time",
+    legend_title_text="Airline",
+    hovermode="closest",
+    height=600,
+    legend=dict(
+        itemclick="toggle",
+        itemdoubleclick="toggleothers",
+        x=1.02,
+        y=1,
+        bordercolor="LightGray",
+        borderwidth=1
+    )
+)
+
+st.plotly_chart(ppm_fig, use_container_width=True)
 
 # Histograms
 col1, col2 = st.columns(2)
