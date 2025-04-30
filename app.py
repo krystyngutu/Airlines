@@ -14,18 +14,17 @@ df = pd.read_csv("all_flights.csv")
 nycAirports = ["JFK", "EWR", "LGA"]
 swissAirports = ["ZRH", "GVA", "BSL"]
 
-# Parse and convert fields
 df['departureTime'] = pd.to_datetime(df['departureTime'], errors='coerce')
 df['arrivalAirportTime'] = pd.to_datetime(df['arrivalAirportTime'], errors='coerce')
 df['price'] = pd.to_numeric(df['price'], errors='coerce')
 df['durationMinutes'] = pd.to_numeric(df['durationTime'], errors='coerce')
 df['carbonEmissionsThisFlight'] = pd.to_numeric(df.get('carbonEmissionsThisFlight'), errors='coerce')
 
-# Filter to only include selected airlines
+# Define airlines to include
 included_airlines = ['SWISS', 'Delta', 'United', 'Lufthansa']
 df = df[df['airline'].isin(included_airlines)].copy()
 
-# Define airline colors
+# Airline colors
 airline_colors = {
     'Lufthansa': '#FFD700',
     'SWISS': '#d71920',
@@ -35,12 +34,8 @@ airline_colors = {
 
 # Derived columns
 df['pricePerMinute'] = df['price'] / df['durationMinutes']
-
-# Optional carbon difference percent
 df['carbonDifferencePercent'] = ((df['carbonEmissionsThisFlight'] - df['carbonEmissionsThisFlight'].mean()) /
                                  df['carbonEmissionsThisFlight'].mean()) * 100
-
-# Label flights
 
 def classify_flight_type(row):
     if row['departureAirportID'] in nycAirports and row['arrivalAirportID'] in swissAirports:
@@ -48,29 +43,43 @@ def classify_flight_type(row):
     return 'Connecting'
 
 df['flightType'] = df.apply(classify_flight_type, axis=1)
-
-# Clean columns
 df['legroom'] = df['legroom'].fillna("Extra reclining seat")
 if "recliningAndLegroom" in df.columns:
     df.drop(columns=["recliningAndLegroom"], inplace=True)
 
-# Subsets
 directFlights = df[df['flightType'] == 'Direct'].copy()
 connectingFlights = df[df['flightType'] == 'Connecting'].copy()
 
 st.title("Flights from NYC to CH")
 
-# -------- Bubble Chart Helper --------
+# Heatmap helper function
+def plotHeatmap(df, x_col, y_col, z_col, title):
+    heatmap_df = df.groupby([x_col, y_col])[z_col].mean().reset_index()
+    heatmap_pivot = heatmap_df.pivot(index=y_col, columns=x_col, values=z_col)
+    fig = px.imshow(
+        heatmap_pivot,
+        color_continuous_scale='RdBu_r',
+        labels=dict(color=z_col),
+        title=title
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+# Insert heatmaps here
+st.subheader("Heatmap: Price by Airline and Legroom")
+plotHeatmap(directFlights, x_col='airline', y_col='legroom', z_col='price', title='Average Price by Airline and Legroom')
+
+st.subheader("Heatmap: Carbon Emissions by Airline and Airplane")
+plotHeatmap(directFlights, x_col='airline', y_col='airplane', z_col='carbonEmissionsThisFlight', title='Carbon Emissions by Airline and Airplane')
+
+# Bubble chart helper function
 def plotBubbleChart(df, airline_col, metric_col, yaxis_title, chart_title, 
                     width=800, height=500):
     countDF = df.groupby([airline_col, metric_col]).size().reset_index(name='count')
     countDF = countDF.sort_values('count', ascending=False)
-
     priorityOrder = ['SWISS', 'United', 'Delta']
     allAirlines = countDF[airline_col].unique()
     remainingAirlines = sorted([a for a in allAirlines if a not in priorityOrder])
     fullOrder = priorityOrder + remainingAirlines
-
     countDF[airline_col] = pd.Categorical(countDF[airline_col], categories=fullOrder, ordered=True)
     countDF = countDF.sort_values(airline_col)
 
@@ -104,7 +113,7 @@ def plotBubbleChart(df, airline_col, metric_col, yaxis_title, chart_title,
 
     st.plotly_chart(fig, use_container_width=True)
 
-# --------- Bubble Charts Section ---------
+# Bubble charts section
 st.subheader("Flight Duration vs Airline (Bubble Size = Count)")
 plotBubbleChart(
     df=directFlights,
