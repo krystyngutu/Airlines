@@ -110,15 +110,6 @@ fig.update_layout(
     ]
 )
 
-# Define desired tick positions (can be adjusted as needed)
-tick_dates = [
-    datetime(2025, 5, 15),
-    datetime(2025, 6, 1),
-    datetime(2025, 6, 15),
-    datetime(2025, 7, 1),
-    datetime(2025, 7, 15)
-]
-
 fig.update_layout(
     xaxis_title="Departure Time",
     yaxis_title="Price (USD)",
