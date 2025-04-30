@@ -331,7 +331,6 @@ plotlyStackedBars(
     df=directFlights,
     group_col='airline',
     sub_col='airplane',
-    title='Total Direct Flights by Airline and Airplane Type',
     legend_title='Airplane Type',
     colors=customColors
 )
@@ -342,7 +341,6 @@ plotlyStackedBars(
     df=directFlights,
     group_col='airline',
     sub_col='legroom',
-    title='Total Direct Flights by Airline and Legroom',
     legend_title='Legroom',
     colors=customColors
 )
