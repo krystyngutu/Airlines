@@ -33,14 +33,6 @@ directFlights['legroom'] = directFlights['legroom'].fillna("Extra reclining seat
 if "recliningAndLegroom" in directFlights.columns:
     directFlights.drop(columns=["recliningAndLegroom"], inplace=True)
 
-# Classify flight type
-def classify_flight_type(row):
-    if row['airline'] in ['Delta', 'United', 'SWISS']:
-        return 'Direct'
-    return 'Connecting'
-
-directFlights['flightType'] = directFlights.apply(classify_flight_type, axis=1)
-
 st.title("Flights from NYC to CH")
 
 # Filtered data
