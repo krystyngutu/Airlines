@@ -46,7 +46,7 @@ st.title("Flights from NYC to CH")
 # Filtered data
 filtered = directFlights.copy()
 
-# PRICE OVER TIME - BY AIRLINE & FLIGHT TYPE
+# Price over time, by airline and flight time
 st.subheader("Price Over Time by Airline and Flight Type")
 filtered = filtered.sort_values('departureTime')
 
@@ -110,6 +110,15 @@ fig.update_layout(
     ]
 )
 
+# Define desired tick positions (can be adjusted as needed)
+tick_dates = [
+    datetime(2025, 5, 15),
+    datetime(2025, 6, 1),
+    datetime(2025, 6, 15),
+    datetime(2025, 7, 1),
+    datetime(2025, 7, 15)
+]
+
 fig.update_layout(
     xaxis_title="Departure Time",
     yaxis_title="Price (USD)",
@@ -128,6 +137,10 @@ fig.update_layout(
         borderwidth=1,
         itemclick='toggle',
         itemdoubleclick='toggleothers'
+    ),
+    xaxis=dict(
+        tickformat="%b %d",
+        tickvals=tick_dates
     )
 )
 
