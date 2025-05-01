@@ -45,21 +45,21 @@ connectingFlights = df[df['flightType'] == 'Connecting'].copy()
 
 # Custom color palette
 customColors = [
-    '#d71920',                        # red
-    '#00235f',                        # dark blue
-    '#f9ba00',                        # gold
-    '#660000',                        # burgundy
-    '#000000',                        # black
-    '#3366ff',                        # blue
-    '#ffffff'                         # white
+    '#d71920',                                    # red
+    '#00235f',                                    # dark blue
+    '#f9ba00',                                    # gold
+    '#660000',                                    # burgundy
+    '#000000',                                    # black
+    '#3366ff',                                    # blue
+    '#ffffff'                                     # white
 ]
 
 # Define new airline colors
 airlineColors = {
-    'Lufthansa': '#ffd700',           # gold
-    'SWISS': '#d71920',               # red
-    'Delta': '#00235f',               # dark blue
-    'United': '#1a75ff',              # light blue
+    'Lufthansa': '#ffd700',                       # gold
+    'SWISS': '#d71920',                           # red
+    'Delta': '#00235f',                           # dark blue
+    'United': '#1a75ff',                          # light blue
 }
 
 st.title("Flights from NYC to CH")
@@ -67,7 +67,9 @@ st.title("Flights from NYC to CH")
 # Create traces for graphs
 def createTraces(df):
     traces = []
-    for airline in ['SWISS', 'Lufthansa', 'United', 'Delta']:
+    airlines = ['Lufthansa', 'United', 'Delta']      # SWISS excluded for now
+
+    for airline in airlines:
         if airline in df['airline'].unique():
             data = df[df['airline'] == airline]
             traces.append(go.Scatter(
@@ -76,8 +78,26 @@ def createTraces(df):
                 mode='markers+lines',
                 name=airline,
                 hovertext=data['flightNumber'],
-                marker=dict(color=airlineColors.get(airline, 'gray'))
+                marker=dict(color=airlineColors.get(airline, 'gray')),
+                legendgroup=airline,
+                legendrank=['SWISS', 'Lufthansa', 'United', 'Delta'].index(airline)
             ))
+
+    # Add SWISS last to bring it to the top of the plot visually
+    if 'SWISS' in df['airline'].unique():
+        data = df[df['airline'] == 'SWISS']
+        traces.append(go.Scatter(
+            x=data['departureTime'],
+            y=data['price'],
+            mode='markers+lines',
+            name='SWISS',
+            hovertext=data['flightNumber'],
+            marker=dict(color=airlineColors.get('SWISS', 'gray')),
+            line=dict(width=3),                   # make SWISS line slightly thicker
+            legendgroup='SWISS',
+            legendrank=0                          # appears first in the legend
+        ))
+
     return traces
 
 # Create traces for both flight types
