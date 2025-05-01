@@ -216,25 +216,44 @@ carbon_fig.update_layout(
 st.plotly_chart(carbon_fig, use_container_width=True)
 
 # Bar chart helper
-def plotlyStackedBars(df, group_col, sub_col, title, legend_title, colors):
-    if sub_col not in df.columns or df[sub_col].dropna().empty:
-        st.warning(f"No valid data available for '{sub_col}'. Skipping chart.")
-        return
+def plotlyStackedBarsWithToggle(directDF, connectingDF, group_col, sub_col, title, legend_title, colors):
+    def build_count(df):
+        return df.groupby([group_col, sub_col]).size().unstack(fill_value=0)
 
-    countDF = df.groupby([group_col, sub_col]).size().unstack(fill_value=0)
-    countDF = countDF.loc[countDF.sum(axis=1).sort_values(ascending=False).index]
-
+    direct_count = build_count(directDF)
+    connecting_count = build_count(connectingDF)
+    
     fig = go.Figure()
-    for i, sub_category in enumerate(countDF.columns):
-        fig.add_trace(go.Bar(
-            x=countDF.index,
-            y=countDF[sub_category],
+
+    direct_traces = []
+    connecting_traces = []
+
+    for i, sub_category in enumerate(direct_count.columns):
+        trace = go.Bar(
+            x=direct_count.index,
+            y=direct_count[sub_category],
             name=sub_category,
             marker_color=colors[i % len(colors)],
-        ))
+            visible=True
+        )
+        fig.add_trace(trace)
+        direct_traces.append(True)
+        connecting_traces.append(False)
+
+    for i, sub_category in enumerate(connecting_count.columns):
+        trace = go.Bar(
+            x=connecting_count.index,
+            y=connecting_count[sub_category],
+            name=sub_category,
+            marker_color=colors[i % len(colors)],
+            visible=False
+        )
+        fig.add_trace(trace)
+        direct_traces.append(False)
+        connecting_traces.append(True)
 
     fig.update_layout(
-        title=title,
+        title=title + " (Direct)",
         barmode='stack',
         xaxis_title=group_col.capitalize(),
         yaxis_title='Number of Flights',
@@ -243,15 +262,38 @@ def plotlyStackedBars(df, group_col, sub_col, title, legend_title, colors):
         plot_bgcolor='white',
         bargap=0.2,
         font=dict(size=12),
-        height=500
+        height=500,
+        updatemenus=[
+            dict(
+                active=0,
+                buttons=[
+                    dict(label="Direct Flights",
+                         method="update",
+                         args=[{"visible": direct_traces},
+                               {"title": title + " (Direct)"}]),
+                    dict(label="Connecting Flights",
+                         method="update",
+                         args=[{"visible": connecting_traces},
+                               {"title": title + " (Connecting)"}])
+                ],
+                direction="down",
+                showactive=True,
+                x=0.5,
+                xanchor="center",
+                y=1.15,
+                yanchor="top"
+            )
+        ]
     )
 
     st.plotly_chart(fig, use_container_width=True)
 
 # Airplane Types
-st.subheader('Direct Flight Visuals')
-plotlyStackedBars(
-    df=directFlights,
+st.subheader('Flight Visuals by Flight Type')
+
+plotlyStackedBarsWithToggle(
+    directFlights,
+    connectingFlights,
     group_col='airline',
     sub_col='airplane',
     title='Airplane Types by Airline',
@@ -259,9 +301,9 @@ plotlyStackedBars(
     colors=customColors
 )
 
-# Legroom
-plotlyStackedBars(
-    df=directFlights,
+plotlyStackedBarsWithToggle(
+    directFlights,
+    connectingFlights,
     group_col='airline',
     sub_col='legroom',
     title='Legroom by Airline',
