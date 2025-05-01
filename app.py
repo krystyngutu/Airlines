@@ -14,9 +14,6 @@ df['price'] = pd.to_numeric(df['price'], errors='coerce')
 df['durationMinutes'] = pd.to_numeric(df['durationTime'], errors='coerce')
 df['carbonEmissionsThisFlight'] = pd.to_numeric(df.get('carbonEmissionsThisFlight'), errors='coerce')
 
-# Feature engineered column
-df['pricePerMinute'] = df['price'] / df['durationMinutes']
-
 # Define  airports and airlines to look at
 nycAirports = ['JFK', 'EWR', 'LGA']
 swissAirports = ['ZRH', 'GVA', 'BSL']
@@ -78,7 +75,7 @@ def createTraces(df):
             mode='markers+lines',
             name=airline,
             hovertext=data['flightNumber'],
-            marker=dict(color=airline_colors.get(airline, 'gray'))
+            marker=dict(color=airlineColors.get(airline, 'gray'))
         ))
     return traces
 
