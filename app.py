@@ -208,7 +208,7 @@ if 'SWISS' in df['airline'].unique():
         mode='markers',
         name='SWISS',
         hovertext=dataDirect['flightNumber'],
-        marker=dict(color=airlineColors.get('SWISS', 'gray'), line=dict(width=2)),
+        marker=dict(color=airlineColors.get('SWISS', 'gray')),
         legendgroup='SWISS',
         legendrank=0
     ))
@@ -220,7 +220,7 @@ if 'SWISS' in df['airline'].unique():
         mode='markers',
         name='SWISS',
         hovertext=dataConnecting['flightNumber'],
-        marker=dict(color=airlineColors.get('SWISS', 'gray'), line=dict(width=2)),
+        marker=dict(color=airlineColors.get('SWISS', 'gray')),
         legendgroup='SWISS',
         legendrank=0
     ))
