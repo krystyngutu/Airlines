@@ -215,83 +215,6 @@ carbon_fig.update_layout(
 
 st.plotly_chart(carbon_fig, use_container_width=True)
 
-# ---------- Price Per Minute ----------
-st.subheader("Price Per Minute by Airline and Flight Type")
-
-# Prepare traces
-ppm_direct_traces = []
-ppm_connecting_traces = []
-
-for airline in df['airline'].unique():
-    # Direct
-    data_direct = directFlights[directFlights['airline'] == airline].sort_values('departureTime')
-    ppm_direct_traces.append(go.Scatter(
-        x=data_direct['departureTime'],
-        y=data_direct['pricePerMinute'],
-        mode='lines+markers',
-        name=airline,
-        marker=dict(color=airline_colors.get(airline, 'gray'))
-    ))
-
-    # Connecting
-    data_connecting = connectingFlights[connectingFlights['airline'] == airline].sort_values('departureTime')
-    ppm_connecting_traces.append(go.Scatter(
-        x=data_connecting['departureTime'],
-        y=data_connecting['pricePerMinute'],
-        mode='lines+markers',
-        name=airline,
-        marker=dict(color=airline_colors.get(airline, 'gray'))
-    ))
-
-# Combine into figure
-ppm_fig = go.Figure()
-for trace in ppm_direct_traces:
-    trace.visible = True
-    ppm_fig.add_trace(trace)
-  
-for trace in ppm_connecting_traces:
-    trace.visible = False
-    ppm_fig.add_trace(trace)
-
-ppm_fig.update_layout(
-    updatemenus=[
-        dict(
-            active=0,
-            buttons=[
-                dict(label="Direct Flights",
-                     method="update",
-                     args=[{"visible": [True]*len(ppm_direct_traces) + [False]*len(ppm_connecting_traces)},
-                           {"title": "Price Per Minute (Direct Flights)"}]),
-                dict(label="Connecting Flights",
-                     method="update",
-                     args=[{"visible": [False]*len(ppm_direct_traces) + [True]*len(ppm_connecting_traces)},
-                           {"title": "Price Per Minute (Connecting Flights)"}])
-            ],
-            direction="down",
-            showactive=True,
-            x=0.5,
-            xanchor="center",
-            y=1.1,
-            yanchor="top"
-        )
-    ],
-    xaxis_title="Departure Time",
-    yaxis_title="Price per Minute (USD)",
-    legend_title_text="Airline",
-    hovermode="closest",
-    height=600,
-    legend=dict(
-        itemclick="toggle",
-        itemdoubleclick="toggleothers",
-        x=1.02,
-        y=1,
-        bordercolor="LightGray",
-        borderwidth=1
-    )
-)
-
-st.plotly_chart(ppm_fig, use_container_width=True)
-
 # Bar chart helper
 def plotlyStackedBars(df, group_col, sub_col, title, legend_title, colors):
     if sub_col not in df.columns or df[sub_col].dropna().empty:
@@ -331,6 +254,7 @@ plotlyStackedBars(
     df=directFlights,
     group_col='airline',
     sub_col='airplane',
+    title='Airplane Types by Airline (Direct Flights)',
     legend_title='Airplane Type',
     colors=customColors
 )
