@@ -269,11 +269,11 @@ plotlyStackedBars(
     colors=customColors
 )
 
-# Bubble chart helper function
 def plotBubbleChart(df, airline_col, metric_col, yaxis_title, chart_title, 
                     width=800, height=500):
     countDF = df.groupby([airline_col, metric_col]).size().reset_index(name='count')
     countDF = countDF.sort_values('count', ascending=False)
+    
     priorityOrder = ['SWISS', 'United', 'Delta']
     allAirlines = countDF[airline_col].unique()
     remainingAirlines = sorted([a for a in allAirlines if a not in priorityOrder])
@@ -317,7 +317,7 @@ plotBubbleChart(
     airline_col='airline',
     metric_col='durationTime',
     yaxis_title='Duration (min)',
-    title='Flight Duration by Airline (Bubble Size = Count)',
+    chart_title='Flight Duration by Airline (Bubble Size = Count)',
     width=1000
 )
 
@@ -326,23 +326,25 @@ plotBubbleChart(
     airline_col='airline',
     metric_col='price',
     yaxis_title='Price (USD)',
-    title='Flight Prices by Airline (Bubble Size = Count)'
+    chart_title='Flight Prices by Airline (Bubble Size = Count)'
 )
 
 plotBubbleChart(
     df=directFlights,
     airline_col='airline',
     metric_col='carbonEmissionsThisFlight',
-    yaxis_title='Carbon Emissions by Airline per Flight (Bubble Size = Count)'
+    yaxis_title='Carbon Emissions by Airline per Flight (Bubble Size = Count)',
+    chart_title='Carbon Emissions by Airline (Bubble Size = Count)'
 )
-
 
 plotBubbleChart(
     df=directFlights,
     airline_col='airline',
     metric_col='carbonDifferencePercent',
-    yaxis_title='Carbon Difference (%) by Airline per Flight (Bubble Size = Count)'
+    yaxis_title='Carbon Difference (%) by Airline per Flight (Bubble Size = Count)',
+    chart_title='Carbon Difference by Airline (Bubble Size = Count)'
 )
+
 
 # Heatmap helper function
 def plotHeatmap(df, valueCol, title, xaxisTitle, colorscale='Blues', width=800, height=500):
