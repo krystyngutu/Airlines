@@ -346,57 +346,77 @@ plotBubbleChart(
 )
 
 
-# Heatmap helper function
-def plotHeatmap(df, valueCol, title, xaxisTitle, colorscale='Blues', width=800, height=500):
-    df_clean = df[[valueCol, 'airline']].dropna()
-    binned_col = pd.cut(df_clean[valueCol], bins=10)
-    pivot = df_clean.groupby(['airline', binned_col]).size().unstack(fill_value=0)
-    pivot['Total'] = pivot.sum(axis=1)
-    pivot = pivot.sort_values("Total", ascending=False).drop(columns="Total")
+# Heatmap helper function with flight type toggle
+def plotHeatmapWithToggle(directDF, connectingDF, valueCol, title, xaxisTitle, colorscale='Blues', width=800, height=500):
+    def build_heatmap_data(df):
+        df_clean = df[[valueCol, 'airline']].dropna()
+        binned_col = pd.cut(df_clean[valueCol], bins=10)
+        pivot = df_clean.groupby(['airline', binned_col]).size().unstack(fill_value=0)
+        pivot['Total'] = pivot.sum(axis=1)
+        pivot = pivot.sort_values("Total", ascending=False).drop(columns="Total")
+        return pivot
 
-    fig = go.Figure(data=go.Heatmap(
-        z=pivot.values,
-        x=[str(interval) for interval in pivot.columns],
-        y=pivot.index,
+    direct_data = build_heatmap_data(directDF)
+    connecting_data = build_heatmap_data(connectingDF)
+
+    trace_direct = go.Heatmap(
+        z=direct_data.values,
+        x=[str(interval) for interval in direct_data.columns],
+        y=direct_data.index,
         colorscale=colorscale,
-        colorbar=dict(title='Number of Flights')
-    ))
+        colorbar=dict(title='Number of Flights'),
+        visible=True
+    )
+
+    trace_connecting = go.Heatmap(
+        z=connecting_data.values,
+        x=[str(interval) for interval in connecting_data.columns],
+        y=connecting_data.index,
+        colorscale=colorscale,
+        colorbar=dict(title='Number of Flights'),
+        visible=False
+    )
+
+    fig = go.Figure(data=[trace_direct, trace_connecting])
 
     fig.update_layout(
-        title=dict(text=title, x=0.5, xanchor='center'),
+        title=title + " (Direct)",
         xaxis_title=xaxisTitle,
         yaxis_title='Airline',
         template='plotly_white',
         width=width,
-        height=height
+        height=height,
+        updatemenus=[
+            dict(
+                active=0,
+                buttons=[
+                    dict(label="Direct Flights",
+                         method="update",
+                         args=[{"visible": [True, False]},
+                               {"title": title + " (Direct)"}]),
+                    dict(label="Connecting Flights",
+                         method="update",
+                         args=[{"visible": [False, True]},
+                               {"title": title + " (Connecting)"}])
+                ],
+                direction="down",
+                showactive=True,
+                x=0.5,
+                xanchor="center",
+                y=1.15,
+                yanchor="top"
+            )
+        ]
     )
 
     st.plotly_chart(fig, use_container_width=True)
 
-# Insert heatmaps
-st.subheader("DIRECT FLIGHT: Carbon Difference Percent by Airline")
-plotHeatmap(
-    directFlights,
-    valueCol='carbonDifferencePercent',
-    title='Carbon Difference Percent by Airline',
-    xaxisTitle='Carbon Difference Percent',
-    colorscale='Reds'
-)
+# Heatmaps
+plotHeatmapWithToggle(directFlights, connectingFlights, 'carbonDifferencePercent',
+                      'Carbon Difference Percent by Airline', 'Carbon Difference Percent', colorscale='Reds')
 
-st.subheader("DIRECT FLIGHTS: Price by Airline")
-plotHeatmap(
-    directFlights,
-    valueCol='price',
-    title='Price by Airline',
-    xaxisTitle='Price (USD)',
-    colorscale='Reds'
-)
+plotHeatmapWithToggle(directFlights, connectingFlights, 'price',
+                      'Price by Airline', 'Price (USD)', colorscale='Reds')
 
-st.subheader("DIRECT FLIGHTS: Duration Time by Airline")
-plotHeatmap(
-    directFlights,
-    valueCol='durationTime',
-    title='Duration Time by Airline',
-    xaxisTitle='Duration (min)',
-    colorscale='Reds'
-)
+plotHeatmapWithToggle(directFlights, connectingFlights, 'durationTime',
+                      'Duration Time by Airline', 'Duration (min)', colorscale='Reds')
