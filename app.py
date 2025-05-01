@@ -269,82 +269,97 @@ plotlyStackedBars(
     colors=customColors
 )
 
-def plotBubbleChart(df, airline_col, metric_col, yaxis_title, chart_title, 
-                    width=800, height=500):
-    countDF = df.groupby([airline_col, metric_col]).size().reset_index(name='count')
-    countDF = countDF.sort_values('count', ascending=False)
-    
-    priorityOrder = ['SWISS', 'United', 'Delta']
-    allAirlines = countDF[airline_col].unique()
-    remainingAirlines = sorted([a for a in allAirlines if a not in priorityOrder])
-    fullOrder = priorityOrder + remainingAirlines
-    countDF[airline_col] = pd.Categorical(countDF[airline_col], categories=fullOrder, ordered=True)
-    countDF = countDF.sort_values(airline_col)
+# Bubble chart helper function with flight type toggle
+def plotBubbleChartWithToggle(directDF, connectingDF, airline_col, metric_col, yaxis_title, chart_title, width=800, height=500):
+    def build_bubble(df):
+        countDF = df.groupby([airline_col, metric_col]).size().reset_index(name='count')
+        countDF = countDF.sort_values('count', ascending=False)
+        return countDF
 
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=countDF[airline_col],
-        y=countDF[metric_col],
+    direct_data = build_bubble(directDF)
+    connecting_data = build_bubble(connectingDF)
+
+    trace_direct = go.Scatter(
+        x=direct_data[airline_col],
+        y=direct_data[metric_col],
         mode='markers+text' if metric_col == 'durationTime' else 'markers',
-        text=countDF['count'],
+        text=direct_data['count'],
         marker=dict(
-            size=countDF['count'],
-            color=countDF[metric_col],
+            size=direct_data['count'],
+            color=direct_data[metric_col],
             colorscale='RdBu',
             showscale=True,
             sizemode='area',
-            sizeref=2. * countDF['count'].max() / (100 ** 2),
+            sizeref=2. * direct_data['count'].max() / (100 ** 2),
             sizemin=4
-        )
-    ))
+        ),
+        visible=True
+    )
+
+    trace_connecting = go.Scatter(
+        x=connecting_data[airline_col],
+        y=connecting_data[metric_col],
+        mode='markers+text' if metric_col == 'durationTime' else 'markers',
+        text=connecting_data['count'],
+        marker=dict(
+            size=connecting_data['count'],
+            color=connecting_data[metric_col],
+            colorscale='RdBu',
+            showscale=True,
+            sizemode='area',
+            sizeref=2. * connecting_data['count'].max() / (100 ** 2),
+            sizemin=4
+        ),
+        visible=False
+    )
+
+    fig = go.Figure(data=[trace_direct, trace_connecting])
 
     fig.update_layout(
-        title=dict(text=chart_title, x=0.5, xanchor='center'),
+        title=chart_title + " (Direct)",
         xaxis_title='Airline',
         yaxis_title=yaxis_title,
-        xaxis_tickangle=0,
         template='plotly_white',
         showlegend=False,
         width=width,
-        height=height
+        height=height,
+        updatemenus=[
+            dict(
+                active=0,
+                buttons=[
+                    dict(label="Direct Flights",
+                         method="update",
+                         args=[{"visible": [True, False]},
+                               {"title": chart_title + " (Direct)"}]),
+                    dict(label="Connecting Flights",
+                         method="update",
+                         args=[{"visible": [False, True]},
+                               {"title": chart_title + " (Connecting)"}])
+                ],
+                direction="down",
+                showactive=True,
+                x=0.5,
+                xanchor="center",
+                y=1.15,
+                yanchor="top"
+            )
+        ]
     )
 
     st.plotly_chart(fig, use_container_width=True)
 
-# Bubble charts section
-plotBubbleChart(
-    df=directFlights,
-    airline_col='airline',
-    metric_col='durationTime',
-    yaxis_title='Duration (min)',
-    chart_title='Flight Duration by Airline (Bubble Size = Count)',
-    width=1000
-)
+# Bubble charts
+plotBubbleChartWithToggle(directFlights, connectingFlights, 'airline', 'durationTime',
+                          'Duration (min)', 'Flight Duration by Airline (Bubble Size = Count)', width=1000)
 
-plotBubbleChart(
-    df=directFlights,
-    airline_col='airline',
-    metric_col='price',
-    yaxis_title='Price (USD)',
-    chart_title='Flight Prices by Airline (Bubble Size = Count)'
-)
+plotBubbleChartWithToggle(directFlights, connectingFlights, 'airline', 'price',
+                          'Price (USD)', 'Flight Prices by Airline (Bubble Size = Count)')
 
-plotBubbleChart(
-    df=directFlights,
-    airline_col='airline',
-    metric_col='carbonEmissionsThisFlight',
-    yaxis_title='Carbon Emissions by Airline per Flight (Bubble Size = Count)',
-    chart_title='Carbon Emissions by Airline (Bubble Size = Count)'
-)
+plotBubbleChartWithToggle(directFlights, connectingFlights, 'airline', 'carbonEmissionsThisFlight',
+                          'Carbon Emissions by Airline per Flight (Bubble Size = Count)', 'Carbon Emissions by Airline (Bubble Size = Count)')
 
-plotBubbleChart(
-    df=directFlights,
-    airline_col='airline',
-    metric_col='carbonDifferencePercent',
-    yaxis_title='Carbon Difference (%) by Airline per Flight (Bubble Size = Count)',
-    chart_title='Carbon Difference by Airline (Bubble Size = Count)'
-)
-
+plotBubbleChartWithToggle(directFlights, connectingFlights, 'airline', 'carbonDifferencePercent',
+                          'Carbon Difference (%) by Airline per Flight (Bubble Size = Count)', 'Carbon Difference by Airline (Bubble Size = Count)')
 
 # Heatmap helper function with flight type toggle
 def plotHeatmapWithToggle(directDF, connectingDF, valueCol, title, xaxisTitle, colorscale='Blues', width=800, height=500):
