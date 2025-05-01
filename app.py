@@ -31,7 +31,7 @@ airline_colors = {
     'SWISS': '#d71920',               # red
     'Delta': '#00235f',               # dark blue
     'United': '#1a75ff',              # light blue
-    'Edelweiss Air': '#fcd299'        # light orange
+    'Edelweiss Air': '#800080'        # purple
 }
 
 # Derived column
