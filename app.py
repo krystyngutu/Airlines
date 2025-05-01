@@ -18,12 +18,10 @@ df['carbonEmissionsThisFlight'] = pd.to_numeric(df.get('carbonEmissionsThisFligh
 nycAirports = ['JFK', 'EWR', 'LGA']
 swissAirports = ['ZRH', 'GVA', 'BSL']
 
-includedAirlines = ['SWISS', 'Delta', 'United', 'Lufthansa']
+includedAirlines = ['SWISS', 'Lufthansa', 'Delta', 'United']
 
 # Filter to only include selected airlines
 df = df[df['airline'].isin(includedAirlines)].copy()
-
-df['airline'] = pd.Categorical(df['airline'], categories=['SWISS', 'Lufthansa', 'United', 'Delta'], ordered=True)
 
 # Label flights as Direct or Connecting
 def classifyFlightType(row):
@@ -69,16 +67,17 @@ st.title("Flights from NYC to CH")
 # Create traces for graphs
 def createTraces(df):
     traces = []
-    for airline in df['airline'].unique():
-        data = df[df['airline'] == airline]
-        traces.append(go.Scatter(
-            x=data['departureTime'],
-            y=data['price'],
-            mode='markers+lines',
-            name=airline,
-            hovertext=data['flightNumber'],
-            marker=dict(color=airlineColors.get(airline, 'gray'))
-        ))
+    for airline in ['SWISS', 'Lufthansa', 'United', 'Delta']:
+        if airline in df['airline'].unique():
+            data = df[df['airline'] == airline]
+            traces.append(go.Scatter(
+                x=data['departureTime'],
+                y=data['price'],
+                mode='markers+lines',
+                name=airline,
+                hovertext=data['flightNumber'],
+                marker=dict(color=airlineColors.get(airline, 'gray'))
+            ))
     return traces
 
 # Create traces for both flight types
