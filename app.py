@@ -287,7 +287,7 @@ def plotlyStackedBarsWithToggle(directDF, connectingDF, group_col, sub_col, titl
 # Airplane Types
 st.subheader('Direct Flight Visuals')
 plotlyStackedBars(
-    df=directFlights, connectingFlights,
+    df=directFlights,
     group_col='airline',
     sub_col='airplane',
     title='Airplane Types by Airline',
@@ -297,7 +297,7 @@ plotlyStackedBars(
 
 # Legroom
 plotlyStackedBars(
-    df=directFlights, connectingFlights,
+    df=directFlights,
     group_col='airline',
     sub_col='legroom',
     title='Legroom by Airline',
