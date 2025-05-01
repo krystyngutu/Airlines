@@ -23,6 +23,8 @@ includedAirlines = ['SWISS', 'Delta', 'United', 'Lufthansa']
 # Filter to only include selected airlines
 df = df[df['airline'].isin(includedAirlines)].copy()
 
+df['airline'] = pd.Categorical(df['airline'], categories=['SWISS', 'Lufthansa', 'United', 'Delta'], ordered=True)
+
 # Label flights as Direct or Connecting
 def classifyFlightType(row):
     if row['departureAirportID'] in nycAirports and row['arrivalAirportID'] in swissAirports:
