@@ -3,6 +3,7 @@ import streamlit as st
 import plotly.express as px
 
 # Load CSV file
+st.set_page_config(layout='wide')
 df = pd.read_csv("all_flights.csv")
 
 # Clean and process
