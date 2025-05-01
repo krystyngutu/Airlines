@@ -299,7 +299,7 @@ def plotBubbleChart(df, airline_col, metric_col, yaxis_title, chart_title,
     ))
 
     fig.update_layout(
-        title=dict(text=chart_title, x=0.5, xanchor='center'),
+        title=dict(text=chart_title),
         xaxis_title='Airline',
         yaxis_title=yaxis_title,
         xaxis_tickangle=0,
