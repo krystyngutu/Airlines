@@ -312,37 +312,36 @@ def plotBubbleChart(df, airline_col, metric_col, yaxis_title, chart_title,
     st.plotly_chart(fig, use_container_width=True)
 
 # Bubble charts section
-st.subheader("DIRECT FLIGHTS: Flight Duration vs Airline (Bubble Size = Count)")
 plotBubbleChart(
     df=directFlights,
     airline_col='airline',
     metric_col='durationTime',
     yaxis_title='Duration (min)',
+    title='Flight Duration by Airline (Bubble Size = Count)'
     width=1000
 )
 
-st.subheader("DIRECT FLIGHTS: Flight Prices vs Airline (Bubble Size = Count)")
 plotBubbleChart(
     df=directFlights,
     airline_col='airline',
     metric_col='price',
-    yaxis_title='Price (USD)'
+    yaxis_title='Price (USD)',
+    title='Flight Prices by Airline (Bubble Size = Count)'
 )
 
-st.subheader("DIRECT FLIGHTS: Flight Carbon Emissions vs Airline (Bubble Size = Count)")
 plotBubbleChart(
     df=directFlights,
     airline_col='airline',
     metric_col='carbonEmissionsThisFlight',
-    yaxis_title='Carbon Emissions This Flight'
+    yaxis_title='Carbon Emissions by Airline per Flight (Bubble Size = Count)'
 )
 
-st.subheader("DIRECT FLIGHTS: Carbon Percent Difference vs Airline (Bubble Size = Count)")
+
 plotBubbleChart(
     df=directFlights,
     airline_col='airline',
     metric_col='carbonDifferencePercent',
-    yaxis_title='Carbon Difference Percent This Flight'
+    yaxis_title='Carbon Difference (%) by Airline per Flight (Bubble Size = Count)'
 )
 
 # Heatmap helper function
