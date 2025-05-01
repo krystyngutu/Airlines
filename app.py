@@ -8,26 +8,22 @@ df = pd.read_csv("all_flights.csv")
 
 # Clean and process
 df['departureTime'] = pd.to_datetime(df['departureTime'], errors='coerce')
+df['arrivalAirportTime'] = pd.to_datetime(df['arrivalAirportTime'], errors='coerce')
 df['price'] = pd.to_numeric(df['price'], errors='coerce')
 df['durationMinutes'] = pd.to_numeric(df['durationTime'], errors='coerce')
 df['carbonEmissionsThisFlight'] = pd.to_numeric(df.get('carbonEmissionsThisFlight'), errors='coerce')
 
-# Drop missing
-df = df.dropna(subset=['airline', 'departureTime', 'price', 'durationMinutes'])
+# Define  airports and airlines to look at
+nycAirports = ['JFK', 'EWR', 'LGA']
+swissAirports = ['ZRH', 'GVA', 'BSL']
 
-# Create derived column: price per minute
-df['pricePerMinute'] = df['price'] / df['durationMinutes']
+includedAirlines = ['SWISS', 'Lufthansa', 'Edelweiss Air', 'Delta', 'United']
 
-# Sidebar filters
-st.sidebar.header("Filters")
-selected_airline = st.sidebar.selectbox("Select an airline", df['airline'].dropna().unique())
-
-# Filtered DataFrame
-filtered = df[df['airline'] == selected_airline]
+# Filter to only include selected airlines
+df = df[df['airline'].isin(includedAirlines)].copy()
 
 # Dashboard Title
-st.title("Flight Data Dashboard")
-st.markdown(f"Showing results for **{selected_airline}**")
+st.title("Flight Dashboard: NYC to CH")
 
 # Price over time
 st.subheader("Price Over Time")
@@ -37,11 +33,6 @@ st.plotly_chart(fig)
 # Carbon emissions vs price
 st.subheader("Carbon Emissions vs Price")
 fig = px.scatter(filtered, x='carbonEmissionsThisFlight', y='price', hover_data=['departureTime'])
-st.plotly_chart(fig)
-
-# Price per minute
-st.subheader("Price Per Minute")
-fig = px.line(filtered.sort_values('departureTime'), x='departureTime', y='pricePerMinute')
 st.plotly_chart(fig)
 
 # Histogram of Prices
