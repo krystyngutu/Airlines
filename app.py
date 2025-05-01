@@ -317,7 +317,7 @@ plotBubbleChart(
     airline_col='airline',
     metric_col='durationTime',
     yaxis_title='Duration (min)',
-    title='Flight Duration by Airline (Bubble Size = Count)'
+    title='Flight Duration by Airline (Bubble Size = Count)',
     width=1000
 )
 
