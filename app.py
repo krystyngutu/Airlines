@@ -363,7 +363,7 @@ def plotHeatmap(df, valueCol, title, xaxisTitle, colorscale='Blues', width=800, 
     ))
 
     fig.update_layout(
-        title=dict(text=title, x=0.5, xanchor='center'),
+        title=dict(text=title),
         xaxis_title=xaxisTitle,
         yaxis_title='Airline',
         template='plotly_white',
@@ -374,7 +374,6 @@ def plotHeatmap(df, valueCol, title, xaxisTitle, colorscale='Blues', width=800, 
     st.plotly_chart(fig, use_container_width=True)
 
 # Insert heatmaps
-st.subheader("DIRECT FLIGHT: Carbon Difference Percent by Airline")
 plotHeatmap(
     directFlights,
     valueCol='carbonDifferencePercent',
@@ -383,7 +382,6 @@ plotHeatmap(
     colorscale='Reds'
 )
 
-st.subheader("DIRECT FLIGHTS: Price by Airline")
 plotHeatmap(
     directFlights,
     valueCol='price',
@@ -392,7 +390,6 @@ plotHeatmap(
     colorscale='Reds'
 )
 
-st.subheader("DIRECT FLIGHTS: Duration Time by Airline")
 plotHeatmap(
     directFlights,
     valueCol='durationTime',
