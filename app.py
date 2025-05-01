@@ -249,7 +249,7 @@ def plotlyStackedBars(df, group_col, sub_col, title, legend_title, colors):
     st.plotly_chart(fig, use_container_width=True)
 
 # Airplane Types
-st.subheader("Direct Flight Visuals')
+st.subheader('Direct Flight Visuals')
 plotlyStackedBars(
     df=directFlights,
     group_col='airline',
