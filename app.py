@@ -168,28 +168,63 @@ st.subheader("Carbon Emissions vs Price by Airline and Flight Type")
 carbonDirectTraces = []
 carbonConnectingTraces = []
 
-for airline in df['airline'].unique():
-    # Direct
-    dataDirect = directFlights[directFlights['airline'] == airline]
+airlines = ['Lufthansa', 'United', 'Delta']  # SWISS excluded for now
+
+# Add Lufthansa, United, Delta
+for airline in airlines:
+    if airline in df['airline'].unique():
+        # Direct
+        dataDirect = directFlights[directFlights['airline'] == airline]
+        carbonDirectTraces.append(go.Scatter(
+            x=dataDirect['carbonEmissionsThisFlight'],
+            y=dataDirect['price'],
+            mode='markers',
+            name=airline,
+            hovertext=dataDirect['flightNumber'],
+            marker=dict(color=airlineColors.get(airline, 'gray')),
+            legendgroup=airline,
+            legendrank=['SWISS', 'Lufthansa', 'United', 'Delta'].index(airline)
+        ))
+
+        # Connecting
+        dataConnecting = connectingFlights[connectingFlights['airline'] == airline]
+        carbonConnectingTraces.append(go.Scatter(
+            x=dataConnecting['carbonEmissionsThisFlight'],
+            y=dataConnecting['price'],
+            mode='markers',
+            name=airline,
+            hovertext=dataConnecting['flightNumber'],
+            marker=dict(color=airlineColors.get(airline, 'gray')),
+            legendgroup=airline,
+            legendrank=['SWISS', 'Lufthansa', 'United', 'Delta'].index(airline)
+        ))
+
+# Add SWISS last (for visual layering), but ranked first in legend
+if 'SWISS' in df['airline'].unique():
+    dataDirect = directFlights[directFlights['airline'] == 'SWISS']
     carbonDirectTraces.append(go.Scatter(
         x=dataDirect['carbonEmissionsThisFlight'],
         y=dataDirect['price'],
         mode='markers',
-        name=airline,
+        name='SWISS',
         hovertext=dataDirect['flightNumber'],
-        marker=dict(color=airlineColors.get(airline, 'gray'))
+        marker=dict(color=airlineColors.get('SWISS', 'gray'), line=dict(width=2)),
+        legendgroup='SWISS',
+        legendrank=0
     ))
 
-    # Connecting
-    dataConnecting = connectingFlights[connectingFlights['airline'] == airline]
+    dataConnecting = connectingFlights[connectingFlights['airline'] == 'SWISS']
     carbonConnectingTraces.append(go.Scatter(
         x=dataConnecting['carbonEmissionsThisFlight'],
         y=dataConnecting['price'],
         mode='markers',
-        name=airline,
+        name='SWISS',
         hovertext=dataConnecting['flightNumber'],
-        marker=dict(color=airlineColors.get(airline, 'gray'))
+        marker=dict(color=airlineColors.get('SWISS', 'gray'), line=dict(width=2)),
+        legendgroup='SWISS',
+        legendrank=0
     ))
+
 
 # Combine into figure
 carbonFig = go.Figure()
