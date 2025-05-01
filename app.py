@@ -93,7 +93,7 @@ def createTraces(df):
             name='SWISS',
             hovertext=data['flightNumber'],
             marker=dict(color=airlineColors.get('SWISS', 'gray')),
-            line=dict(width=3),                   # make SWISS line slightly thicker
+            line=dict(width=1),                   # make SWISS line slightly thicker
             legendgroup='SWISS',
             legendrank=0                          # appears first in the legend
         ))
