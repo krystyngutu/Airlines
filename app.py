@@ -434,7 +434,7 @@ def plotBubbleChart(directDF, connectingDF, airline_col, metric_col, yaxis_title
                          args=[{"visible": [True, False]}]),
                     dict(label="Connecting Flights",
                          method="update",
-                         args=[{"visible": [False, True]}]
+                         args=[{"visible": [False, True]}])
                 ],
                 direction="down",
                 showactive=True,
