@@ -37,6 +37,30 @@ lufthansaGroup = ['Austrian', 'Brussels Airlines', 'Discover Airlines', 'Eurowin
 # Add Star Alliance
 starAlliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zealand', 'ANA', 'Asiana Airlines', 'Austrian', 'Avianca', 'Brussels Airport', 'CopaAirlines', 'Croatia Airlines', 'Egyptair', 'Ethiopian Airlines', 'Eva Air', 'LOT Polish Airlines', 'Lufthansa', 'Shenzhen Airlines', 'Singapore Airlines', 'South African Airways', 'SWISS', 'Tap Air Portugal', 'Thai', 'Turkish Airlines', 'United']
 
+# Toggle for connected flights
+showConnected = st.toggle("Include Connecting Flights", value=False)
+
+# Filtering options
+if not showConnected:
+    # Default: show only direct airlines
+    filteredAirlines = directAirlines
+else:
+    # User selects airline group when showing connecting flights
+    filterChoice = st.selectbox(
+        "Select airlines to view:",
+        options=['Direct Airlines Only', 'Lufthansa Group', 'Star Alliance']
+    )
+
+    if filterChoice == 'Direct Airlines Only':
+        filteredAirlines = directAirlines
+    elif filterChoice == 'Lufthansa Group':
+        filteredAirlines = lufthansaGroup
+    elif filterChoice == 'Star Alliance':
+        filteredAirlines = starAlliance
+
+# Filter DataFrame
+df = df[df['airline'].isin(filteredAirlines)].copy()
+
 # Filter to only include selected airlines
 df = df[df['airline'].isin(directAirlines)].copy()
 
