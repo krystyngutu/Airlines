@@ -299,7 +299,6 @@ def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, 
         connectingTraces.append(True)
 
     fig.update_layout(
-        title=title,
         barmode='stack',
         xaxis_title=group_col.capitalize(),
         yaxis_title='Number of Flights',
