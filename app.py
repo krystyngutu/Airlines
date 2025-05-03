@@ -6,6 +6,8 @@ import plotly.graph_objects as go
 st.set_page_config(layout="wide")
 df = pd.read_csv("all_flights.csv")
 
+st.title("Flights from NYC to CH")
+
 df['departureTime'] = pd.to_datetime(df['departureTime'], errors='coerce')
 df['arrivalAirportTime'] = pd.to_datetime(df['arrivalAirportTime'], errors='coerce')
 df['price'] = pd.to_numeric(df['price'], errors='coerce')
@@ -38,7 +40,7 @@ lufthansaGroup = ['Austrian', 'Brussels Airlines', 'Discover Airlines', 'Eurowin
 starAlliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zealand', 'ANA', 'Asiana Airlines', 'Austrian', 'Avianca', 'Brussels Airport', 'CopaAirlines', 'Croatia Airlines', 'Egyptair', 'Ethiopian Airlines', 'Eva Air', 'LOT Polish Airlines', 'Lufthansa', 'Shenzhen Airlines', 'Singapore Airlines', 'South African Airways', 'SWISS', 'Tap Air Portugal', 'Thai', 'Turkish Airlines', 'United']
 
 # Toggle for connected flights
-showConnected = st.toggle("Include Connecting Flights", value=False)
+showConnected = st.toggle("Include Airlines with only Connecting Flights", value=False)
 
 # Filtering options
 if not showConnected:
@@ -100,8 +102,6 @@ if "recliningAndLegroom" in df.columns:
 # Split into direct and connecting flights
 directFlights = df[df['flightType'] == 'Direct'].copy()
 connectingFlights = df[df['flightType'] == 'Connecting'].copy()
-
-st.title("Flights from NYC to CH")
 
 # Helper to create traces
 def createTraces(df):
