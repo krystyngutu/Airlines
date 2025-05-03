@@ -31,7 +31,7 @@ def splitExtentions(df):
     return df
 
 # Define  airlines to include
-directAirlines = ['SWISS', 'Delta', 'United']
+directAirlines = ['SWISS', 'United', 'Delta']
 
 # Add LHG --> Lufthansa Group
 lufthansaGroup = ['Austrian', 'Brussels Airlines', 'Discover Airlines', 'Eurowings', 'Edelweiss Air', 'ITA', 'Air Dolomiti', 'Lufthansa']
@@ -419,7 +419,6 @@ def plotBubbleChart(directDF, connectingDF, airline_col, metric_col, yaxis_title
     fig = go.Figure(data=[traceDirect, traceConnecting])
 
     fig.update_layout(
-        title=chart_title",
         xaxis_title='Airline',
         yaxis_title=yaxis_title,
         template='plotly_white',
@@ -432,12 +431,10 @@ def plotBubbleChart(directDF, connectingDF, airline_col, metric_col, yaxis_title
                 buttons=[
                     dict(label="Direct Flights",
                          method="update",
-                         args=[{"visible": [True, False]},
-                               {"title": chart_title}]),
+                         args=[{"visible": [True, False]}]),
                     dict(label="Connecting Flights",
                          method="update",
-                         args=[{"visible": [False, True]},
-                               {"title": chart_title}])
+                         args=[{"visible": [False, True]}
                 ],
                 direction="down",
                 showactive=True,
