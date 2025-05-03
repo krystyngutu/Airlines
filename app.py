@@ -32,10 +32,10 @@ def splitExtentions(df):
 directAirlines = ['SWISS', 'Delta', 'United']
 
 # Add LHG --> Lufthansa Group
-lufthansaGroup = ['Austrian', 'Brussels Airline', 'Discover Airlines', 'Eurowings', 'Edelweiss Air', 'ITA Airways', 'Air Dolomiti', 'Lufthansa']
+lufthansaGroup = ['Austrian', 'Brussels Airlines', 'Discover Airlines', 'Eurowings', 'Edelweiss Air', 'ITA', 'Air Dolomiti', 'Lufthansa']
 
 # Add Star Alliance
-starAlliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zealand', 'ANA', 'Asiana Airlines', 'Austrian', 'Avianca', 'Brussels Airport', 'CopaAirlines', 'Croatia Airlines', 'Egyptair', 'Ethiopian ...', 'Eva Air', 'LOT Polish Airlines', 'Lufthansa', 'Shenzhen Airlines', 'Singapore Airlines', 'South African Airways', 'SWISS', 'TAP AirPortugal', 'Thai', 'Turkish Airlines', 'United']
+starAlliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zealand', 'ANA', 'Asiana Airlines', 'Austrian', 'Avianca', 'Brussels Airport', 'CopaAirlines', 'Croatia Airlines', 'Egyptair', 'Ethiopian Airlines', 'Eva Air', 'LOT Polish Airlines', 'Lufthansa', 'Shenzhen Airlines', 'Singapore Airlines', 'South African Airways', 'SWISS', 'Tap Air Portugal', 'Thai', 'Turkish Airlines', 'United']
 
 # Filter to only include selected airlines
 df = df[df['airline'].isin(directAirlines)].copy()
@@ -296,7 +296,7 @@ def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, title, legend_
                     dict(label="Connecting Flights",
                          method="update",
                          args=[{"visible": connectingTraces},
-                               {"title": title)}])
+                               {"title": title}])
                 ],
                 direction="down",
                 showactive=True,
