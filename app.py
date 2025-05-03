@@ -351,7 +351,6 @@ plotlyStackedBars(
     connectingFlights,
     group_col='airline',
     sub_col='legroom',
-    title='Legroom by Airline',
     legend_title='Legroom',
     colors=customColors
 )
@@ -364,7 +363,6 @@ plotlyStackedBars(
     connectingFlights,
     group_col='airline',
     sub_col='wifi',
-    title='WiFi by Airline',
     legend_title='WiFi',
     colors=customColors
 )
