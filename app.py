@@ -262,7 +262,7 @@ carbonFig.update_layout(
 st.plotly_chart(carbonFig, use_container_width=True)
 
 # Bar chart helper
-def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, title, legend_title, colors):
+def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, colors):
     def buildCount(df):
         return df.groupby([group_col, sub_col]).size().unstack(fill_value=0)
 
@@ -334,18 +334,20 @@ def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, title, legend_
 
     st.plotly_chart(fig, use_container_width=True)
 
-# Airplane Types
-st.subheader('Flight Visuals by Flight Type')
+# Aircraft breakdown
+st.subheader('Aircraft by Airline')
 
 plotlyStackedBars(
     directFlights,
     connectingFlights,
     group_col='airline',
     sub_col='airplane',
-    title='Airplane Types by Airline',
     legend_title='Airplane Type',
     colors=customColors
 )
+
+# Legroom breakdown
+st.subheader('Legroom by Airline')
 
 plotlyStackedBars(
     directFlights,
@@ -357,15 +359,28 @@ plotlyStackedBars(
     colors=customColors
 )
 
+# WiFi breakdown
+st.subheader('WiFi by Airline')
+
+plotlyStackedBars(
+    directFlights,
+    connectingFlights,
+    group_col='airline',
+    sub_col='wifi',
+    title='WiFi by Airline',
+    legend_title='WiFi',
+    colors=customColors
+)
+
 # Bubble chart helper function with flight type toggle
-def plotBubbleChart(directDF, connectingDF, airline_col, metric_col, yaxis_title, chart_title, width=800, height=500):
-    def build_bubble(df):
+def plotBubbleChart(directDF, connectingDF, airline_col, metric_col, yaxis_title, width=800, height=500):
+    def buildBubble(df):
         countDF = df.groupby([airline_col, metric_col]).size().reset_index(name='count')
         countDF = countDF.sort_values('count', ascending=False)
         return countDF
 
-    directData = build_bubble(directDF)
-    connectingData = build_bubble(connectingDF)
+    directData = buildBubble(directDF)
+    connectingData = buildBubble(connectingDF)
 
     traceDirect = go.Scatter(
         x=directData[airline_col],
@@ -404,7 +419,7 @@ def plotBubbleChart(directDF, connectingDF, airline_col, metric_col, yaxis_title
     fig = go.Figure(data=[traceDirect, traceConnecting])
 
     fig.update_layout(
-        title=chart_title + " (Direct)",
+        title=chart_title",
         xaxis_title='Airline',
         yaxis_title=yaxis_title,
         template='plotly_white',
@@ -437,20 +452,27 @@ def plotBubbleChart(directDF, connectingDF, airline_col, metric_col, yaxis_title
     st.plotly_chart(fig, use_container_width=True)
 
 # Bubble charts
+# Flight duration breakdown
+st.subheader('Flight Duration by Airline (Bubble Size = Count)')
 plotBubbleChart(directFlights, connectingFlights, 'airline', 'durationTime',
-                'Duration (min)', 'Flight Duration by Airline (Bubble Size = Count)', width=1000)
+                'Duration (min)', width=1000)
 
-plotBubbleChart(directFlights, connectingFlights, 'airline', 'price',
-                          'Price (USD)', 'Flight Prices by Airline (Bubble Size = Count)')
+# Flight prices breakdown
+st.subheader('Flight Prices by Airline (Bubble Size = Count)')
+plotBubbleChart(directFlights, connectingFlights, 'airline', 'price', 'Price (USD)')
 
+# Carbon emissions breakdown
+st.subheader('Carbon Emissions by Airline per Flight (Bubble Size = Count)')
 plotBubbleChart(directFlights, connectingFlights, 'airline', 'carbonEmissionsThisFlight',
-                          'Carbon Emissions by Airline per Flight (Bubble Size = Count)', 'Carbon Emissions by Airline (Bubble Size = Count)')
+                'Carbon Emissions by Airline (Bubble Size = Count)')
 
+# Carbon difference breakdown
+st.subheader('Carbon Difference (%) by Airline per Flight (Bubble Size = Count)')
 plotBubbleChart(directFlights, connectingFlights, 'airline', 'carbonDifferencePercent',
-                          'Carbon Difference (%) by Airline per Flight (Bubble Size = Count)', 'Carbon Difference by Airline (Bubble Size = Count)')
+                'Carbon Difference by Airline (Bubble Size = Count)')
 
 # Heatmap helper function with flight type toggle
-def plotHeatmap(directDF, connectingDF, valueCol, title, xaxisTitle, colorscale='Blues', width=800, height=500):
+def plotHeatmap(directDF, connectingDF, valueCol, xaxisTitle, colorscale='Blues', width=800, height=500):
     def buildHeatmapData(df):
         df_clean = df[[valueCol, 'airline']].dropna()
         binned_col = pd.cut(df_clean[valueCol], bins=10)
@@ -515,11 +537,12 @@ def plotHeatmap(directDF, connectingDF, valueCol, title, xaxisTitle, colorscale=
     st.plotly_chart(fig, use_container_width=True)
 
 # Heatmaps
-plotHeatmapWithToggle(directFlights, connectingFlights, 'carbonDifferencePercent',
-                      'Carbon Difference Percent by Airline', 'Carbon Difference Percent', colorscale='Reds')
+# Carbon Difference Percent by Airline
+plotHeatmap(directFlights, connectingFlights, 'carbonDifferencePercent',
+           'Carbon Difference Percent', colorscale='Reds')
 
-plotHeatmapWithToggle(directFlights, connectingFlights, 'price',
-                      'Price by Airline', 'Price (USD)', colorscale='Reds')
+# Price by Airline
+plotHeatmap(directFlights, connectingFlights, 'price', 'Price (USD)', colorscale='Reds')
 
-plotHeatmapWithToggle(directFlights, connectingFlights, 'durationTime',
-                      'Duration Time by Airline', 'Duration (min)', colorscale='Reds')
+# Duration Time by Airline
+plotHeatmap(directFlights, connectingFlights, 'durationTime', 'Duration (min)', colorscale='Reds')
