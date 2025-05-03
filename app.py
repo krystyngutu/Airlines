@@ -292,11 +292,11 @@ def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, title, legend_
                     dict(label="Direct Flights",
                          method="update",
                          args=[{"visible": directTraces},
-                               {"title": title"}]),
+                               {"title": title}]),
                     dict(label="Connecting Flights",
                          method="update",
                          args=[{"visible": connectingTraces},
-                               {"title": title)"}])
+                               {"title": title)}])
                 ],
                 direction="down",
                 showactive=True,
