@@ -91,25 +91,6 @@ df['flightType'] = df.apply(classifyFlightType, axis=1)
 directFlights = df[df['flightType'] == 'Direct'].copy()
 connectingFlights = df[df['flightType'] == 'Connecting'].copy()
 
-# ----------------------
-# ENFORCE SORTING
-# ----------------------
-
-# Alphabetically sort airlines in all subsets
-for flightDF in [df, directFlights, connectingFlights]:
-    if not flightDF.empty:
-        airlineOrder = sorted(flightDF['airline'].dropna().unique())
-        flightDF['airline'] = pd.Categorical(flightDF['airline'], categories=airlineOrder, ordered=True)
-        flightDF.sort_values(by='airline', inplace=True)
-
-# For categorical columns (used in stacked bar and box plots), enforce sorted order
-for cat_col in ['legroom', 'travelClass', 'airplane', 'wifi']:
-    combinedCats = sorted(set(directFlights[cat_col].dropna().unique()).union(connectingFlights[cat_col].dropna().unique()))
-    if cat_col in directFlights.columns:
-        directFlights[cat_col] = pd.Categorical(directFlights[cat_col], categories=combinedCats, ordered=True)
-    if cat_col in connectingFlights.columns:
-        connectingFlights[cat_col] = pd.Categorical(connectingFlights[cat_col], categories=combinedCats, ordered=True)
-
 
 # ----------------------
 # COLORS
