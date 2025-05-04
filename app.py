@@ -439,6 +439,13 @@ def plotBubbleChart(directDF, connectingDF, airline_col, metric_col, yaxis_title
     directData = buildBubble(directDF)
     connectingData = buildBubble(connectingDF)
 
+    # Sort airline names alphabetically for both
+    directData[airline_col] = pd.Categorical(directData[airline_col], categories=sorted(directData[airline_col].unique()), ordered=True)
+    directData = directData.sort_values(airline_col)
+    
+    connectingData[airline_col] = pd.Categorical(connectingData[airline_col], categories=sorted(connectingData[airline_col].unique()), ordered=True)
+    connectingData = connectingData.sort_values(airline_col)
+
     traceDirect = go.Scatter(
         x=directData[airline_col],
         y=directData[metric_col],
@@ -523,20 +530,16 @@ st.subheader('Carbon Difference')
 plotBubbleChart(directFlights, connectingFlights, 'airline', 'carbonDifferencePercent', 'Carbon Difference')
 
 # Heatmap helper function with flight type toggle
-def plotHeatmap(directDF, connectingDF, valueCol, xaxisTitle, colorscale='Blues', width=800, height=500):
-    filterChoice = st.session_state.get('filterChoice', 'Airlines That Fly Both Direct and Connecting')
-    showDirect = filterChoice == 'Airlines That Fly Both Direct and Connecting'
-    showConnecting = not showDirect
-
-    def buildHeatmapData(df):
-        df_clean = df[[valueCol, 'airline']].dropna()
-        if df_clean.empty:
-            return pd.DataFrame()
-        binned_col = pd.cut(df_clean[valueCol], bins=10)
-        pivot = df_clean.groupby(['airline', binned_col]).size().unstack(fill_value=0)
-        pivot['Total'] = pivot.sum(axis=1)
-        pivot = pivot.sort_values("Total", ascending=False).drop(columns="Total")
-        return pivot
+def buildHeatmapData(df):
+    df_clean = df[[valueCol, 'airline']].dropna()
+    if df_clean.empty:
+        return pd.DataFrame()
+    binned_col = pd.cut(df_clean[valueCol], bins=10)
+    pivot = df_clean.groupby(['airline', binned_col]).size().unstack(fill_value=0)
+    pivot['Total'] = pivot.sum(axis=1)
+    pivot = pivot.drop(columns="Total")
+    pivot = pivot.sort_index(axis=0)  # Alphabetical sort by airline
+    return pivot
 
     directData = buildHeatmapData(directDF)
     connectingData = buildHeatmapData(connectingDF)
