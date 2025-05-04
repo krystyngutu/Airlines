@@ -436,15 +436,8 @@ def plotBubbleChart(directDF, connectingDF, airline_col, metric_col, yaxis_title
         countDF = countDF.sort_values('count', ascending=False)
         return countDF
 
-        directData = buildBubble(directDF)
-        connectingData = buildBubble(connectingDF)
-        
-        # Sort airline names alphabetically for both
-        directData[airline_col] = pd.Categorical(directData[airline_col], categories=sorted(directData[airline_col].unique()), ordered=True)
-        directData = directData.sort_values(airline_col)
-        
-        connectingData[airline_col] = pd.Categorical(connectingData[airline_col], categories=sorted(connectingData[airline_col].unique()), ordered=True)
-        connectingData = connectingData.sort_values(airline_col)
+    directData = buildBubble(directDF)
+    connectingData = buildBubble(connectingDF)
 
     traceDirect = go.Scatter(
         x=directData[airline_col],
@@ -483,30 +476,34 @@ def plotBubbleChart(directDF, connectingDF, airline_col, metric_col, yaxis_title
     fig = go.Figure(data=[traceDirect, traceConnecting])
 
     fig.update_layout(
-    xaxis='Airline',
-    yaxis_title=yaxis_title,
-    template='plotly_white',
-    showlegend=False,
-    width=width,
-    height=height,
-    updatemenus=[
-        dict(
-            active=0 if showDirect else 1,
-            buttons=[
-                dict(label="Direct Flights", method="update", args=[{"visible": [True, False]}]),
-                dict(label="Connecting Flights", method="update", args=[{"visible": [False, True]}])
-            ],
-            direction="down",
-            showactive=True,
-            x=0.5,
-            xanchor="center",
-            y=1.15,
-            yanchor="top"
-        )
-    ]
-)
+        xaxis_title='Airline',
+        yaxis_title=yaxis_title,
+        template='plotly_white',
+        showlegend=False,
+        width=width,
+        height=height,
+        updatemenus=[
+            dict(
+                active=0 if showDirect else 1,
+                buttons=[
+                    dict(label="Direct Flights",
+                         method="update",
+                         args=[{"visible": [True, False]}]),
+                    dict(label="Connecting Flights",
+                         method="update",
+                         args=[{"visible": [False, True]}])
+                ],
+                direction="down",
+                showactive=True,
+                x=0.5,
+                xanchor="center",
+                y=1.15,
+                yanchor="top"
+            )
+        ]
+    )
 
-st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True)
 
 # Bubble charts
 # Flight duration breakdown
