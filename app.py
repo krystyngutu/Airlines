@@ -48,10 +48,10 @@ df['carbonDifferencePercent'] = (
     df['carbonEmissionsThisFlight'].mean() * 100
 )
 
-# Define  airlines to include
-directAirlines = ['SWISS', 'United', 'Delta']
-lufthansaGroup = ['Austrian', 'Brussels Airlines', 'Discover Airlines', 'Eurowings', 'Edelweiss Air', 'ITA', 'Air Dolomiti', 'Lufthansa']
-starAlliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zealand', 'ANA', 'Asiana Airlines', 'Austrian', 'Avianca', 'Brussels Airport', 'CopaAirlines', 'Croatia Airlines', 'Egyptair', 'Ethiopian Airlines', 'Eva Air', 'LOT Polish Airlines', 'Lufthansa', 'Shenzhen Airlines', 'Singapore Airlines', 'South African Airways', 'SWISS', 'Tap Air Portugal', 'Thai', 'Turkish Airlines', 'United']
+# # Define  airlines to include
+# directAirlines = ['SWISS', 'United', 'Delta']
+# lufthansaGroup = ['Austrian', 'Brussels Airlines', 'Discover Airlines', 'Eurowings', 'Edelweiss Air', 'ITA', 'Air Dolomiti', 'Lufthansa']
+# starAlliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zealand', 'ANA', 'Asiana Airlines', 'Austrian', 'Avianca', 'Brussels Airport', 'CopaAirlines', 'Croatia Airlines', 'Egyptair', 'Ethiopian Airlines', 'Eva Air', 'LOT Polish Airlines', 'Lufthansa', 'Shenzhen Airlines', 'Singapore Airlines', 'South African Airways', 'SWISS', 'Tap Air Portugal', 'Thai', 'Turkish Airlines', 'United']
 
 # # Toggle for connected flights
 # showConnected = st.toggle("Include All Airlines", value=False)
@@ -107,28 +107,41 @@ airlineColors = {
 # ----------------------
 # CHART HELPERS
 # ----------------------
-def createTraces(df):
+def createTraces(df, visibleAirlines, groupName):
     traces = []
+    addGroups = set()
     for airline in df['airline'].unique():
         data = df[df['airline'] == airline]
-        traces.append(go.Scatter(
+        trace = go.Scatter(
             x=data['departureTime'],
             y=data['price'],
             mode='markers+lines',
             name=airline,
             hovertext=data['flightNumber'],
-            marker=dict(color=airlineColors.get(airline, 'gray'))
-        ))
+            marker=dict(color=airlineColors.get(airline, 'gray')),
+            visible=True if airline in visibleAirlines else 'legendonly',
+            legendgroup=groupName,
+            showlegend=airline not in addedGroups
+        )
+        traces.append(trace)
+        addedGroups.add(airline)
     return traces
 
+# Define  airlines to include
+directAirlines = ['SWISS', 'United', 'Delta']
+lufthansaGroup = ['Austrian', 'Brussels Airlines', 'Discover Airlines', 'Eurowings', 'Edelweiss Air', 'ITA', 'Air Dolomiti', 'Lufthansa']
+starAlliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zealand', 'ANA', 'Asiana Airlines', 'Austrian', 'Avianca', 'Brussels Airport', 'CopaAirlines', 'Croatia Airlines', 'Egyptair', 'Ethiopian Airlines', 'Eva Air', 'LOT Polish Airlines', 'Lufthansa', 'Shenzhen Airlines', 'Singapore Airlines', 'South African Airways', 'SWISS', 'Tap Air Portugal', 'Thai', 'Turkish Airlines', 'United']
+
 # Create traces for both flight types
-directTraces = createTraces(directFlights)
+directTraces = createTraces(directFlights[directFlights['airline'].isin(directAirlines)], visibleAirlines=directAirlines, groupName='Direct')
 connectingTraces = createTraces(connectingFlights)
+lufthansaTraces = createTraces(df[df['airline'].isin(lufthansaGroup)], visibleAirlines=[], groupName='Lufthansa Group')
+starAllianceTraces = createTraces(df[df['airline'].isin(starAlliance)], visibleAirlines=[], groupName='Star Alliance')
 
 fig = go.Figure()
 
 # Add direct traces (visible)
-for trace in directTraces:
+for trace in directTraces + lufthansaTraces + starAllianceTraces:
     trace.visible = True
     fig.add_trace(trace)
 
