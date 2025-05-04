@@ -258,50 +258,52 @@ carbonFig.update_layout(
 
 st.plotly_chart(carbonFig, use_container_width=True)
 
-# Bar chart helper
+# Bar chart helper with toggle for Direct vs Connecting
 def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, colors):
     def buildCount(df):
+        if not pd.api.types.is_categorical_dtype(df[sub_col]):
+            df[sub_col] = pd.Categorical(df[sub_col])  # Ensure consistency
         counts = df.groupby([group_col, sub_col]).size().unstack(fill_value=0)
-    # Ensure all subcategories are included, even if some have 0
-    for cat in df[sub_col].cat.categories:
-        if cat not in counts.columns:
-            counts[cat] = 0
-    return counts
+
+        # Ensure all subcategories are included
+        for cat in df[sub_col].cat.categories:
+            if cat not in counts.columns:
+                counts[cat] = 0
+        return counts
 
     directCount = buildCount(directDF)
     connectingCount = buildCount(connectingDF)
-    
+
     fig = go.Figure()
 
     directTraces = []
     connectingTraces = []
 
     for i, sub_category in enumerate(directCount.columns):
-        trace = go.Bar(
+        fig.add_trace(go.Bar(
             x=directCount.index,
             y=directCount[sub_category],
             name=sub_category,
             marker_color=colors[i % len(colors)],
             visible=True
-        )
-        fig.add_trace(trace)
+        ))
         directTraces.append(True)
         connectingTraces.append(False)
 
     for i, sub_category in enumerate(connectingCount.columns):
-        trace = go.Bar(
+        fig.add_trace(go.Bar(
             x=connectingCount.index,
             y=connectingCount[sub_category],
             name=sub_category,
             marker_color=colors[i % len(colors)],
             visible=False
-        )
-        fig.add_trace(trace)
+        ))
         directTraces.append(False)
         connectingTraces.append(True)
 
     fig.update_layout(
         barmode='stack',
+        title='Aircraft by Airline',
         xaxis_title=group_col.capitalize(),
         yaxis_title='Number of Flights',
         legend_title=legend_title,
@@ -333,6 +335,7 @@ def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, 
 
     st.plotly_chart(fig, use_container_width=True)
 
+
 # Standardize aircraft types for connecting flights
 def classifyAircraft(aircraft):
     if pd.isna(aircraft):
@@ -349,6 +352,7 @@ def classifyAircraft(aircraft):
     else:
         return "Other"
 
+directFlights['airplane'] = directFlights['airplane'].apply(classifyAircraft)
 connectingFlights['airplane'] = connectingFlights['airplane'].apply(classifyAircraft)
 
 # Aircraft breakdown
