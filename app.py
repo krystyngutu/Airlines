@@ -116,6 +116,96 @@ airlineColors = {
 }
 
 # ----------------------
+# PRICE COMPARISON PLOTS
+# ----------------------
+st.subheader("Price Comparisons")
+
+# Drop rows with missing values for key comparisons
+priceDF = df.dropna(subset=['price', 'durationMinutes', 'carbonEmissionsThisFlight', 'legroom', 'travelClass', 'airplane'])
+
+# 1. Price vs Duration (scatter)
+st.subheader("Price vs Duration")
+st.plotly_chart(go.Figure(
+    data=[go.Scatter(
+        x=priceDF['durationMinutes'],
+        y=priceDF['price'],
+        mode='markers',
+        marker=dict(color='blue'),
+        name='Duration'
+    )],
+    layout=go.Layout(
+        xaxis_title="Duration (minutes)",
+        yaxis_title="Price (USD)",
+        height=450
+    )
+), use_container_width=True)
+
+# 2. Price vs Carbon Emissions (scatter)
+st.subheader("Price vs Carbon Emissions")
+st.plotly_chart(go.Figure(
+    data=[go.Scatter(
+        x=priceDF['carbonEmissionsThisFlight'],
+        y=priceDF['price'],
+        mode='markers',
+        marker=dict(color='green'),
+        name='Carbon Emissions'
+    )],
+    layout=go.Layout(
+        xaxis_title="Carbon Emissions (kg CO₂)",
+        yaxis_title="Price (USD)",
+        height=450
+    )
+), use_container_width=True)
+
+# 3. Price vs Legroom (box)
+st.subheader("Price by Legroom")
+st.plotly_chart(go.Figure(
+    data=[go.Box(
+        x=priceDF['legroom'],
+        y=priceDF['price'],
+        name='Legroom',
+        marker_color='orange'
+    )],
+    layout=go.Layout(
+        xaxis_title="Legroom (inches or category)",
+        yaxis_title="Price (USD)",
+        height=450
+    )
+), use_container_width=True)
+
+# 4. Price vs Travel Class (box)
+st.subheader("Price by Travel Class")
+st.plotly_chart(go.Figure(
+    data=[go.Box(
+        x=priceDF['travelClass'],
+        y=priceDF['price'],
+        name='Travel Class',
+        marker_color='purple'
+    )],
+    layout=go.Layout(
+        xaxis_title="Travel Class",
+        yaxis_title="Price (USD)",
+        height=450
+    )
+), use_container_width=True)
+
+# 5. Price vs Aircraft (box)
+st.subheader("Price by Aircraft Type")
+st.plotly_chart(go.Figure(
+    data=[go.Box(
+        x=priceDF['airplane'],
+        y=priceDF['price'],
+        name='Aircraft',
+        marker_color='darkred'
+    )],
+    layout=go.Layout(
+        xaxis_title="Aircraft Type",
+        yaxis_title="Price (USD)",
+        height=450
+    )
+), use_container_width=True)
+
+# ----------------------
 # CHART HELPERS
 # ----------------------
 def createTraces(df):
