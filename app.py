@@ -89,6 +89,12 @@ df['flightType'] = df.apply(classifyFlightType, axis=1)
 directFlights = df[df['flightType'] == 'Direct'].copy()
 connectingFlights = df[df['flightType'] == 'Connecting'].copy()
 
+# For Lufthansa/Star Alliance views, focus only on connecting flights
+if showConnected and filterChoice in ['Lufthansa Group', 'Star Alliance']:
+    selectedGroupFlights = connectingFlights.copy()
+else:
+    selectedGroupFlights = directFlights.copy()
+
 # ----------------------
 # COLORS
 # ----------------------
@@ -364,10 +370,12 @@ directFlights['airplane'] = directFlights['airplane'].apply(classifyAircraft)
 connectingFlights['airplane'] = connectingFlights['airplane'].apply(classifyAircraft)
 
 # Aircraft breakdown
+selectedGroupFlights['airplane'] = selectedGroupFlights['airplane'].apply(classifyAircraft)
+
 st.subheader('Aircraft by Airline')
 plotlyStackedBars(
-    directFlights,
-    connectingFlights,
+    selectedGroupFlights[selectedGroupFlights['flightType'] == 'Direct'],
+    selectedGroupFlights[selectedGroupFlights['flightType'] == 'Connecting'],
     group_col='airline',
     sub_col='airplane',
     legend_title='Aircraft',
@@ -377,26 +385,25 @@ plotlyStackedBars(
 # Legroom and Reclining breakdown
 st.subheader('Legroom by Airline')
 plotlyStackedBars(
-    directFlights,
-    connectingFlights,
+    selectedGroupFlights[selectedGroupFlights['flightType'] == 'Direct'],
+    selectedGroupFlights[selectedGroupFlights['flightType'] == 'Connecting'],
     group_col='airline',
     sub_col='legroom',
     legend_title='Legroom',
     colors=customColors
 )
 
-# Get all unique wifi categories from both DataFrames
-wifiCategories = sorted(set(directFlights['wifi'].dropna().unique()).union(connectingFlights['wifi'].dropna().unique()))
-
-# Convert to ordered categorical
-directFlights['wifi'] = pd.Categorical(directFlights['wifi'], categories=wifiCategories, ordered=True)
-connectingFlights['wifi'] = pd.Categorical(connectingFlights['wifi'], categories=wifiCategories, ordered=True)
-
 # WiFi breakdown
+wifiCategories = sorted(set(
+    selectedGroupFlights['wifi'].dropna().unique()
+))
+
+selectedGroupFlights['wifi'] = pd.Categorical(selectedGroupFlights['wifi'], categories=wifiCategories, ordered=True)
+
 st.subheader('WiFi by Airline')
 plotlyStackedBars(
-    directFlights,
-    connectingFlights,
+    selectedGroupFlights[selectedGroupFlights['flightType'] == 'Direct'],
+    selectedGroupFlights[selectedGroupFlights['flightType'] == 'Connecting'],
     group_col='airline',
     sub_col='wifi',
     legend_title='WiFi',
@@ -482,21 +489,28 @@ def plotBubbleChart(directDF, connectingDF, airline_col, metric_col, yaxis_title
 # Bubble charts
 # Flight duration breakdown
 st.subheader('Flight Duration by Airline (Bubble Size = Count)')
-plotBubbleChart(directFlights, connectingFlights, 'airline', 'durationTime',
-                'Duration (min)', width=1000)
+plotBubbleChart(selectedGroupFlights[selectedGroupFlights['flightType'] == 'Direct'],
+                selectedGroupFlights[selectedGroupFlights['flightType'] == 'Connecting'],
+                'airline', 'durationTime', 'Duration (min)', width=1000)
 
 # Flight prices breakdown
 st.subheader('Flight Prices by Airline (Bubble Size = Count)')
-plotBubbleChart(directFlights, connectingFlights, 'airline', 'price', 'Price (USD)')
+plotBubbleChart(selectedGroupFlights[selectedGroupFlights['flightType'] == 'Direct'],
+                selectedGroupFlights[selectedGroupFlights['flightType'] == 'Connecting'],
+                'airline', 'price', 'Price (USD)')
 
 # Carbon emissions breakdown
 st.subheader('Carbon Emissions by Airline per Flight (Bubble Size = Count)')
-plotBubbleChart(directFlights, connectingFlights, 'airline', 'carbonEmissionsThisFlight',
+plotBubbleChart(selectedGroupFlights[selectedGroupFlights['flightType'] == 'Direct'],
+                selectedGroupFlights[selectedGroupFlights['flightType'] == 'Connecting'],
+                'airline', 'carbonEmissionsThisFlight',
                 'Carbon Emissions by Airline (Bubble Size = Count)')
 
 # Carbon difference breakdown
 st.subheader('Carbon Difference (%) by Airline per Flight (Bubble Size = Count)')
-plotBubbleChart(directFlights, connectingFlights, 'airline', 'carbonDifferencePercent',
+plotBubbleChart(selectedGroupFlights[selectedGroupFlights['flightType'] == 'Direct'],
+                selectedGroupFlights[selectedGroupFlights['flightType'] == 'Connecting'],
+                'airline', 'carbonDifferencePercent',
                 'Carbon Difference by Airline (Bubble Size = Count)')
 
 # Heatmap helper function with flight type toggle
@@ -566,11 +580,16 @@ def plotHeatmap(directDF, connectingDF, valueCol, xaxisTitle, colorscale='Blues'
 
 # Heatmaps
 # Carbon Difference Percent by Airline
-plotHeatmap(directFlights, connectingFlights, 'carbonDifferencePercent',
-           'Carbon Difference Percent', colorscale='Reds')
+plotHeatmap(selectedGroupFlights[selectedGroupFlights['flightType'] == 'Direct'],
+            selectedGroupFlights[selectedGroupFlights['flightType'] == 'Connecting'],
+            'carbonDifferencePercent', 'Carbon Difference Percent', colorscale='Reds')
 
 # Price by Airline
-plotHeatmap(directFlights, connectingFlights, 'price', 'Price (USD)', colorscale='Reds')
+plotHeatmap(selectedGroupFlights[selectedGroupFlights['flightType'] == 'Direct'],
+            selectedGroupFlights[selectedGroupFlights['flightType'] == 'Connecting'],
+            'price', 'Price (USD)', colorscale='Reds')
 
 # Duration Time by Airline
-plotHeatmap(directFlights, connectingFlights, 'durationTime', 'Duration (min)', colorscale='Reds')
+plotHeatmap(selectedGroupFlights[selectedGroupFlights['flightType'] == 'Direct'],
+            selectedGroupFlights[selectedGroupFlights['flightType'] == 'Connecting'],
+            'durationTime', 'Duration (min)', colorscale='Reds')
