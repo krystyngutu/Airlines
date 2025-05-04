@@ -38,7 +38,7 @@ def extractParensOrKeep(val):
 
 df['recliningAndLegroom'] = df['recliningAndLegroom'].apply(extractParensOrKeep)
 df['legroom'] = df['legroom'].fillna(df['recliningAndLegroom'])
-df.loc[df['wifi'].str.startswith('Carbon', na=False), 'wifi'] = 'Unknown Wi-Fi Status'
+df.loc[df['wifi'].str.startswith('Carbon', na=False), 'wifi'] = 'Status Unknown'
 
 # Derived features
 df['pricePerMinute'] = df['price'] / df['totalDurationMinutes']
@@ -170,7 +170,7 @@ fig.update_layout(
     ],
     xaxis_title="Departure Date",
     yaxis_title="Price (USD)",
-    legend_title_text="Airlines",
+    legend_title_text="Airline",
     hovermode="closest",
     height=600,
     legend=dict(
@@ -255,7 +255,7 @@ carbonFig.update_layout(
     ],
     xaxis_title="Carbon Emissions (kg CO₂)",
     yaxis_title="Price (USD)",
-    legend_title_text="Airlines",
+    legend_title_text="Airline",
     hovermode="closest",
     height=600,
     legend=dict(
