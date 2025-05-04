@@ -436,17 +436,15 @@ def plotBubbleChart(directDF, connectingDF, airline_col, metric_col, yaxis_title
         countDF = countDF.sort_values('count', ascending=False)
         return countDF
 
-    directData = buildBubble(directDF)
-    connectingData = buildBubble(connectingDF)
-
-    # Sort airline names alphabetically
-    sortedAirlinesDirect = sorted(directData[airline_col].unique())
-    directData[airline_col] = pd.Categorical(directData[airline_col], categories=sortedAirlinesDirect, ordered=True)
-    directData = directData.sort_values(airline_col)
-    
-    sortedAirlinesConnecting = sorted(connectingData[airline_col].unique())
-    connectingData[airline_col] = pd.Categorical(connectingData[airline_col], categories=sortedAirlinesConnecting, ordered=True)
-    connectingData = connectingData.sort_values(airline_col)
+        directData = buildBubble(directDF)
+        connectingData = buildBubble(connectingDF)
+        
+        # Sort airline names alphabetically for both
+        directData[airline_col] = pd.Categorical(directData[airline_col], categories=sorted(directData[airline_col].unique()), ordered=True)
+        directData = directData.sort_values(airline_col)
+        
+        connectingData[airline_col] = pd.Categorical(connectingData[airline_col], categories=sorted(connectingData[airline_col].unique()), ordered=True)
+        connectingData = connectingData.sort_values(airline_col)
 
     traceDirect = go.Scatter(
         x=directData[airline_col],
@@ -485,10 +483,7 @@ def plotBubbleChart(directDF, connectingDF, airline_col, metric_col, yaxis_title
     fig = go.Figure(data=[traceDirect, traceConnecting])
 
     fig.update_layout(
-    xaxis=dict(
-        title='Airline',
-        categoryorder='category ascending'
-    ),
+    xaxis='Airline',
     yaxis_title=yaxis_title,
     template='plotly_white',
     showlegend=False,
