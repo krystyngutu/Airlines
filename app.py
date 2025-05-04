@@ -123,6 +123,22 @@ airlineColors = {
 # Drop rows with missing values for key comparisons
 priceDF = df.dropna(subset=['price', 'durationMinutes', 'carbonEmissionsThisFlight', 'legroom', 'travelClass', 'airplane'])
 
+# Standardize aircraft types for connecting flights
+def classifyAircraft(aircraft):
+    if pd.isna(aircraft):
+        return "Other"
+    aircraft = aircraft.lower()
+    if aircraft.startswith("airbus"):
+        return "Airbus"
+    elif aircraft.startswith("boeing"):
+        return "Boeing"
+    elif aircraft.startswith("canadair"):
+        return "Canadair"
+    elif aircraft.startswith("embraer"):
+        return "Embraer"
+    else:
+        return "Other"
+
 # 1. Price vs Duration (scatter)
 st.subheader("Price vs Duration")
 st.plotly_chart(go.Figure(
@@ -443,22 +459,6 @@ def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, 
     )
 
     st.plotly_chart(fig, use_container_width=True)
-
-# Standardize aircraft types for connecting flights
-def classifyAircraft(aircraft):
-    if pd.isna(aircraft):
-        return "Other"
-    aircraft = aircraft.lower()
-    if aircraft.startswith("airbus"):
-        return "Airbus"
-    elif aircraft.startswith("boeing"):
-        return "Boeing"
-    elif aircraft.startswith("canadair"):
-        return "Canadair"
-    elif aircraft.startswith("embraer"):
-        return "Embraer"
-    else:
-        return "Other"
 
 directFlights['airplane'] = directFlights['airplane'].apply(classifyAircraft)
 connectingFlights['airplane'] = connectingFlights['airplane'].apply(classifyAircraft)
