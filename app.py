@@ -261,7 +261,7 @@ st.plotly_chart(carbonFig, use_container_width=True)
 # Bar chart helper with toggle for Direct vs Connecting
 def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, colors):
     def buildCount(df, all_categories):
-    counts = df.groupby([group_col, sub_col]).size().unstack(fill_value=0)
+        counts = df.groupby([group_col, sub_col]).size().unstack(fill_value=0)
 
     # Ensure all subcategories are present, in the same order
     for cat in all_categories:
