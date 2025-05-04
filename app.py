@@ -523,22 +523,16 @@ st.subheader('Carbon Difference')
 plotBubbleChart(directFlights, connectingFlights, 'airline', 'carbonDifferencePercent', 'Carbon Difference')
 
 # Heatmap helper function with flight type toggle
-def plotHeatmap(directDF, connectingDF, valueCol, xaxisTitle, colorscale='Blues', width=800, height=500):
-    # Determine toggle state
-    filterChoice = st.session_state.get('filterChoice', 'Airlines That Fly Both Direct and Connecting')
-    showDirect = filterChoice == 'Airlines That Fly Both Direct and Connecting'
-    showConnecting = not showDirect
-
-    def buildHeatmapData(df):
-        df_clean = df[[valueCol, 'airline']].dropna()
-        if df_clean.empty:
-            return pd.DataFrame()
-        binned_col = pd.cut(df_clean[valueCol], bins=10)
-        pivot = df_clean.groupby(['airline', binned_col]).size().unstack(fill_value=0)
-        pivot['Total'] = pivot.sum(axis=1)
-        pivot = pivot.drop(columns="Total")
-        pivot = pivot.sort_index(axis=0)  # Alphabetical sort by airline
-        return pivot
+def plotHeatmap(df):
+    df_clean = df[[valueCol, 'airline']].dropna()
+    if df_clean.empty:
+        return pd.DataFrame()
+    binned_col = pd.cut(df_clean[valueCol], bins=10)
+    pivot = df_clean.groupby(['airline', binned_col]).size().unstack(fill_value=0)
+    pivot['Total'] = pivot.sum(axis=1)
+    pivot = pivot.drop(columns="Total")
+    pivot = pivot.sort_index(axis=0)  # Alphabetical sort by airline
+    return pivot
 
     directData = buildHeatmapData(directDF)
     connectingData = buildHeatmapData(connectingDF)
