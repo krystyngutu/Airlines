@@ -2,12 +2,18 @@ import pandas as pd
 import streamlit as st
 import plotly.graph_objects as go
 
-# Load data
+# ----------------------
+# PAGE SETUP
+# ----------------------
 st.set_page_config(layout="wide")
 st.title("Flights from NYC to CH")
 
+# ----------------------
+# DATA LOADING & CLEANING
+# ----------------------
 df = pd.read_csv("all_flights.csv")
 
+# Convert columns
 df['departureTime'] = pd.to_datetime(df['departureTime'], errors='coerce')
 df['arrivalAirportTime'] = pd.to_datetime(df['arrivalAirportTime'], errors='coerce')
 df['price'] = pd.to_numeric(df['price'], errors='coerce')
@@ -44,11 +50,7 @@ df['carbonDifferencePercent'] = (
 
 # Define  airlines to include
 directAirlines = ['SWISS', 'United', 'Delta']
-
-# Add LHG --> Lufthansa Group
 lufthansaGroup = ['Austrian', 'Brussels Airlines', 'Discover Airlines', 'Eurowings', 'Edelweiss Air', 'ITA', 'Air Dolomiti', 'Lufthansa']
-
-# Add Star Alliance
 starAlliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zealand', 'ANA', 'Asiana Airlines', 'Austrian', 'Avianca', 'Brussels Airport', 'CopaAirlines', 'Croatia Airlines', 'Egyptair', 'Ethiopian Airlines', 'Eva Air', 'LOT Polish Airlines', 'Lufthansa', 'Shenzhen Airlines', 'Singapore Airlines', 'South African Airways', 'SWISS', 'Tap Air Portugal', 'Thai', 'Turkish Airlines', 'United']
 
 # Toggle for connected flights
@@ -60,10 +62,7 @@ if not showConnected:
     filteredAirlines = directAirlines
 else:
     # User selects airline group when showing connecting flights
-    filterChoice = st.selectbox(
-        "Select airlines to view:",
-        options=['Airlines That Fly Both Direct and Connecting', 'Lufthansa Group', 'Star Alliance']
-    )
+    filterChoice = st.selectbox("Select airlines to view:", options=['Airlines That Fly Both Direct and Connecting', 'Lufthansa Group', 'Star Alliance'])
 
     if filterChoice == 'Lufthansa Group':
         filteredAirlines = lufthansaGroup
@@ -91,7 +90,9 @@ df['flightType'] = df.apply(classifyFlightType, axis=1)
 directFlights = df[df['flightType'] == 'Direct'].copy()
 connectingFlights = df[df['flightType'] == 'Connecting'].copy()
 
-# Custom color palette
+# ----------------------
+# COLORS
+# ----------------------
 customColors = ['#d71920', '#00235f', '#f9ba00', '#660000', '#000000', '#3366ff']
 
 # Define new airline colors
@@ -103,7 +104,9 @@ airlineColors = {
     'Edelweiss Air': '#800080'        # purple
 }
 
-# Helper to create traces
+# ----------------------
+# CHART HELPERS
+# ----------------------
 def createTraces(df):
     traces = []
     for airline in df['airline'].unique():
