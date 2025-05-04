@@ -151,7 +151,7 @@ for trace in connectingTraces:
 fig.update_layout(
     updatemenus=[
         dict(
-            active=1,
+            active=0 if showDirect else 1,
             buttons=[
                 dict(label='Direct Flights',
                      method='update',
@@ -236,7 +236,7 @@ for trace in carbonConnectingTraces:
 carbonFig.update_layout(
     updatemenus=[
         dict(
-            active=1,
+            active=0 if showDirect else 1,
             buttons=[
                 dict(label="Direct Flights",
                      method="update",
@@ -329,7 +329,7 @@ def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, 
         height=500,
         updatemenus=[
             dict(
-                active=1,
+                active=0 if showDirect else 1,
                 buttons=[
                     dict(label="Direct Flights", method="update", args=[{"visible": directTraces}]),
                     dict(label="Connecting Flights", method="update", args=[{"visible": connectingTraces}])
@@ -460,7 +460,7 @@ def plotBubbleChart(directDF, connectingDF, airline_col, metric_col, yaxis_title
         height=height,
         updatemenus=[
             dict(
-                active=1,
+                active=0 if showDirect else 1,
                 buttons=[
                     dict(label="Direct Flights",
                          method="update",
@@ -543,7 +543,7 @@ def plotHeatmap(directDF, connectingDF, valueCol, xaxisTitle, colorscale='Blues'
         height=height,
         updatemenus=[
             dict(
-                active=1,
+                active=0 if showDirect else 1,
                 buttons=[
                     dict(label="Direct Flights",
                          method="update",
