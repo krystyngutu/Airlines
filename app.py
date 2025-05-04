@@ -52,23 +52,25 @@ directAirlines = ['SWISS', 'United', 'Delta']
 lufthansaGroup = ['Austrian', 'Brussels Airlines', 'Discover Airlines', 'Eurowings', 'Edelweiss Air', 'ITA', 'Air Dolomiti', 'Lufthansa', 'SWISS']
 starAlliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zealand', 'ANA', 'Asiana Airlines', 'Austrian', 'Avianca', 'Brussels Airport', 'CopaAirlines', 'Croatia Airlines', 'Egyptair', 'Ethiopian Airlines', 'Eva Air', 'LOT Polish Airlines', 'Lufthansa', 'Shenzhen Airlines', 'Singapore Airlines', 'South African Airways', 'SWISS', 'Tap Air Portugal', 'Thai', 'Turkish Airlines', 'United']
 
-# Toggle for connected flights
-showConnected = st.toggle("Include All Airlines", value=True)
+# Dropdown: default = Direct for general, Connecting for LHG and Star Alliance
+filterOptions = ['Airlines That Fly Both Direct and Connecting', 'Lufthansa Group', 'Star Alliance']
+defaultIndex = 0  # Default to general group
 
-# Filtering options
-if not showConnected:
-    # Default: show only direct airlines
-    filteredAirlines = directAirlines
+filterChoice = st.selectbox("Select airlines to view:", options=filterOptions, index=defaultIndex)
+
+# Set filtered airline list and default flight type
+if filterChoice == 'Lufthansa Group':
+    filteredAirlines = lufthansaGroup
+    showDirect = False
+    showConnecting = True
+elif filterChoice == 'Star Alliance':
+    filteredAirlines = starAlliance
+    showDirect = False
+    showConnecting = True
 else:
-    # User selects airline group when showing connecting flights
-    filterChoice = st.selectbox("Select airlines to view:", options=['Airlines That Fly Both Direct and Connecting', 'Lufthansa Group', 'Star Alliance'], index=1)
-
-    if filterChoice == 'Lufthansa Group':
-        filteredAirlines = lufthansaGroup
-    elif filterChoice == 'Star Alliance':
-        filteredAirlines = starAlliance
-    else:
-        filteredAirlines = directAirlines
+    filteredAirlines = directAirlines
+    showDirect = True
+    showConnecting = False
 
 # Filter DataFrame
 df = df[df['airline'].isin(filteredAirlines)].copy()
@@ -138,12 +140,12 @@ fig = go.Figure()
 
 # Add direct traces (visible)
 for trace in directTraces:
-    trace.visible=False
+    trace.visible=showDirect
     fig.add_trace(trace)
 
 # Add connecting traces (hidden)
 for trace in connectingTraces:
-    trace.visible=True
+    trace.visible=showConnecting
     fig.add_trace(trace)
 
 fig.update_layout(
@@ -223,12 +225,12 @@ carbonFig = go.Figure()
 
 # Add direct traces (visible)
 for trace in carbonDirectTraces:
-    trace.visible = False
+    trace.visible=showDirect
     carbonFig.add_trace(trace)
 
 # Add connecting traces (hidden initially)
 for trace in carbonConnectingTraces:
-    trace.visible = True
+    trace.visible=showConnecting
     carbonFig.add_trace(trace)
 
 carbonFig.update_layout(
