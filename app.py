@@ -91,7 +91,8 @@ connectingFlights = df[df['flightType'] == 'Connecting'].copy()
 # ----------------------
 # COLORS
 # ----------------------
-customColors = ['#d71920', '#00235f', '#f9ba00', '#660000', '#000000', '#3366ff']
+customColors = ['#d71920', '#00235f', '#f9ba00', '#660000', '#800080', '#3366ff',
+                '#c3f550', '#fbaa3f', '#000000']
 
 # Define new airline colors
 airlineColors = {
