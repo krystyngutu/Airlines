@@ -432,8 +432,9 @@ def plotBubbleChart(directDF, connectingDF, airline_col, metric_col, yaxis_title
     showConnecting = not showDirect
 
     def buildBubble(df):
-        countDF = df.groupby([airline_col, metric_col]).size().reset_index(name='count')
-        countDF = countDF.sort_values('count', ascending=False)
+        df['airline'] = pd.Categorical(df['airline'], categories=sorted(df['airline'].unique()), ordered=True)
+        countDF = df.groupby(['airline', metric_col]).size().reset_index(name='count')
+        countDF = countDF.sort_values('airline')  # Alphabetical order
         return countDF
 
     directData = buildBubble(directDF)
@@ -533,11 +534,12 @@ def plotHeatmap(directDF, connectingDF, valueCol, xaxisTitle, colorscale='Blues'
         df_clean = df[[valueCol, 'airline']].dropna()
         if df_clean.empty:
             return pd.DataFrame()
+        df_clean['airline'] = pd.Categorical(df_clean['airline'], categories=sorted(df_clean['airline'].unique()), ordered=True)
         binned_col = pd.cut(df_clean[valueCol], bins=10)
         pivot = df_clean.groupby(['airline', binned_col]).size().unstack(fill_value=0)
         pivot['Total'] = pivot.sum(axis=1)
         pivot = pivot.drop(columns="Total")
-        pivot = pivot.sort_index(axis=0)  # Alphabetical sort by airline
+        pivot = pivot.sort_index()  # Alphabetical
         return pivot
 
     directData = buildHeatmapData(directDF)
@@ -578,12 +580,10 @@ def plotHeatmap(directDF, connectingDF, valueCol, xaxisTitle, colorscale='Blues'
                 buttons=[
                     dict(label="Direct Flights",
                          method="update",
-                         args=[{"visible": [True, False]},
-                               {"title": title + " (Direct)"}]),
+                         args=[{"visible": [True, False]}]),
                     dict(label="Connecting Flights",
                          method="update",
-                         args=[{"visible": [False, True]},
-                               {"title": title + " (Connecting)"}])
+                         args=[{"visible": [False, True]}])
                 ],
                 direction="down",
                 showactive=True,
