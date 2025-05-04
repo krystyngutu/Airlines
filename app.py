@@ -31,7 +31,7 @@ def formatLegroom(val):
         return str(val)
 
 df['legroom'] = df['legroom'].apply(formatLegroom)
-df['legroom'] = pd.Categorical(df['legroom'], categories=sorted(legroomOptions), ordered=True)
+df['legroom'] = pd.Categorical(df['legroom'], categories=legroomOptions, ordered=True)
 
 # Extract features from extensions if present
 if 'extentions' in df.columns:
@@ -49,7 +49,6 @@ df['carbonDifferencePercent'] = (
 )
 
 # Define airlines
-
 directAirlines = ['Delta', 'SWISS', 'United']
 lufthansaGroup = ['Air Dolomiti', 'Austrian', 'Brussels Airlines', 'Discover Airlines', 'Edelweiss Air', 'Eurowings', 'ITA', 'Lufthansa']
 starAlliance = sorted(['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zealand', 'ANA', 'Asiana Airlines', 'Austrian', 'Avianca', 'Brussels Airport', 'CopaAirlines', 'Croatia Airlines', 'Egyptair', 'Ethiopian Airlines', 'Eva Air', 'LOT Polish Airlines', 'Lufthansa', 'Shenzhen Airlines', 'Singapore Airlines', 'South African Airways', 'SWISS', 'Tap Air Portugal', 'Thai', 'Turkish Airlines', 'United'])
@@ -98,6 +97,60 @@ airlineColors = {
 # ----------------------
 # CHART HELPERS
 # ----------------------
+def createLineChart(directDF, connectingDF):
+    def buildTraces(df):
+        traces = []
+        for airline in sorted(df['airline'].unique()):
+            data = df[df['airline'] == airline]
+            traces.append(go.Scatter(
+                x=data['departureTime'],
+                y=data['price'],
+                mode='lines+markers',
+                name=airline,
+                hovertext=data['flightNumber'],
+                marker=dict(color=airlineColors.get(airline, 'gray'))
+            ))
+        return traces
+
+    tracesDirect = buildTraces(directDF)
+    tracesConnecting = buildTraces(connectingDF)
+
+    fig = go.Figure()
+    for trace in tracesDirect:
+        trace.visible = True
+        fig.add_trace(trace)
+    for trace in tracesConnecting:
+        trace.visible = False
+        fig.add_trace(trace)
+
+    fig.update_layout(
+        title="Price Over Time",
+        xaxis_title="Departure Date",
+        yaxis_title="Price (USD)",
+        legend_title_text="Airlines",
+        height=600,
+        hovermode="closest",
+        legend=dict(borderwidth=0),
+        updatemenus=[
+            dict(
+                active=0,
+                buttons=[
+                    dict(label="Direct Flights", method="update", args=[{"visible": [True]*len(tracesDirect) + [False]*len(tracesConnecting)}]),
+                    dict(label="Connecting Flights", method="update", args=[{"visible": [False]*len(tracesDirect) + [True]*len(tracesConnecting)}])
+                ],
+                direction="down",
+                showactive=True,
+                x=0.5,
+                xanchor="center",
+                y=1.15,
+                yanchor="top"
+            )
+        ]
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+
 def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, colors):
     def buildCount(df):
         counts = df.groupby([group_col, sub_col]).size().unstack(fill_value=0)
@@ -181,7 +234,7 @@ def plotHeatmap(directDF, connectingDF, valueCol, xaxisTitle, colorscale='Blues'
     trace_direct = go.Heatmap(
         z=directData.values,
         x=[str(interval) for interval in directData.columns],
-        y=sorted(directData.index),
+        y=directData.index,
         colorscale=colorscale,
         colorbar=dict(title='Number of Flights'),
         visible=True
@@ -190,7 +243,7 @@ def plotHeatmap(directDF, connectingDF, valueCol, xaxisTitle, colorscale='Blues'
     trace_connecting = go.Heatmap(
         z=connectingData.values,
         x=[str(interval) for interval in connectingData.columns],
-        y=sorted(connectingData.index),
+        y=connectingData.index,
         colorscale=colorscale,
         colorbar=dict(title='Number of Flights'),
         visible=False
@@ -224,74 +277,13 @@ def plotHeatmap(directDF, connectingDF, valueCol, xaxisTitle, colorscale='Blues'
     st.plotly_chart(fig, use_container_width=True)
 
 # ----------------------
-# USAGE (bubble + heatmaps)
+# CHART CALLS
 # ----------------------
-def plotBubbleChart(directDF, connectingDF, airline_col, metric_col, yaxis_title, width=800, height=500):
-    def buildBubble(df):
-        countDF = df.groupby([airline_col, metric_col]).size().reset_index(name='count')
-        countDF = countDF.sort_values('count', ascending=False)
-        return countDF
-
-    directData = buildBubble(directDF)
-    connectingData = buildBubble(connectingDF)
-
-    traceDirect = go.Scatter(
-        x=directData[airline_col],
-        y=directData[metric_col],
-        mode='markers',
-        text=directData['count'],
-        marker=dict(
-            size=directData['count'],
-            color=directData[metric_col],
-            colorscale='RdBu',
-            showscale=True,
-            sizemode='area',
-            sizeref=2. * directData['count'].max() / (100 ** 2),
-            sizemin=4
-        ),
-        visible=True
-    )
-
-    traceConnecting = go.Scatter(
-        x=connectingData[airline_col],
-        y=connectingData[metric_col],
-        mode='markers',
-        text=connectingData['count'],
-        marker=dict(
-            size=connectingData['count'],
-            color=connectingData[metric_col],
-            colorscale='RdBu',
-            showscale=True,
-            sizemode='area',
-            sizeref=2. * connectingData['count'].max() / (100 ** 2),
-            sizemin=4
-        ),
-        visible=False
-    )
-
-    fig = go.Figure(data=[traceDirect, traceConnecting])
-    fig.update_layout(
-        xaxis_title='Airline',
-        yaxis_title=yaxis_title,
-        template='plotly_white',
-        showlegend=False,
-        width=width,
-        height=height,
-        updatemenus=[
-            dict(
-                active=0,
-                buttons=[
-                    dict(label="Direct Flights", method="update", args=[{"visible": [True, False]}]),
-                    dict(label="Connecting Flights", method="update", args=[{"visible": [False, True]}])
-                ],
-                direction="down",
-                showactive=True,
-                x=0.5,
-                xanchor="center",
-                y=1.15,
-                yanchor="top"
-            )
-        ]
-    )
-
-    st.plotly_chart(fig, use_container_width=True)
+createLineChart(directFlights, connectingFlights)
+st.subheader("WiFi by Airline")
+plotlyStackedBars(directFlights, connectingFlights, 'airline', 'wifi', 'WiFi', customColors)
+plotlyStackedBars(directFlights, connectingFlights, 'airline', 'legroom', 'Legroom', customColors)
+plotlyStackedBars(directFlights, connectingFlights, 'airline', 'airplane', 'Aircraft', customColors)
+plotHeatmap(directFlights, connectingFlights, 'price', 'Price (USD)', colorscale='Reds')
+plotHeatmap(directFlights, connectingFlights, 'durationTime', 'Duration (min)', colorscale='Reds')
+plotHeatmap(directFlights, connectingFlights, 'carbonDifferencePercent', 'Carbon Difference Percent', colorscale='Reds')
