@@ -523,19 +523,25 @@ st.subheader('Carbon Difference')
 plotBubbleChart(directFlights, connectingFlights, 'airline', 'carbonDifferencePercent', 'Carbon Difference')
 
 # Heatmap helper function with flight type toggle
-def plotHeatmap(df):
-    df_clean = df[[valueCol, 'airline']].dropna()
-    if df_clean.empty:
-        return pd.DataFrame()
-    binned_col = pd.cut(df_clean[valueCol], bins=10)
-    pivot = df_clean.groupby(['airline', binned_col]).size().unstack(fill_value=0)
-    pivot['Total'] = pivot.sum(axis=1)
-    pivot = pivot.drop(columns="Total")
-    pivot = pivot.sort_index(axis=0)  # Alphabetical sort by airline
-    return pivot
+def plotHeatmap(directDF, connectingDF, valueCol, xaxisTitle, colorscale='Blues', width=800, height=500):
+    # Determine toggle state
+    filterChoice = st.session_state.get('filterChoice', 'Airlines That Fly Both Direct and Connecting')
+    showDirect = filterChoice == 'Airlines That Fly Both Direct and Connecting'
+    showConnecting = not showDirect
 
-    directData = plotHeatmap(directDF)
-    connectingData = plotHeatmap(connectingDF)
+    def buildHeatmapData(df):
+        df_clean = df[[valueCol, 'airline']].dropna()
+        if df_clean.empty:
+            return pd.DataFrame()
+        binned_col = pd.cut(df_clean[valueCol], bins=10)
+        pivot = df_clean.groupby(['airline', binned_col]).size().unstack(fill_value=0)
+        pivot['Total'] = pivot.sum(axis=1)
+        pivot = pivot.drop(columns="Total")
+        pivot = pivot.sort_index(axis=0)  # Alphabetical sort by airline
+        return pivot
+
+    directData = buildHeatmapData(directDF)
+    connectingData = buildHeatmapData(connectingDF)
 
     traceDirect = go.Heatmap(
         z=directData.values,
@@ -544,7 +550,7 @@ def plotHeatmap(df):
         colorscale=colorscale,
         colorbar=dict(title='Number of Flights'),
         visible=showDirect
-    ) if not directData.empty else go.Heatmap(z=[], visible=False)
+    ) if not directData.empty else go.Heatmap(z=[[0]], visible=False)
 
     traceConnecting = go.Heatmap(
         z=connectingData.values,
@@ -553,7 +559,7 @@ def plotHeatmap(df):
         colorscale=colorscale,
         colorbar=dict(title='Number of Flights'),
         visible=showConnecting
-    ) if not connectingData.empty else go.Heatmap(z=[], visible=False)
+    ) if not connectingData.empty else go.Heatmap(z=[[0]], visible=False)
 
     fig = go.Figure(data=[traceDirect, traceConnecting])
 
@@ -572,10 +578,12 @@ def plotHeatmap(df):
                 buttons=[
                     dict(label="Direct Flights",
                          method="update",
-                         args=[{"visible": [True, False]}]),
+                         args=[{"visible": [True, False]},
+                               {"title": title + " (Direct)"}]),
                     dict(label="Connecting Flights",
                          method="update",
-                         args=[{"visible": [False, True]}])
+                         args=[{"visible": [False, True]},
+                               {"title": title + " (Connecting)"}])
                 ],
                 direction="down",
                 showactive=True,
@@ -589,16 +597,15 @@ def plotHeatmap(df):
 
     st.plotly_chart(fig, use_container_width=True)
 
-
 # Heatmaps
 # Carbon Difference Percent by Airline
-st.subheader('Carbon Difference %')
-plotHeatmap(directFlights, connectingFlights, 'carbonDifferencePercent', colorscale='Reds')
+st.subheader('Carbon Difference (Percentage)')
+plotHeatmap(directFlights, connectingFlights, 'carbonDifferencePercent', 'Carbon Difference Percent', colorscale='Reds')
 
 # Price by Airline
 st.subheader('Price (USD)')
-plotHeatmap(directFlights, connectingFlights, 'price', colorscale='Reds')
+plotHeatmap(directFlights, connectingFlights, 'price', 'Price (USD)', colorscale='Reds')
 
 # Duration Time by Airline
 st.subheader('Duration Time')
-plotHeatmap(directFlights, connectingFlights, 'durationTime', colorscale='Reds')
+plotHeatmap(directFlights, connectingFlights, 'durationTime', 'Total Duration in Minutes', colorscale='Reds')
