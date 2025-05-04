@@ -385,6 +385,13 @@ plotlyStackedBars(
     colors=customColors
 )
 
+# Get all unique wifi categories from both DataFrames
+wifiCategories = sorted(set(directFlights['wifi'].dropna().unique()).union(connectingFlights['wifi'].dropna().unique()))
+
+# Convert to ordered categorical
+directFlights['wifi'] = pd.Categorical(directFlights['wifi'], categories=wifiCategories, ordered=True)
+connectingFlights['wifi'] = pd.Categorical(connectingFlights['wifi'], categories=wifiCategories, ordered=True)
+
 # WiFi breakdown
 st.subheader('WiFi by Airline')
 plotlyStackedBars(
