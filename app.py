@@ -329,8 +329,23 @@ def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, 
 
     st.plotly_chart(fig, use_container_width=True)
 
-# Group aircraft in connecting flights into categories
-connectingFlights['airplane'] = connectingFlights['airplane'].str.extract(r'^(Airbus|Boeing|Canadair|Embraer)', expand=False).fillna('Other')
+# Standardize aircraft types for connecting flights
+def classifyAircraft(aircraft):
+    if pd.isna(aircraft):
+        return "Other"
+    aircraft = aircraft.lower()
+    if aircraft.startswith("airbus"):
+        return "Airbus"
+    elif aircraft.startswith("boeing"):
+        return "Boeing"
+    elif aircraft.startswith("canadair"):
+        return "Canadair"
+    elif aircraft.startswith("embraer"):
+        return "Embraer"
+    else:
+        return "Other"
+
+connectingFlights['airplane'] = connectingFlights['airplane'].apply(classifyAircraft)
 
 # Aircraft breakdown
 st.subheader('Aircraft by Airline')
