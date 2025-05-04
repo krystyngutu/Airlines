@@ -278,6 +278,7 @@ def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, 
         for cat in df[sub_col].cat.categories:
             if cat not in counts.columns:
                 counts[cat] = 0
+                counts = counts.reindex(sorted(counts.columns), axis =1)
         return counts
 
     directCount = buildCount(directDF)
@@ -342,7 +343,6 @@ def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, 
     )
 
     st.plotly_chart(fig, use_container_width=True)
-
 
 # Standardize aircraft types for connecting flights
 def classifyAircraft(aircraft):
