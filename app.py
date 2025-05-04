@@ -4,9 +4,9 @@ import plotly.graph_objects as go
 
 # Load data
 st.set_page_config(layout="wide")
-df = pd.read_csv("all_flights.csv")
-
 st.title("Flights from NYC to CH")
+
+df = pd.read_csv("all_flights.csv")
 
 df['departureTime'] = pd.to_datetime(df['departureTime'], errors='coerce')
 df['arrivalAirportTime'] = pd.to_datetime(df['arrivalAirportTime'], errors='coerce')
@@ -15,20 +15,32 @@ df['durationMinutes'] = pd.to_numeric(df['durationTime'], errors='coerce')
 df['totalDurationMinutes'] = pd.to_numeric(df['totalTripDuration'], errors='coerce')
 df['carbonEmissionsThisFlight'] = pd.to_numeric(df.get('carbonEmissionsThisFlight'), errors='coerce')
 
-# Drop inches in legroom and make int
-df['legroom'] = df['legroom'].str.split(' ').str[0] 
-df['legroom'] = pd.to_numeric(df['legroom'], errors='coerce')
+# Clean legroom values
+legroomOptions = [f"{i} inches" for i in range(28, 34)] + ["Extra reclining seat"]
 
-# Split extentions
-def splitExtentions(df):
+def formatLegroom(val):
+    try:
+        return f"{int(float(val))} inches"
+    except:
+        return str(val)
+
+df['legroom'] = df['legroom'].apply(formatLegroom)
+df['legroom'] = pd.Categorical(df['legroom'], categories=legroomOptions, ordered=True)
+
+# Extract features from extensions if present
+if 'extentions' in df.columns:
     df['extentions'] = df['extentions'].fillna(',')
-    splitExt=df['extentions'].str.split(',', n=2, expand=True).apply(lambda col: col.str.strip())
-
+    splitExt = df['extentions'].str.split(',', n=2, expand=True).apply(lambda col: col.str.strip())
     df['recliningAndLegroom'] = splitExt[0]
     df['wifi'] = splitExt[1]
     df['carbonEmssionsEstimate'] = splitExt[2]
 
-    return df
+# Derived features
+df['pricePerMinute'] = df['price'] / df['totalDurationMinutes']
+df['carbonDifferencePercent'] = (
+    (df['carbonEmissionsThisFlight'] - df['carbonEmissionsThisFlight'].mean()) /
+    df['carbonEmissionsThisFlight'].mean() * 100
+)
 
 # Define  airlines to include
 directAirlines = ['SWISS', 'United', 'Delta']
@@ -53,22 +65,31 @@ else:
         options=['Airlines That Fly Both Direct and Connecting', 'Lufthansa Group', 'Star Alliance']
     )
 
-    if filterChoice == 'Direct Airlines Only':
-        filteredAirlines = directAirlines
-    elif filterChoice == 'Lufthansa Group':
+    if filterChoice == 'Lufthansa Group':
         filteredAirlines = lufthansaGroup
     elif filterChoice == 'Star Alliance':
         filteredAirlines = starAlliance
+    else:
+        filteredAirlines = directAirlines
 
 # Filter DataFrame
 df = df[df['airline'].isin(filteredAirlines)].copy()
 
-# Filter to only include selected airlines
-df = df[df['airline'].isin(directAirlines)].copy()
-
 # Define airports to include
 nycAirports = ["JFK", "EWR", "LGA"]
 swissAirports = ["ZRH", "GVA", "BSL"]
+
+# Label flights as Direct or Connecting
+def classifyFlightType(row):
+    if row['departureAirportID'] in nycAirports and row['arrivalAirportID'] in swissAirports:
+        return 'Direct'
+    return 'Connecting'
+
+df['flightType'] = df.apply(classifyFlightType, axis=1)
+
+# Split into direct and connecting flights
+directFlights = df[df['flightType'] == 'Direct'].copy()
+connectingFlights = df[df['flightType'] == 'Connecting'].copy()
 
 # Custom color palette
 customColors = ['#d71920', '#00235f', '#f9ba00', '#660000', '#000000', '#3366ff']
@@ -81,40 +102,6 @@ airlineColors = {
     'United': '#1a75ff',              # light blue
     'Edelweiss Air': '#800080'        # purple
 }
-
-# Derived column
-df['pricePerMinute'] = df['price'] / df['totalDurationMinutes']
-df['carbonDifferencePercent'] = ((df['carbonEmissionsThisFlight'] - df['carbonEmissionsThisFlight'].mean()) / df['carbonEmissionsThisFlight'].mean()) * 100
-
-# Label flights as Direct or Connecting
-def classifyFlightType(row):
-    if row['departureAirportID'] in nycAirports and row['arrivalAirportID'] in swissAirports:
-        return 'Direct'
-    return 'Connecting'
-
-df['flightType'] = df.apply(classifyFlightType, axis=1)
-
-# Clean legroom and drop unused columns
-# Fill missing with label, then relabel numeric values with 'inches'
-# Define full list of desired legroom labels
-all_legroom_options = [f"{inches} inches" for inches in range(28, 34)] + ["Extra reclining seat"]
-
-# Convert numeric and label properly
-def format_legroom(val):
-    try:
-        val_float = float(val)
-        return f"{int(val_float)} inches"
-    except:
-        return str(val)
-
-df['legroom'] = df['legroom'].apply(format_legroom)
-
-# Make it a categorical column with all levels (to preserve 28 and 33)
-df['legroom'] = pd.Categorical(df['legroom'], categories=all_legroom_options, ordered=True)
-
-# Split into direct and connecting flights
-directFlights = df[df['flightType'] == 'Direct'].copy()
-connectingFlights = df[df['flightType'] == 'Connecting'].copy()
 
 # Helper to create traces
 def createTraces(df):
