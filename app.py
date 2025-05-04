@@ -96,9 +96,10 @@ df['flightType'] = df.apply(classifyFlightType, axis=1)
 
 # Clean legroom and drop unused columns
 # Fill missing with label, then relabel numeric values with 'inches'
-df['legroom'] = df['legroom'].fillna("Extra reclining seat")
+# Define full list of desired legroom labels
+all_legroom_options = [f"{inches} inches" for inches in range(28, 34)] + ["Extra reclining seat"]
 
-# Create a new cleaned column for display
+# Convert numeric and label properly
 def format_legroom(val):
     try:
         val_float = float(val)
@@ -108,8 +109,8 @@ def format_legroom(val):
 
 df['legroom'] = df['legroom'].apply(format_legroom)
 
-if "recliningAndLegroom" in df.columns:
-    df.drop(columns=["recliningAndLegroom"], inplace=True)
+# Make it a categorical column with all levels (to preserve 28 and 33)
+df['legroom'] = pd.Categorical(df['legroom'], categories=all_legroom_options, ordered=True)
 
 # Split into direct and connecting flights
 directFlights = df[df['flightType'] == 'Direct'].copy()
