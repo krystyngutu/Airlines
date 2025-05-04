@@ -50,7 +50,7 @@ df['carbonDifferencePercent'] = (
 
 # Define  airlines to include
 directAirlines = ['SWISS', 'United', 'Delta']
-lufthansaGroup = ['Austrian', 'Brussels Airlines', 'Discover Airlines', 'Eurowings', 'Edelweiss Air', 'ITA', 'Air Dolomiti', 'Lufthansa']
+lufthansaGroup = ['Austrian', 'Brussels Airlines', 'Discover Airlines', 'Eurowings', 'Edelweiss Air', 'ITA', 'Air Dolomiti', 'Lufthansa', 'SWISS']
 starAlliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zealand', 'ANA', 'Asiana Airlines', 'Austrian', 'Avianca', 'Brussels Airport', 'CopaAirlines', 'Croatia Airlines', 'Egyptair', 'Ethiopian Airlines', 'Eva Air', 'LOT Polish Airlines', 'Lufthansa', 'Shenzhen Airlines', 'Singapore Airlines', 'South African Airways', 'SWISS', 'Tap Air Portugal', 'Thai', 'Turkish Airlines', 'United']
 
 # Toggle for connected flights
@@ -97,11 +97,16 @@ customColors = ['#d71920', '#00235f', '#f9ba00', '#660000', '#000000', '#3366ff'
 
 # Define new airline colors
 airlineColors = {
-    'Lufthansa': '#FFD700',           # gold
+    'Lufthansa': '#ffd700',           # gold
     'SWISS': '#d71920',               # red
     'Delta': '#00235f',               # dark blue
     'United': '#1a75ff',              # light blue
-    'Edelweiss Air': '#800080'        # purple
+    'Edelweiss Air': '#800080',       # purple
+    'Air Dolomiti': '#32cd32',        # lime green
+    'Austrian': '#c3f550',            # lime
+    'ITA': '#fbaa3f',                 # orange
+    'Brussels Airlines': '#ffdade',   # pink
+    'Eurowings': '#ffffff',           # black
 }
 
 # ----------------------
