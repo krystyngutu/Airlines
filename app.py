@@ -134,7 +134,7 @@ for trace in directTraces:
 
 # Add connecting traces (hidden)
 for trace in connectingTraces:
-    trace.visible=hidden
+    trace.visible=False
     fig.add_trace(trace)
 
 fig.update_layout(
