@@ -226,12 +226,10 @@ carbonFig.update_layout(
             buttons=[
                 dict(label="Direct Flights",
                      method="update",
-                     args=[{"visible": [True]*len(carbonDirectTraces) + [False]*len(carbonConnectingTraces)},
-                           {"title": "Carbon Emissions vs Price (Direct Flights)"}]),
+                     args=[{"visible": [True]*len(carbonDirectTraces) + [False]*len(carbonConnectingTraces)}]),
                 dict(label="Connecting Flights",
                      method="update",
-                     args=[{"visible": [False]*len(carbonDirectTraces) + [True]*len(carbonConnectingTraces)},
-                           {"title": "Carbon Emissions vs Price (Connecting Flights)"}])
+                     args=[{"visible": [False]*len(carbonDirectTraces) + [True]*len(carbonConnectingTraces)}])
             ],
             direction="down",
             showactive=True,
