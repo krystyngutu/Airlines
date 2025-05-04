@@ -123,7 +123,9 @@ airlineColors = {
 # Drop rows with missing values for key comparisons
 priceDF = df.dropna(subset=['price', 'durationMinutes', 'carbonEmissionsThisFlight', 'legroom', 'travelClass', 'airplane'])
 
-# Standardize aircraft types for connecting flights
+# ----------------------
+# Standardize Aircraft
+# ----------------------
 def classifyAircraft(aircraft):
     if pd.isna(aircraft):
         return "Other"
@@ -139,16 +141,16 @@ def classifyAircraft(aircraft):
     else:
         return "Other"
 
+df['airplaneLumped'] = df['airplane'].apply(classifyAircraft)
+priceDF['airplaneLumped'] = priceDF['airplane'].apply(classifyAircraft)
+
 # ----------------------
-# Price vs Legroom (sorted alphabetically)
+# LINE PLOTS
 # ----------------------
+
+# 1. Price vs Legroom (mean by category, sorted alphabetically)
 st.subheader("Price vs Legroom")
-
-# Filter valid values
-validLegroom = df[df['legroom'].notna() & df['price'].notna()]
-legroomGrouped = validLegroom.groupby('legroom')['price'].mean().reset_index()
-legroomGrouped = legroomGrouped.sort_values(by='legroom')
-
+legroomGrouped = priceDF.groupby('legroom')['price'].mean().reset_index().sort_values(by='legroom')
 fig_legroom = go.Figure(go.Scatter(
     x=legroomGrouped['legroom'],
     y=legroomGrouped['price'],
@@ -156,28 +158,12 @@ fig_legroom = go.Figure(go.Scatter(
     line=dict(color='#d71920'),
     marker=dict(size=8)
 ))
-
-fig_legroom.update_layout(
-    xaxis_title='Legroom (inches or category)',
-    yaxis_title='Average Price (USD)',
-    template='plotly_white',
-    height=450
-)
-
+fig_legroom.update_layout(xaxis_title='Legroom', yaxis_title='Avg Price (USD)', template='plotly_white', height=450)
 st.plotly_chart(fig_legroom, use_container_width=True)
 
-# ----------------------
-# Price vs Aircraft (lumped groups)
-# ----------------------
+# 2. Price vs Aircraft (mean by category, lumped)
 st.subheader("Price vs Aircraft Type")
-
-# Apply classifier
-df['airplaneLumped'] = df['airplane'].apply(classifyAircraft)
-
-# Filter and group
-validAircraft = df[df['airplaneLumped'].notna() & df['price'].notna()]
-aircraftGrouped = validAircraft.groupby('airplaneLumped')['price'].mean().reset_index()
-
+aircraftGrouped = priceDF.groupby('airplaneLumped')['price'].mean().reset_index().sort_values(by='airplaneLumped')
 fig_aircraft = go.Figure(go.Scatter(
     x=aircraftGrouped['airplaneLumped'],
     y=aircraftGrouped['price'],
@@ -185,18 +171,10 @@ fig_aircraft = go.Figure(go.Scatter(
     line=dict(color='#00235f'),
     marker=dict(size=8)
 ))
-
-fig_aircraft.update_layout(
-    xaxis_title='Aircraft Type',
-    yaxis_title='Average Price (USD)',
-    template='plotly_white',
-    height=450
-)
-
+fig_aircraft.update_layout(xaxis_title='Aircraft Type', yaxis_title='Avg Price (USD)', template='plotly_white', height=450)
 st.plotly_chart(fig_aircraft, use_container_width=True)
 
-
-# 1. Price vs Duration (scatter)
+# 3. Price vs Duration
 st.subheader("Price vs Duration")
 st.plotly_chart(go.Figure(
     data=[go.Scatter(
@@ -207,13 +185,14 @@ st.plotly_chart(go.Figure(
         name='Duration'
     )],
     layout=go.Layout(
-        xaxis_title="Duration (minutes)",
+        xaxis_title="Duration (min)",
         yaxis_title="Price (USD)",
+        template='plotly_white',
         height=450
     )
 ), use_container_width=True)
 
-# 2. Price vs Carbon Emissions (scatter)
+# 4. Price vs Carbon Emissions
 st.subheader("Price vs Carbon Emissions")
 st.plotly_chart(go.Figure(
     data=[go.Scatter(
@@ -221,62 +200,59 @@ st.plotly_chart(go.Figure(
         y=priceDF['price'],
         mode='markers',
         marker=dict(color='green'),
-        name='Carbon Emissions'
+        name='Carbon'
     )],
     layout=go.Layout(
         xaxis_title="Carbon Emissions (kg CO₂)",
         yaxis_title="Price (USD)",
+        template='plotly_white',
         height=450
     )
 ), use_container_width=True)
 
-# 3. Price vs Legroom (box)
+# ----------------------
+# BOX PLOTS
+# ----------------------
+
+# Sort categorical variables
+priceDF['legroom'] = pd.Categorical(priceDF['legroom'], categories=sorted(priceDF['legroom'].unique()), ordered=True)
+priceDF['travelClass'] = pd.Categorical(priceDF['travelClass'], categories=sorted(priceDF['travelClass'].unique()), ordered=True)
+priceDF['airplaneLumped'] = pd.Categorical(priceDF['airplaneLumped'], categories=sorted(priceDF['airplaneLumped'].unique()), ordered=True)
+
+# 5. Price by Legroom (box)
 st.subheader("Price by Legroom")
-st.plotly_chart(go.Figure(
-    data=[go.Box(
-        x=priceDF['legroom'],
-        y=priceDF['price'],
-        name='Legroom',
-        marker_color='orange'
-    )],
-    layout=go.Layout(
-        xaxis_title="Legroom (inches or category)",
-        yaxis_title="Price (USD)",
-        height=450
-    )
-), use_container_width=True)
+fig_box_legroom = go.Figure(go.Box(
+    x=priceDF['legroom'],
+    y=priceDF['price'],
+    marker_color='orange',
+    name='Legroom'
+))
+fig_box_legroom.update_layout(xaxis_title="Legroom", yaxis_title="Price (USD)", template='plotly_white', height=450)
+st.plotly_chart(fig_box_legroom, use_container_width=True)
 
-# 4. Price vs Travel Class (box)
+# 6. Price by Travel Class (box)
 st.subheader("Price by Travel Class")
-st.plotly_chart(go.Figure(
-    data=[go.Box(
-        x=priceDF['travelClass'],
-        y=priceDF['price'],
-        name='Travel Class',
-        marker_color='purple'
-    )],
-    layout=go.Layout(
-        xaxis_title="Travel Class",
-        yaxis_title="Price (USD)",
-        height=450
-    )
-), use_container_width=True)
+fig_box_class = go.Figure(go.Box(
+    x=priceDF['travelClass'],
+    y=priceDF['price'],
+    marker_color='purple',
+    name='Travel Class'
+))
+fig_box_class.update_layout(xaxis_title="Travel Class", yaxis_title="Price (USD)", template='plotly_white', height=450)
+st.plotly_chart(fig_box_class, use_container_width=True)
 
-# 5. Price vs Aircraft (box)
+# 7. Price by Aircraft Type (lumped box)
 st.subheader("Price by Aircraft Type")
-st.plotly_chart(go.Figure(
-    data=[go.Box(
-        x=priceDF['airplane'],
-        y=priceDF['price'],
-        name='Aircraft',
-        marker_color='darkred'
-    )],
-    layout=go.Layout(
-        xaxis_title="Aircraft Type",
-        yaxis_title="Price (USD)",
-        height=450
-    )
-), use_container_width=True)
+fig_box_aircraft = go.Figure(go.Box(
+    x=priceDF['airplaneLumped'],
+    y=priceDF['price'],
+    marker_color='darkred',
+    name='Aircraft'
+))
+fig_box_aircraft.update_layout(xaxis_title="Aircraft Type", yaxis_title="Price (USD)", template='plotly_white', height=450)
+st.plotly_chart(fig_box_aircraft, use_container_width=True)
+
+
 
 # ----------------------
 # CHART HELPERS
