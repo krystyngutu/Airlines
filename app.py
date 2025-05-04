@@ -270,7 +270,7 @@ carbonFig.update_layout(
 st.plotly_chart(carbonFig, use_container_width=True)
 
 # Bar chart helper with toggle for Direct vs Connecting
-def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, colors, showDirect=True, showConnecting=False):
+def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, colors, showDirect=False, showConnecting=True):
     def buildCount(df):
         if not pd.api.types.is_categorical_dtype(df[sub_col]):
             df[sub_col] = pd.Categorical(df[sub_col])  # Ensure consistency
