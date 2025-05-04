@@ -260,7 +260,7 @@ st.plotly_chart(carbonFig, use_container_width=True)
 # Bar chart helper
 def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, colors):
     def buildCount(df):
-    counts = df.groupby([group_col, sub_col]).size().unstack(fill_value=0)
+        counts = df.groupby([group_col, sub_col]).size().unstack(fill_value=0)
     # Ensure all subcategories are included, even if some have 0
     for cat in df[sub_col].cat.categories:
         if cat not in counts.columns:
