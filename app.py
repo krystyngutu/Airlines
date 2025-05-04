@@ -523,7 +523,7 @@ st.subheader('Carbon Difference')
 plotBubbleChart(directFlights, connectingFlights, 'airline', 'carbonDifferencePercent', 'Carbon Difference')
 
 # Heatmap helper function with flight type toggle
-def buildHeatmapData(df):
+def plotHeatmapData(df):
     df_clean = df[[valueCol, 'airline']].dropna()
     if df_clean.empty:
         return pd.DataFrame()
