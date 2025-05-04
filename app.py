@@ -426,6 +426,11 @@ plotlyStackedBars(
 
 # Bubble chart helper function with flight type toggle
 def plotBubbleChart(directDF, connectingDF, airline_col, metric_col, yaxis_title, width=800, height=500):
+    # Determine which flight type to show by default
+    filterChoice = st.session_state.get('filterChoice', 'Airlines That Fly Both Direct and Connecting')
+    showDirect = filterChoice == 'Airlines That Fly Both Direct and Connecting'
+    showConnecting = not showDirect
+
     def buildBubble(df):
         countDF = df.groupby([airline_col, metric_col]).size().reset_index(name='count')
         countDF = countDF.sort_values('count', ascending=False)
@@ -437,7 +442,7 @@ def plotBubbleChart(directDF, connectingDF, airline_col, metric_col, yaxis_title
     traceDirect = go.Scatter(
         x=directData[airline_col],
         y=directData[metric_col],
-        mode='markers+text' if metric_col == 'durationTime' else 'markers',
+        mode='markers',
         text=directData['count'],
         marker=dict(
             size=directData['count'],
@@ -448,13 +453,13 @@ def plotBubbleChart(directDF, connectingDF, airline_col, metric_col, yaxis_title
             sizeref=2. * directData['count'].max() / (100 ** 2),
             sizemin=4
         ),
-        visible=True
+        visible=showDirect
     )
 
     traceConnecting = go.Scatter(
         x=connectingData[airline_col],
         y=connectingData[metric_col],
-        mode='markers+text' if metric_col == 'durationTime' else 'markers',
+        mode='markers',
         text=connectingData['count'],
         marker=dict(
             size=connectingData['count'],
@@ -465,7 +470,7 @@ def plotBubbleChart(directDF, connectingDF, airline_col, metric_col, yaxis_title
             sizeref=2. * connectingData['count'].max() / (100 ** 2),
             sizemin=4
         ),
-        visible=False
+        visible=showConnecting
     )
 
     fig = go.Figure(data=[traceDirect, traceConnecting])
@@ -502,28 +507,31 @@ def plotBubbleChart(directDF, connectingDF, airline_col, metric_col, yaxis_title
 
 # Bubble charts
 # Flight duration breakdown
-st.subheader('Flight Duration by Airline (Bubble Size = Count)')
-plotBubbleChart(directFlights, connectingFlights, 'airline', 'durationTime',
-                'Duration (min)', width=1000)
+st.subheader('Total Duration')
+plotBubbleChart(directFlights, connectingFlights, 'airline', 'durationTime', 'Duration (min)', width=1000)
 
 # Flight prices breakdown
-st.subheader('Flight Prices by Airline (Bubble Size = Count)')
+st.subheader('Prices')
 plotBubbleChart(directFlights, connectingFlights, 'airline', 'price', 'Price (USD)')
 
 # Carbon emissions breakdown
-st.subheader('Carbon Emissions by Airline per Flight (Bubble Size = Count)')
-plotBubbleChart(directFlights, connectingFlights, 'airline', 'carbonEmissionsThisFlight',
-                'Carbon Emissions by Airline (Bubble Size = Count)')
+st.subheader('Carbon Emissions')
+plotBubbleChart(directFlights, connectingFlights, 'airline', 'carbonEmissionsThisFlight', 'Carbon Emissions')
 
 # Carbon difference breakdown
-st.subheader('Carbon Difference (%) by Airline per Flight (Bubble Size = Count)')
-plotBubbleChart(directFlights, connectingFlights, 'airline', 'carbonDifferencePercent',
-                'Carbon Difference by Airline (Bubble Size = Count)')
+st.subheader('Carbon Difference')
+plotBubbleChart(directFlights, connectingFlights, 'airline', 'carbonDifferencePercent', 'Carbon Difference')
 
 # Heatmap helper function with flight type toggle
 def plotHeatmap(directDF, connectingDF, valueCol, xaxisTitle, colorscale='Blues', width=800, height=500):
+    filterChoice = st.session_state.get('filterChoice', 'Airlines That Fly Both Direct and Connecting')
+    showDirect = filterChoice == 'Airlines That Fly Both Direct and Connecting'
+    showConnecting = not showDirect
+
     def buildHeatmapData(df):
         df_clean = df[[valueCol, 'airline']].dropna()
+        if df_clean.empty:
+            return pd.DataFrame()
         binned_col = pd.cut(df_clean[valueCol], bins=10)
         pivot = df_clean.groupby(['airline', binned_col]).size().unstack(fill_value=0)
         pivot['Total'] = pivot.sum(axis=1)
@@ -533,14 +541,14 @@ def plotHeatmap(directDF, connectingDF, valueCol, xaxisTitle, colorscale='Blues'
     directData = buildHeatmapData(directDF)
     connectingData = buildHeatmapData(connectingDF)
 
-    trace_direct = go.Heatmap(
+    traceDirect = go.Heatmap(
         z=directData.values,
         x=[str(interval) for interval in directData.columns],
         y=directData.index,
         colorscale=colorscale,
         colorbar=dict(title='Number of Flights'),
-        visible=True
-    )
+        visible=showDirect
+    ) if not directData.empty else go.Heatmap(z=[], visible=False)
 
     traceConnecting = go.Heatmap(
         z=connectingData.values,
@@ -548,13 +556,15 @@ def plotHeatmap(directDF, connectingDF, valueCol, xaxisTitle, colorscale='Blues'
         y=connectingData.index,
         colorscale=colorscale,
         colorbar=dict(title='Number of Flights'),
-        visible=False
-    )
+        visible=showConnecting
+    ) if not connectingData.empty else go.Heatmap(z=[], visible=False)
 
-    fig = go.Figure(data=[trace_direct, traceConnecting])
+    fig = go.Figure(data=[traceDirect, traceConnecting])
+
+    title = f"{xaxisTitle} by Airline (Bubble Size = Count)"
 
     fig.update_layout(
-        title=title,
+        title=title + (" (Direct)" if showDirect else " (Connecting)"),
         xaxis_title=xaxisTitle,
         yaxis_title='Airline',
         template='plotly_white',
