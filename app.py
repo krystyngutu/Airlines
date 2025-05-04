@@ -251,7 +251,6 @@ carbonFig.update_layout(
         itemdoubleclick="toggleothers",
         x=1.02,
         y=1,
-        bordercolor="LightGray",
         borderwidth=1
     )
 )
