@@ -263,11 +263,11 @@ def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, 
     def buildCount(df, all_categories):
         counts = df.groupby([group_col, sub_col]).size().unstack(fill_value=0)
 
-    # Ensure all subcategories are present, in the same order
-    for cat in all_categories:
-        if cat not in counts.columns:
-            counts[cat] = 0
-    return counts[all_categories]  # reorder to match
+        # Ensure all subcategories are present, in the same order
+        for cat in all_categories:
+            if cat not in counts.columns:
+                counts[cat] = 0
+        return counts[all_categories]  # reorder to match
 
     directCount = buildCount(directDF)
     connectingCount = buildCount(connectingDF)
