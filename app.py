@@ -86,10 +86,6 @@ def classifyFlightType(row):
 
 df['flightType'] = df.apply(classifyFlightType, axis=1)
 
-# Filter for relevant airlines
-relevantAirlines = set(directAirlines + lufthansaGroup + starAlliance)
-df = df[df['airline'].isin(relevantAirlines)]
-
 # Split into direct and connecting flights
 directFlights = df[df['flightType'] == 'Direct'].copy()
 connectingFlights = df[df['flightType'] == 'Connecting'].copy()
@@ -120,37 +116,56 @@ airlineColors = {
 # ----------------------
 # CHART HELPERS
 # ----------------------
-def createTraces(df, visibleAirlines, groupName):
+def createTraces(df):
     traces = []
-    shown = set()
-    for airline in sorted(df['airline'].unique()):
-        data = df[df['airline'] == airline].sort_values('DepartureTime')
-        traces = go.Scatter(
+    for airline in df['airline'].unique():
+        data = df[df['airline'] == airline]
+        traces.append(go.Scatter(
             x=data['departureTime'],
             y=data['price'],
             mode='markers+lines',
             name=airline,
             hovertext=data['flightNumber'],
-            marker=dict(color=airlineColors.get(airline, 'gray')),
-            visible=True if airline in visibleAirlines else 'legendonly',
-            legendgroup=groupName,
-            showlegend=airline not in shown
-        )
-        traces.append(trace)
-        shown.add(airline)
+            marker=dict(color=airlineColors.get(airline, 'gray'))
+        ))
     return traces
 
-# Generate traces
-directTraces = createTraces(df[df['flightType'] == 'Direct'], directAirlines, 'Direct')
-lufthansaTraces = createTraces(df, [], 'Lufthansa Group')
-starTraces = createTraces(df, [], 'Star Alliance')
+# Create traces for direct and connecting flights
+directTraces = createTraces(directFlights)
+connectingTraces = createTraces(connectingFlights)
 
 fig = go.Figure()
-for trace in directTraces + lufthansaTraces + starTraces:
+
+# Add direct traces (visible)
+for trace in directTraces:
+    trace.visible=True
     fig.add_trace(trace)
 
-# Update layout
+# Add connecting traces (hidden)
+for trace in connectingTraces:
+    trace.visible=False
+    fig.add_trace(trace)
+
 fig.update_layout(
+    updatemenus=[
+        dict(
+            active=0,
+            buttons=[
+                dict(label='Direct Flights',
+                     method='update',
+                     args=[{'visible':[True]*len(directTraces) + [False]*len(connectingTraces)}]),
+                dict(label='Connecting Flights',
+                     method='update',
+                     args=[{'visible':[False]*len(directTraces) + [True]*len(connectingTraces)}])
+            ],
+            direction='down',
+            showactive=True,
+            x=0.5,
+            xanchor='center',
+            y=1.1,
+            yanchor='top'
+        )
+    ],
     xaxis_title="Departure Date",
     yaxis_title="Price (USD)",
     legend_title_text="Airlines",
@@ -170,7 +185,7 @@ fig.update_layout(
     )
 )
 
-# Render
+st.subheader("Price Over Time")
 st.plotly_chart(fig, use_container_width=True)
 
 # ---------- Carbon Emissions vs Price ----------
