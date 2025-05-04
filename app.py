@@ -21,18 +21,6 @@ df['durationMinutes'] = pd.to_numeric(df['durationTime'], errors='coerce')
 df['totalDurationMinutes'] = pd.to_numeric(df['totalTripDuration'], errors='coerce')
 df['carbonEmissionsThisFlight'] = pd.to_numeric(df.get('carbonEmissionsThisFlight'), errors='coerce')
 
-# Clean legroom values
-legroomOptions = [f"{i} inches" for i in range(28, 34)] + ["Extra reclining seat"]
-
-def formatLegroom(val):
-    try:
-        return f"{int(float(val))} inches"
-    except:
-        return str(val)
-
-df['legroom'] = df['legroom'].apply(formatLegroom)
-df['legroom'] = pd.Categorical(df['legroom'], categories=legroomOptions, ordered=True)
-
 # Extract features from extensions if present
 if 'extentions' in df.columns:
     df['extentions'] = df['extentions'].fillna(',')
@@ -40,6 +28,15 @@ if 'extentions' in df.columns:
     df['recliningAndLegroom'] = splitExt[0]
     df['wifi'] = splitExt[1]
     df['carbonEmssionsEstimate'] = splitExt[2]
+
+def extractParensOrKeep(val):
+    if pd.isna(val):
+        return val
+    import re
+    match = re.search(r'\((.*?)\)', val)
+    return match.group(1) if match else val.strip()
+
+df['recliningAndLegroom'] = df['recliningAndLegroom'].apply(extractParensOrKeep)
 
 # Derived features
 df['pricePerMinute'] = df['price'] / df['totalDurationMinutes']
@@ -374,13 +371,13 @@ plotlyStackedBars(
     colors=customColors
 )
 
-# Legroom breakdown
+# Legroom and Reclining breakdown
 st.subheader('Legroom by Airline')
 plotlyStackedBars(
     directFlights,
     connectingFlights,
     group_col='airline',
-    sub_col='legroom',
+    sub_col='recliningAndLegroom',
     legend_title='Legroom',
     colors=customColors
 )
