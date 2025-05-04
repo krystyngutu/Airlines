@@ -37,6 +37,7 @@ def extractParensOrKeep(val):
     return match.group(1) if match else val.strip()
 
 df['recliningAndLegroom'] = df['recliningAndLegroom'].apply(extractParensOrKeep)
+df['legroom'] = df['legroom'].fillna(df['recliningAndLegroom'])
 
 # Derived features
 df['pricePerMinute'] = df['price'] / df['totalDurationMinutes']
@@ -377,7 +378,7 @@ plotlyStackedBars(
     directFlights,
     connectingFlights,
     group_col='airline',
-    sub_col='recliningAndLegroom',
+    sub_col='legroom',
     legend_title='Legroom',
     colors=customColors
 )
