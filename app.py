@@ -279,7 +279,7 @@ def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, 
             if cat not in counts.columns:
                 counts[cat] = 0
         
-        counts = counts.reindex(sorted(counts.columns), axis =1)
+        counts = counts[sorted(counts.columns)]
         return counts
 
     directCount = buildCount(directDF)
