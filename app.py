@@ -154,16 +154,16 @@ fig.update_layout(
             yanchor="top"
         )
     ],
-    xaxis_title="Departure Time",
+    xaxis_title="Departure Date",
     yaxis_title="Price (USD)",
-    legend_title_text="Toggle Airlines",
+    legend_title_text="Airlines",
     hovermode="closest",
     height=600,
     legend=dict(
         title_font=dict(size=12),
         font=dict(size=11),
         orientation="v",
-        x=1.02,
+        x=1,
         y=1,
         xanchor='left',
         yanchor='top',
