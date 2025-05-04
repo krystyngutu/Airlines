@@ -40,7 +40,7 @@ lufthansaGroup = ['Austrian', 'Brussels Airlines', 'Discover Airlines', 'Eurowin
 starAlliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zealand', 'ANA', 'Asiana Airlines', 'Austrian', 'Avianca', 'Brussels Airport', 'CopaAirlines', 'Croatia Airlines', 'Egyptair', 'Ethiopian Airlines', 'Eva Air', 'LOT Polish Airlines', 'Lufthansa', 'Shenzhen Airlines', 'Singapore Airlines', 'South African Airways', 'SWISS', 'Tap Air Portugal', 'Thai', 'Turkish Airlines', 'United']
 
 # Toggle for connected flights
-showConnected = st.toggle("Include Airlines with only Connecting Flights", value=False)
+showConnected = st.toggle("Include Airlines That Don't Fly Direct", value=False)
 
 # Filtering options
 if not showConnected:
@@ -141,12 +141,10 @@ fig.update_layout(
             buttons=[
                 dict(label="Direct Flights",
                      method="update",
-                     args=[{"visible": [True]*len(directTraces) + [False]*len(connectingTraces)},
-                           {"title": "Price Over Time (Direct Flights)"}]),
+                     args=[{"visible": [True]*len(directTraces) + [False]*len(connectingTraces)}]),
                 dict(label="Connecting Flights",
                      method="update",
-                     args=[{"visible": [False]*len(directTraces) + [True]*len(connectingTraces)},
-                           {"title": "Price Over Time (Connecting Flights)"}])
+                     args=[{"visible": [False]*len(directTraces) + [True]*len(connectingTraces)}])
             ],
             direction="down",
             showactive=True,
