@@ -534,8 +534,8 @@ def plotHeatmap(df):
     pivot = pivot.sort_index(axis=0)  # Alphabetical sort by airline
     return pivot
 
-    directData = buildHeatmapData(directDF)
-    connectingData = buildHeatmapData(connectingDF)
+    directData = plotHeatmap(directDF)
+    connectingData = plotHeatmap(connectingDF)
 
     traceDirect = go.Heatmap(
         z=directData.values,
