@@ -139,6 +139,63 @@ def classifyAircraft(aircraft):
     else:
         return "Other"
 
+# ----------------------
+# Price vs Legroom (sorted alphabetically)
+# ----------------------
+st.subheader("Price vs Legroom")
+
+# Filter valid values
+validLegroom = df[df['legroom'].notna() & df['price'].notna()]
+legroomGrouped = validLegroom.groupby('legroom')['price'].mean().reset_index()
+legroomGrouped = legroomGrouped.sort_values(by='legroom')
+
+fig_legroom = go.Figure(go.Scatter(
+    x=legroomGrouped['legroom'],
+    y=legroomGrouped['price'],
+    mode='lines+markers',
+    line=dict(color='#d71920'),
+    marker=dict(size=8)
+))
+
+fig_legroom.update_layout(
+    xaxis_title='Legroom (inches or category)',
+    yaxis_title='Average Price (USD)',
+    template='plotly_white',
+    height=450
+)
+
+st.plotly_chart(fig_legroom, use_container_width=True)
+
+# ----------------------
+# Price vs Aircraft (lumped groups)
+# ----------------------
+st.subheader("Price vs Aircraft Type")
+
+# Apply classifier
+df['airplaneLumped'] = df['airplane'].apply(classifyAircraft)
+
+# Filter and group
+validAircraft = df[df['airplaneLumped'].notna() & df['price'].notna()]
+aircraftGrouped = validAircraft.groupby('airplaneLumped')['price'].mean().reset_index()
+
+fig_aircraft = go.Figure(go.Scatter(
+    x=aircraftGrouped['airplaneLumped'],
+    y=aircraftGrouped['price'],
+    mode='lines+markers',
+    line=dict(color='#00235f'),
+    marker=dict(size=8)
+))
+
+fig_aircraft.update_layout(
+    xaxis_title='Aircraft Type',
+    yaxis_title='Average Price (USD)',
+    template='plotly_white',
+    height=450
+)
+
+st.plotly_chart(fig_aircraft, use_container_width=True)
+
+
 # 1. Price vs Duration (scatter)
 st.subheader("Price vs Duration")
 st.plotly_chart(go.Figure(
