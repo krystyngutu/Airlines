@@ -38,6 +38,7 @@ def extractParensOrKeep(val):
 
 df['recliningAndLegroom'] = df['recliningAndLegroom'].apply(extractParensOrKeep)
 df['legroom'] = df['legroom'].fillna(df['recliningAndLegroom'])
+df.loc[df['wifi'].str.startswith('Carbon', na=False), 'wifi'] = 'Unknown Wi-Fi Status'
 
 # Derived features
 df['pricePerMinute'] = df['price'] / df['totalDurationMinutes']
