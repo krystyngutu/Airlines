@@ -95,7 +95,19 @@ def classifyFlightType(row):
 df['flightType'] = df.apply(classifyFlightType, axis=1)
 
 # Clean legroom and drop unused columns
+# Fill missing with label, then relabel numeric values with 'inches'
 df['legroom'] = df['legroom'].fillna("Extra reclining seat")
+
+# Create a new cleaned column for display
+def format_legroom(val):
+    try:
+        val_float = float(val)
+        return f"{int(val_float)} inches"
+    except:
+        return str(val)
+
+df['legroom'] = df['legroom'].apply(format_legroom)
+
 if "recliningAndLegroom" in df.columns:
     df.drop(columns=["recliningAndLegroom"], inplace=True)
 
