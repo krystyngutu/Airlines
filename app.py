@@ -270,17 +270,21 @@ carbonFig.update_layout(
 st.plotly_chart(carbonFig, use_container_width=True)
 
 # Bar chart helper with toggle for Direct vs Connecting
-def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, colors, showDirect=False, showConnecting=True):
+def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, colors):
+    # Use session state to determine toggle behavior
+    filterChoice = st.session_state.get('filterChoice', 'Airlines That Fly Both Direct and Connecting')
+    showDirect = filterChoice == 'Airlines That Fly Both Direct and Connecting'
+    showConnecting = not showDirect
+
     def buildCount(df):
         if not pd.api.types.is_categorical_dtype(df[sub_col]):
             df[sub_col] = pd.Categorical(df[sub_col])  # Ensure consistency
         counts = df.groupby([group_col, sub_col]).size().unstack(fill_value=0)
 
-        # Ensure all subcategories are included
         for cat in df[sub_col].cat.categories:
             if cat not in counts.columns:
                 counts[cat] = 0
-        
+
         counts = counts.reindex(sorted(counts.columns), axis=1)
         return counts
 
@@ -301,7 +305,8 @@ def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, 
             legendgroup=f'{sub_category}',
             showlegend=True
         ))
-        
+        directTraces.append(showDirect)
+
     for i, sub_category in enumerate(connectingCount.columns):
         fig.add_trace(go.Bar(
             x=connectingCount.index,
@@ -312,6 +317,7 @@ def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, 
             legendgroup=f'{sub_category}',
             showlegend=True
         ))
+        connectingTraces.append(showConnecting)
 
     fig.update_layout(
         barmode='stack',
@@ -327,8 +333,8 @@ def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, 
             dict(
                 active=0 if showDirect else 1,
                 buttons=[
-                    dict(label="Direct Flights", method="update", args=[{"visible": directTraces}]),
-                    dict(label="Connecting Flights", method="update", args=[{"visible": connectingTraces}])
+                    dict(label="Direct Flights", method="update", args=[{"visible": directTraces + [False]*len(connectingTraces)}]),
+                    dict(label="Connecting Flights", method="update", args=[{"visible": [False]*len(directTraces) + connectingTraces}])
                 ],
                 direction="down",
                 showactive=True,
@@ -398,6 +404,17 @@ plotlyStackedBars(
     group_col='airline',
     sub_col='wifi',
     legend_title='WiFi',
+    colors=customColors
+)
+
+# Travel Class breakdown
+st.subheader('Travel Class by Airline')
+plotlyStackedBars(
+    directFlights,
+    connectingFlights,
+    group_col='airline',
+    sub_col='travelClass',
+    legend_title='Travel Class',
     colors=customColors
 )
 
