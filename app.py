@@ -109,7 +109,7 @@ airlineColors = {
 # ----------------------
 def createTraces(df, visibleAirlines, groupName):
     traces = []
-    addGroups = set()
+    addedGroups = set()
     for airline in df['airline'].unique():
         data = df[df['airline'] == airline]
         trace = go.Scatter(
@@ -127,49 +127,22 @@ def createTraces(df, visibleAirlines, groupName):
         addedGroups.add(airline)
     return traces
 
-# Define  airlines to include
+# Define airline groupings
 directAirlines = ['SWISS', 'United', 'Delta']
 lufthansaGroup = ['Austrian', 'Brussels Airlines', 'Discover Airlines', 'Eurowings', 'Edelweiss Air', 'ITA', 'Air Dolomiti', 'Lufthansa']
 starAlliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zealand', 'ANA', 'Asiana Airlines', 'Austrian', 'Avianca', 'Brussels Airport', 'CopaAirlines', 'Croatia Airlines', 'Egyptair', 'Ethiopian Airlines', 'Eva Air', 'LOT Polish Airlines', 'Lufthansa', 'Shenzhen Airlines', 'Singapore Airlines', 'South African Airways', 'SWISS', 'Tap Air Portugal', 'Thai', 'Turkish Airlines', 'United']
 
-# Create traces for both flight types
+# Create all traces
 directTraces = createTraces(directFlights[directFlights['airline'].isin(directAirlines)], visibleAirlines=directAirlines, groupName='Direct')
-connectingTraces = createTraces(connectingFlights)
 lufthansaTraces = createTraces(df[df['airline'].isin(lufthansaGroup)], visibleAirlines=[], groupName='Lufthansa Group')
 starAllianceTraces = createTraces(df[df['airline'].isin(starAlliance)], visibleAirlines=[], groupName='Star Alliance')
 
 fig = go.Figure()
 
-# Add direct traces (visible)
 for trace in directTraces + lufthansaTraces + starAllianceTraces:
-    trace.visible = True
-    fig.add_trace(trace)
-
-# Add connecting traces (hidden)
-for trace in connectingTraces:
-    trace.visible = False
     fig.add_trace(trace)
 
 fig.update_layout(
-    updatemenus=[
-        dict(
-            active=0,
-            buttons=[
-                dict(label="Direct Flights",
-                     method="update",
-                     args=[{"visible": [True]*len(directTraces) + [False]*len(connectingTraces)}]),
-                dict(label="Connecting Flights",
-                     method="update",
-                     args=[{"visible": [False]*len(directTraces) + [True]*len(connectingTraces)}])
-            ],
-            direction="down",
-            showactive=True,
-            x=0.5,
-            xanchor="center",
-            y=1.1,
-            yanchor="top"
-        )
-    ],
     xaxis_title="Departure Date",
     yaxis_title="Price (USD)",
     legend_title_text="Airlines",
