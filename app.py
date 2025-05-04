@@ -578,12 +578,10 @@ def plotHeatmap(directDF, connectingDF, valueCol, xaxisTitle, colorscale='Blues'
                 buttons=[
                     dict(label="Direct Flights",
                          method="update",
-                         args=[{"visible": [True, False]},
-                               {"title": title + " (Direct)"}]),
+                         args=[{"visible": [True, False]}]),
                     dict(label="Connecting Flights",
                          method="update",
-                         args=[{"visible": [False, True]},
-                               {"title": title + " (Connecting)"}])
+                         args=[{"visible": [False, True]}])
                 ],
                 direction="down",
                 showactive=True,
