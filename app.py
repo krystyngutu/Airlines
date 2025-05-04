@@ -40,7 +40,7 @@ lufthansaGroup = ['Austrian', 'Brussels Airlines', 'Discover Airlines', 'Eurowin
 starAlliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zealand', 'ANA', 'Asiana Airlines', 'Austrian', 'Avianca', 'Brussels Airport', 'CopaAirlines', 'Croatia Airlines', 'Egyptair', 'Ethiopian Airlines', 'Eva Air', 'LOT Polish Airlines', 'Lufthansa', 'Shenzhen Airlines', 'Singapore Airlines', 'South African Airways', 'SWISS', 'Tap Air Portugal', 'Thai', 'Turkish Airlines', 'United']
 
 # Toggle for connected flights
-showConnected = st.toggle("Include Airlines That Don't Fly Direct", value=False)
+showConnected = st.toggle("Include All Airlines", value=False)
 
 # Filtering options
 if not showConnected:
@@ -50,7 +50,7 @@ else:
     # User selects airline group when showing connecting flights
     filterChoice = st.selectbox(
         "Select airlines to view:",
-        options=['Direct Airlines Only', 'Lufthansa Group', 'Star Alliance']
+        options=['Airlines That Fly Both Direct and Connecting', 'Lufthansa Group', 'Star Alliance']
     )
 
     if filterChoice == 'Direct Airlines Only':
@@ -244,7 +244,7 @@ carbonFig.update_layout(
     ],
     xaxis_title="Carbon Emissions (kg CO₂)",
     yaxis_title="Price (USD)",
-    legend_title_text="Airline",
+    legend_title_text="Airlines",
     hovermode="closest",
     height=600,
     legend=dict(
@@ -329,6 +329,9 @@ def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, 
 
     st.plotly_chart(fig, use_container_width=True)
 
+# Group aircraft in connecting flights into categories
+connectingFlights['airplane'] = connectingFlights['airplane'].str.extract(r'^(Airbus|Boeing|Canadair|Embraer)', expand=False).fillna('Other')
+
 # Aircraft breakdown
 st.subheader('Aircraft by Airline')
 plotlyStackedBars(
@@ -336,7 +339,7 @@ plotlyStackedBars(
     connectingFlights,
     group_col='airline',
     sub_col='airplane',
-    legend_title='Airplane Type',
+    legend_title='Aircraft',
     colors=customColors
 )
 
