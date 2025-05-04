@@ -485,35 +485,31 @@ def plotBubbleChart(directDF, connectingDF, airline_col, metric_col, yaxis_title
     fig = go.Figure(data=[traceDirect, traceConnecting])
 
     fig.update_layout(
-        xaxis_title=dict(
-            title='Airline',
-            categoryorder='category ascending'
+    xaxis=dict(
+        title='Airline',
+        categoryorder='category ascending'
+    ),
+    yaxis_title=yaxis_title,
+    template='plotly_white',
+    showlegend=False,
+    width=width,
+    height=height,
+    updatemenus=[
+        dict(
+            active=0 if showDirect else 1,
+            buttons=[
+                dict(label="Direct Flights", method="update", args=[{"visible": [True, False]}]),
+                dict(label="Connecting Flights", method="update", args=[{"visible": [False, True]}])
+            ],
+            direction="down",
+            showactive=True,
+            x=0.5,
+            xanchor="center",
+            y=1.15,
+            yanchor="top"
         )
-        yaxis_title=yaxis_title,
-        template='plotly_white',
-        showlegend=False,
-        width=width,
-        height=height,
-        updatemenus=[
-            dict(
-                active=0 if showDirect else 1,
-                buttons=[
-                    dict(label="Direct Flights",
-                         method="update",
-                         args=[{"visible": [True, False]}]),
-                    dict(label="Connecting Flights",
-                         method="update",
-                         args=[{"visible": [False, True]}])
-                ],
-                direction="down",
-                showactive=True,
-                x=0.5,
-                xanchor="center",
-                y=1.15,
-                yanchor="top"
-            )
-        ]
-    )
+    ]
+)
 
     st.plotly_chart(fig, use_container_width=True)
 
