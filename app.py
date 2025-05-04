@@ -333,7 +333,6 @@ def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, 
 
 # Aircraft breakdown
 st.subheader('Aircraft by Airline')
-
 plotlyStackedBars(
     directFlights,
     connectingFlights,
@@ -345,7 +344,6 @@ plotlyStackedBars(
 
 # Legroom breakdown
 st.subheader('Legroom by Airline')
-
 plotlyStackedBars(
     directFlights,
     connectingFlights,
@@ -357,7 +355,6 @@ plotlyStackedBars(
 
 # WiFi breakdown
 st.subheader('WiFi by Airline')
-
 plotlyStackedBars(
     directFlights,
     connectingFlights,
