@@ -107,6 +107,10 @@ airlineColors = {
     'ITA': '#fbaa3f',                 # orange
     'Brussels Airlines': '#00235f',   # dark blue
     'Eurowings': '#1a75ff',           # light blue
+    'Aegean': '#767676',              # gray
+    'Air Canada': '#00235f',          # dark blue
+    'Tao Air Portugal': '#fbaa3f',    # orange
+    'Turkish Airlines': '#800080'     # purple    
 }
 
 # ----------------------
