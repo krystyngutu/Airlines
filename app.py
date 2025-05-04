@@ -291,6 +291,7 @@ def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, 
     directTraces = []
     connectingTraces = []
 
+    # Direct flight traces
     for i, sub_category in enumerate(directCount.columns):
         fig.add_trace(go.Bar(
             x=directCount.index,
@@ -301,7 +302,10 @@ def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, 
             legendgroup=f'{sub_category}',
             showlegend=True
         ))
-        
+        directTraces.append(showDirect)
+        connectingTraces.append(False)
+    
+    # Connecting flight traces
     for i, sub_category in enumerate(connectingCount.columns):
         fig.add_trace(go.Bar(
             x=connectingCount.index,
@@ -312,6 +316,8 @@ def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, 
             legendgroup=f'{sub_category}',
             showlegend=True
         ))
+        directTraces.append(False)
+        connectingTraces.append(showConnecting)
 
     fig.update_layout(
         barmode='stack',
