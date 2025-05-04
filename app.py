@@ -118,7 +118,7 @@ airlineColors = {
 # ----------------------
 def createTraces(df):
     traces = []
-    for airline in df['airline'].unique():
+    for airline in sorted (df['airline'].unique()):
         data = df[df['airline'] == airline]
         traces.append(go.Scatter(
             x=data['departureTime'],
