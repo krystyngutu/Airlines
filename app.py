@@ -53,7 +53,7 @@ lufthansaGroup = ['Austrian', 'Brussels Airlines', 'Discover Airlines', 'Eurowin
 starAlliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zealand', 'ANA', 'Asiana Airlines', 'Austrian', 'Avianca', 'Brussels Airport', 'CopaAirlines', 'Croatia Airlines', 'Egyptair', 'Ethiopian Airlines', 'Eva Air', 'LOT Polish Airlines', 'Lufthansa', 'Shenzhen Airlines', 'Singapore Airlines', 'South African Airways', 'SWISS', 'Tap Air Portugal', 'Thai', 'Turkish Airlines', 'United']
 
 # Toggle for connected flights
-showConnected = st.toggle("Include All Airlines", value=False)
+showConnected = st.toggle("Include All Airlines", value=True)
 
 # Filtering options
 if not showConnected:
@@ -61,7 +61,7 @@ if not showConnected:
     filteredAirlines = directAirlines
 else:
     # User selects airline group when showing connecting flights
-    filterChoice = st.selectbox("Select airlines to view:", options=['Airlines That Fly Both Direct and Connecting', 'Lufthansa Group', 'Star Alliance'])
+    filterChoice = st.selectbox("Select airlines to view:", options=['Airlines That Fly Both Direct and Connecting', 'Lufthansa Group', 'Star Alliance'], index=1)
 
     if filterChoice == 'Lufthansa Group':
         filteredAirlines = lufthansaGroup
@@ -138,18 +138,18 @@ fig = go.Figure()
 
 # Add direct traces (visible)
 for trace in directTraces:
-    trace.visible=True
+    trace.visible=False
     fig.add_trace(trace)
 
 # Add connecting traces (hidden)
 for trace in connectingTraces:
-    trace.visible=False
+    trace.visible=True
     fig.add_trace(trace)
 
 fig.update_layout(
     updatemenus=[
         dict(
-            active=0,
+            active=1,
             buttons=[
                 dict(label='Direct Flights',
                      method='update',
@@ -223,18 +223,18 @@ carbonFig = go.Figure()
 
 # Add direct traces (visible)
 for trace in carbonDirectTraces:
-    trace.visible = True
+    trace.visible = False
     carbonFig.add_trace(trace)
 
 # Add connecting traces (hidden initially)
 for trace in carbonConnectingTraces:
-    trace.visible = False
+    trace.visible = True
     carbonFig.add_trace(trace)
 
 carbonFig.update_layout(
     updatemenus=[
         dict(
-            active=0,
+            active=1,
             buttons=[
                 dict(label="Direct Flights",
                      method="update",
@@ -327,7 +327,7 @@ def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, 
         height=500,
         updatemenus=[
             dict(
-                active=0,
+                active=1,
                 buttons=[
                     dict(label="Direct Flights", method="update", args=[{"visible": directTraces}]),
                     dict(label="Connecting Flights", method="update", args=[{"visible": connectingTraces}])
@@ -458,7 +458,7 @@ def plotBubbleChart(directDF, connectingDF, airline_col, metric_col, yaxis_title
         height=height,
         updatemenus=[
             dict(
-                active=0,
+                active=1,
                 buttons=[
                     dict(label="Direct Flights",
                          method="update",
@@ -541,7 +541,7 @@ def plotHeatmap(directDF, connectingDF, valueCol, xaxisTitle, colorscale='Blues'
         height=height,
         updatemenus=[
             dict(
-                active=0,
+                active=1,
                 buttons=[
                     dict(label="Direct Flights",
                          method="update",
