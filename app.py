@@ -401,17 +401,6 @@ plotlyStackedBars(
     colors=customColors
 )
 
-# Travel Class breakdown
-st.subheader('Travel Class by Airline')
-plotlyStackedBars(
-    directFlights,
-    connectingFlights,
-    group_col='airline',
-    sub_col='travelClass',
-    legend_title='Travel Class',
-    colors=customColors
-)
-
 # Bubble chart helper function with flight type toggle
 def plotBubbleChart(directDF, connectingDF, airline_col, metric_col, yaxis_title, width=800, height=500):
     def buildBubble(df):
