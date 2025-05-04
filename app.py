@@ -511,7 +511,7 @@ def plotBubbleChart(directDF, connectingDF, airline_col, metric_col, yaxis_title
     ]
 )
 
-    st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig, use_container_width=True)
 
 # Bubble charts
 # Flight duration breakdown
