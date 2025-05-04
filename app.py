@@ -167,7 +167,6 @@ fig.update_layout(
         y=1,
         xanchor='left',
         yanchor='top',
-        bordercolor="LightGray",
         borderwidth=1,
         itemclick='toggle',
         itemdoubleclick='toggleothers'
