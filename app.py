@@ -534,12 +534,19 @@ def plotHeatmap(directDF, connectingDF, valueCol, xaxisTitle, colorscale='Blues'
         df_clean = df[[valueCol, 'airline']].dropna()
         if df_clean.empty:
             return pd.DataFrame()
-        df_clean['airline'] = pd.Categorical(df_clean['airline'], categories=sorted(df_clean['airline'].unique()), ordered=True)
+        
+        # Enforce airline category order
+        airline_order = sorted(df_clean['airline'].unique())
+        df_clean['airline'] = pd.Categorical(df_clean['airline'], categories=airline_order, ordered=True)
+        
         binned_col = pd.cut(df_clean[valueCol], bins=10)
         pivot = df_clean.groupby(['airline', binned_col]).size().unstack(fill_value=0)
-        pivot['Total'] = pivot.sum(axis=1)
-        pivot = pivot.drop(columns="Total")
-        pivot = pivot.sort_index()  # Alphabetical
+    
+        # Drop totals column if it exists and sort by airline category order
+        if 'Total' in pivot.columns:
+            pivot = pivot.drop(columns="Total")
+        
+        pivot = pivot.sort_index(level='airline')  # Sort rows by airline index
         return pivot
 
     directData = buildHeatmapData(directDF)
@@ -564,8 +571,6 @@ def plotHeatmap(directDF, connectingDF, valueCol, xaxisTitle, colorscale='Blues'
     ) if not connectingData.empty else go.Heatmap(z=[[0]], visible=False)
 
     fig = go.Figure(data=[traceDirect, traceConnecting])
-
-    title = f"{xaxisTitle} by Airline"
 
     fig.update_layout(
         title=title + (" (Direct)" if showDirect else " (Connecting)"),
