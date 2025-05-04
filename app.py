@@ -279,14 +279,13 @@ def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, 
             if cat not in counts.columns:
                 counts[cat] = 0
         
-        counts = counts[sorted(counts.columns)]
+        counts = counts.reindex(sorted(counts.columns), axis=1)
         return counts
 
     directCount = buildCount(directDF)
     connectingCount = buildCount(connectingDF)
 
     fig = go.Figure()
-
     directTraces = []
     connectingTraces = []
 
@@ -296,7 +295,9 @@ def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, 
             y=directCount[sub_category],
             name=sub_category,
             marker_color=colors[i % len(colors)],
-            visible=True
+            visible=True,
+            legendgroup=sub_category,
+            showlegend=True
         ))
         directTraces.append(True)
         connectingTraces.append(False)
@@ -307,7 +308,9 @@ def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, 
             y=connectingCount[sub_category],
             name=sub_category,
             marker_color=colors[i % len(colors)],
-            visible=False
+            visible=False,
+            legendgroup=sub_category,
+            showlegend=False
         ))
         directTraces.append(False)
         connectingTraces.append(True)
@@ -326,12 +329,8 @@ def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, 
             dict(
                 active=0,
                 buttons=[
-                    dict(label="Direct Flights",
-                         method="update",
-                         args=[{"visible": directTraces}]),
-                    dict(label="Connecting Flights",
-                         method="update",
-                         args=[{"visible": connectingTraces}])
+                    dict(label="Direct Flights", method="update", args=[{"visible": directTraces}]),
+                    dict(label="Connecting Flights", method="update", args=[{"visible": connectingTraces}])
                 ],
                 direction="down",
                 showactive=True,
