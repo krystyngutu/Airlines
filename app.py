@@ -303,7 +303,6 @@ def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, 
 
     fig.update_layout(
         barmode='stack',
-        title='Aircraft by Airline',
         xaxis_title=group_col.capitalize(),
         yaxis_title='Number of Flights',
         legend_title=legend_title,
@@ -334,7 +333,6 @@ def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, 
     )
 
     st.plotly_chart(fig, use_container_width=True)
-
 
 # Standardize aircraft types for connecting flights
 def classifyAircraft(aircraft):
