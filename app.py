@@ -138,7 +138,7 @@ for trace in connectingTraces:
     fig.add_trace(trace)
 
 fig.update_layout(
-    updatesmenus=[
+    updatemenus=[
         dict(
             active=0,
             buttons=[
