@@ -598,11 +598,13 @@ def plotHeatmap(directDF, connectingDF, valueCol, xaxisTitle, colorscale='Blues'
 
 # Heatmaps
 # Carbon Difference Percent by Airline
-plotHeatmap(directFlights, connectingFlights, 'carbonDifferencePercent',
-           'Carbon Difference Percent', colorscale='Reds')
+st.subheader('Carbon Difference %')
+plotHeatmap(directFlights, connectingFlights, 'carbonDifferencePercent', colorscale='Reds')
 
 # Price by Airline
-plotHeatmap(directFlights, connectingFlights, 'price', 'Price (USD)', colorscale='Reds')
+st.subheader('Price (USD)')
+plotHeatmap(directFlights, connectingFlights, 'price', colorscale='Reds')
 
 # Duration Time by Airline
-plotHeatmap(directFlights, connectingFlights, 'durationTime', 'Duration (min)', colorscale='Reds')
+st.subheader('Duration Time')
+plotHeatmap(directFlights, connectingFlights, 'durationTime', colorscale='Reds')
