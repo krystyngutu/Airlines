@@ -360,8 +360,8 @@ def classifyAircraft(aircraft):
     else:
         return "Other"
 
-directFlights['airplane'] = sorted(directFlights['airplane'].apply(classifyAircraft))
-connectingFlights['airplane'] = sorted(connectingFlights['airplane'].apply(classifyAircraft))
+directFlights['airplane'] = directFlights['airplane'].apply(classifyAircraft)
+connectingFlights['airplane'] = connectingFlights['airplane'].apply(classifyAircraft)
 
 # Aircraft breakdown
 st.subheader('Aircraft by Airline')
