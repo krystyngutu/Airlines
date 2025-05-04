@@ -270,7 +270,7 @@ carbonFig.update_layout(
 st.plotly_chart(carbonFig, use_container_width=True)
 
 # Bar chart helper with toggle for Direct vs Connecting
-def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, colors):
+def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, colors, showDirect=True, showConnecting=False):
     def buildCount(df):
         if not pd.api.types.is_categorical_dtype(df[sub_col]):
             df[sub_col] = pd.Categorical(df[sub_col])  # Ensure consistency
@@ -297,25 +297,21 @@ def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, 
             y=directCount[sub_category],
             name=f'{sub_category}',
             marker_color=colors[i % len(colors)],
-            visible=True,
+            visible=showDirect,
             legendgroup=f'{sub_category}',
             showlegend=True
         ))
-        directTraces.append(True)
-        connectingTraces.append(False)
-
+        
     for i, sub_category in enumerate(connectingCount.columns):
         fig.add_trace(go.Bar(
             x=connectingCount.index,
             y=connectingCount[sub_category],
             name=f'{sub_category}',
             marker_color=colors[i % len(colors)],
-            visible=False,
+            visible=showConnecting,
             legendgroup=f'{sub_category}',
             showlegend=True
         ))
-        directTraces.append(False)
-        connectingTraces.append(True)
 
     fig.update_layout(
         barmode='stack',
