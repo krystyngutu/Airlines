@@ -105,8 +105,8 @@ airlineColors = {
     'Air Dolomiti': '#32cd32',        # lime green
     'Austrian': '#c3f550',            # lime
     'ITA': '#fbaa3f',                 # orange
-    'Brussels Airlines': '#ffdade',   # pink
-    'Eurowings': '#ffffff',           # black
+    'Brussels Airlines': '#00235f',   # dark blue
+    'Eurowings': '#1a75ff',           # light blue
 }
 
 # ----------------------
