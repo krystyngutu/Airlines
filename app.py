@@ -118,7 +118,6 @@ airlineColors = {
 # ----------------------
 # PRICE COMPARISON PLOTS
 # ----------------------
-st.subheader("Price Comparisons")
 
 # Drop rows with missing values for key comparisons
 priceDF = df.dropna(subset=['price', 'durationMinutes', 'carbonEmissionsThisFlight', 'legroom', 'travelClass', 'airplane'])
@@ -127,7 +126,7 @@ priceDF = df.dropna(subset=['price', 'durationMinutes', 'carbonEmissionsThisFlig
 st.subheader("Price vs Duration")
 st.plotly_chart(go.Figure(
     data=[go.Scatter(
-        x=priceDF['durationMinutes'],
+        x=priceDF['totalDurationMinutes'],
         y=priceDF['price'],
         mode='markers',
         marker=dict(color='blue'),
