@@ -79,7 +79,11 @@ else:
 
 # Filter DataFrame based on the selected airline group
 df_filtered = df[df['airline'].isin(filteredAirlines)].copy()
-df_filtered['airplaneLumped'] = df_filtered['airplane'].apply(classifyAircraft)
+
+# Only add airplaneLumped if not already created
+if 'airplaneLumped' not in df_filtered.columns:
+    df_filtered['airplaneLumped'] = df_filtered['airplane'].apply(classifyAircraft)
+
 
 # Define airports to include
 nycAirports = ["JFK", "EWR", "LGA"]
