@@ -306,11 +306,11 @@ def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, 
         fig.add_trace(go.Bar(
             x=connectingCount.index,
             y=connectingCount[sub_category],
-            name='{sub_category} (Connecting)',
+            name='{sub_category}',
             marker_color=colors[i % len(colors)],
             visible=False,
-            legendgroup='{sub_category} (Connecting)',
-            showlegend=False
+            legendgroup='{sub_category}',
+            showlegend=True
         ))
         directTraces.append(False)
         connectingTraces.append(True)
