@@ -118,7 +118,7 @@ airlineColors = {
 # ----------------------
 def createTraces(df):
     traces = []
-    for airline in sorted (df['airline'].unique()):
+    for airline in sorted(df['airline'].unique()):
         data = df[df['airline'] == airline]
         traces.append(go.Scatter(
             x=data['departureTime'],
@@ -195,7 +195,7 @@ st.subheader("Price vs Carbon Emissions")
 carbonDirectTraces = []
 carbonConnectingTraces = []
 
-for airline in df['airline'].unique():
+for airline in sorted(df['airline'].unique()):
     # Direct
     dataDirect = directFlights[directFlights['airline'] == airline]
     carbonDirectTraces.append(go.Scatter(
@@ -288,7 +288,7 @@ def plotlyStackedBars(directDF, connectingDF, group_col, sub_col, legend_title, 
     directTraces = []
     connectingTraces = []
 
-    for i, sub_category in enumerate(directCount.columns):
+    for i, sub_category in sorted(enumerate(directCount.columns)):
         fig.add_trace(go.Bar(
             x=directCount.index,
             y=directCount[sub_category],
