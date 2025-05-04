@@ -143,10 +143,10 @@ fig.update_layout(
             active=0,
             buttons=[
                 dict(label='Direct Flights',
-                     method='updates',
+                     method='update',
                      args=[{'visible':[True]*len(directTraces) + [False]*len(connectingTraces)}]),
                 dict(label='Connecting Flights',
-                     method='updates',
+                     method='update',
                      args=[{'visible':[False]*len(directTraces) + [True]*len(connectingTraces)}])
             ],
             direction='down',
