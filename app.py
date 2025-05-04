@@ -22,9 +22,9 @@ df['totalDurationMinutes'] = pd.to_numeric(df['totalTripDuration'], errors='coer
 df['carbonEmissionsThisFlight'] = pd.to_numeric(df.get('carbonEmissionsThisFlight'), errors='coerce')
 
 # Extract features from extensions if present
-if 'extentions' in df.columns:
-    df['extentions'] = df['extentions'].fillna(',')
-    splitExt = df['extentions'].str.split(',', n=2, expand=True).apply(lambda col: col.str.strip())
+if 'extensions' in df.columns:
+    df['extensions'] = df['extensions'].fillna(',')
+    splitExt = df['extensions'].str.split(',', n=2, expand=True).apply(lambda col: col.str.strip())
     df['recliningAndLegroom'] = splitExt[0]
     df['wifi'] = splitExt[1]
     df['carbonEmssionsEstimate'] = splitExt[2]
