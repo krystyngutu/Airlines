@@ -522,9 +522,8 @@ plotBubbleChart(directFlights, connectingFlights, 'airline', 'carbonEmissionsThi
 # Carbon difference breakdown
 st.subheader('Carbon Difference')
 plotBubbleChart(directFlights, connectingFlights, 'airline', 'carbonDifferencePercent', 'Carbon Difference')
-
-# Heatmap helper function with flight type toggle
-def plotHeatmap(directDF, connectingDF, valueCol, xaxisTitle, colorscale='Blues', width=800, height=500):
+# Heatmap helper function with flight type toggle (no internal title)
+def plotHeatmap(directDF, connectingDF, valueCol, colorscale='Blues', width=800, height=500):
     # Determine toggle state
     filterChoice = st.session_state.get('filterChoice', 'Airlines That Fly Both Direct and Connecting')
     showDirect = filterChoice == 'Airlines That Fly Both Direct and Connecting'
@@ -534,47 +533,41 @@ def plotHeatmap(directDF, connectingDF, valueCol, xaxisTitle, colorscale='Blues'
         df_clean = df[[valueCol, 'airline']].dropna()
         if df_clean.empty:
             return pd.DataFrame()
-        
-        # Enforce airline category order
+
+        # Sort airline names alphabetically
+        df_clean['airline'] = df_clean['airline'].astype(str)
         airline_order = sorted(df_clean['airline'].unique())
         df_clean['airline'] = pd.Categorical(df_clean['airline'], categories=airline_order, ordered=True)
-        
+
         binned_col = pd.cut(df_clean[valueCol], bins=10)
         pivot = df_clean.groupby(['airline', binned_col]).size().unstack(fill_value=0)
-    
-        # Drop totals column if it exists and sort by airline category order
-        if 'Total' in pivot.columns:
-            pivot = pivot.drop(columns="Total")
-        
-        pivot = pivot.sort_index(level='airline')  # Sort rows by airline index
+        pivot = pivot.sort_index(level=0)
         return pivot
 
     directData = buildHeatmapData(directDF)
     connectingData = buildHeatmapData(connectingDF)
 
     traceDirect = go.Heatmap(
-        z=directData.values,
-        x=[str(interval) for interval in directData.columns],
-        y=directData.index,
+        z=directData.values if not directData.empty else [[0]],
+        x=[str(col) for col in directData.columns] if not directData.empty else [],
+        y=directData.index.tolist() if not directData.empty else [],
         colorscale=colorscale,
         colorbar=dict(title='Number of Flights'),
         visible=showDirect
-    ) if not directData.empty else go.Heatmap(z=[[0]], visible=False)
+    )
 
     traceConnecting = go.Heatmap(
-        z=connectingData.values,
-        x=[str(interval) for interval in connectingData.columns],
-        y=connectingData.index,
+        z=connectingData.values if not connectingData.empty else [[0]],
+        x=[str(col) for col in connectingData.columns] if not connectingData.empty else [],
+        y=connectingData.index.tolist() if not connectingData.empty else [],
         colorscale=colorscale,
         colorbar=dict(title='Number of Flights'),
         visible=showConnecting
-    ) if not connectingData.empty else go.Heatmap(z=[[0]], visible=False)
+    )
 
     fig = go.Figure(data=[traceDirect, traceConnecting])
-
     fig.update_layout(
-        title=title + (" (Direct)" if showDirect else " (Connecting)"),
-        xaxis_title=xaxisTitle,
+        xaxis_title='Value Bin',
         yaxis_title='Airline',
         template='plotly_white',
         width=width,
@@ -583,12 +576,8 @@ def plotHeatmap(directDF, connectingDF, valueCol, xaxisTitle, colorscale='Blues'
             dict(
                 active=0 if showDirect else 1,
                 buttons=[
-                    dict(label="Direct Flights",
-                         method="update",
-                         args=[{"visible": [True, False]}]),
-                    dict(label="Connecting Flights",
-                         method="update",
-                         args=[{"visible": [False, True]}])
+                    dict(label="Direct Flights", method="update", args=[{"visible": [True, False]}]),
+                    dict(label="Connecting Flights", method="update", args=[{"visible": [False, True]}])
                 ],
                 direction="down",
                 showactive=True,
@@ -602,15 +591,13 @@ def plotHeatmap(directDF, connectingDF, valueCol, xaxisTitle, colorscale='Blues'
 
     st.plotly_chart(fig, use_container_width=True)
 
-# Heatmaps
-# Carbon Difference Percent by Airline
+
+# ----------- Heatmap Calls (only subheaders shown) -----------
 st.subheader('Carbon Difference (Percentage)')
-plotHeatmap(directFlights, connectingFlights, 'carbonDifferencePercent', 'Carbon Difference Percent', colorscale='Reds')
+plotHeatmap(directFlights, connectingFlights, 'carbonDifferencePercent', colorscale='Reds')
 
-# Price by Airline
 st.subheader('Price (USD)')
-plotHeatmap(directFlights, connectingFlights, 'price', 'Price (USD)', colorscale='Reds')
+plotHeatmap(directFlights, connectingFlights, 'price', colorscale='Reds')
 
-# Duration Time by Airline
 st.subheader('Duration Time')
-plotHeatmap(directFlights, connectingFlights, 'durationTime', 'Total Duration in Minutes', colorscale='Reds')
+plotHeatmap(directFlights, connectingFlights, 'durationTime', colorscale='Reds')
