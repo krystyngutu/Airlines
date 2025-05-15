@@ -61,8 +61,8 @@ y_pred = model.predict(X_test)
 
 rmse = np.sqrt(mean_squared_error(y_test, y_pred))
 st.markdown(f"**Model RMSE**: ${rmse:.2f}")
-best_hour = int(X.groupby('hour')['price'].mean().idxmin())
-best_month = int(X.groupby('month')['price'].mean().idxmin())
+best_hour = int(df.groupby('hour')['price'].mean().idxmin())
+best_month = int(df.groupby('month')['price'].mean().idxmin())
 st.success(f"📌 Best time to book: **Hour {best_hour}:00**, Month {best_month}")
 
 # --------------------------
