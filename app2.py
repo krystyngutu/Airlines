@@ -232,7 +232,5 @@ fig_time = px.bar(
 )
 
 # Display the chart in Streamlit
-st.plotly_chart(fig_time, use_container_width=True)
-
 st.plotly_chart(fig_day, use_container_width=True)
 st.plotly_chart(fig_time, use_container_width=True)
