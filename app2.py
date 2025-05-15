@@ -92,8 +92,8 @@ df = df[df['airline'].isin(selected_airlines)]
 # PRICE TRENDS
 # --------------------------
 st.subheader("📈 Historical Price Trends")
-price_by_date = df.groupby('date')['price'].mean().reset_index()
-fig1 = px.line(price_by_date, x='date', y='price', title="Average Ticket Price Over Time", color_discrete_sequence=color_palette)
+price_by_date = df.groupby(['date', 'airline'])['price'].mean().reset_index()
+fig1 = px.line(price_by_date, x='date', y='price', color='airline', title="Average Ticket Price Over Time", color_discrete_sequence=color_palette)
 st.plotly_chart(fig1, use_container_width=True)
 
 # --------------------------
@@ -127,8 +127,8 @@ st.success(f"📌 Best time to book: **Hour {best_hour}:00**, Month {best_month}
 # --------------------------
 st.subheader("🌍 Carbon Emissions Overview")
 df['aircraftType'] = df['aircraft'].apply(classify_aircraft)
-emissions_by_aircraft = df.groupby('aircraftType')['carbonEmissionsThisFlight'].mean().sort_values()
-fig2 = px.bar(emissions_by_aircraft, title="Average CO₂ Emissions by Aircraft Type", labels={"value": "Avg CO₂ (kg)", "aircraftType": "Aircraft"}, color_discrete_sequence=color_palette)
+emissions_by_aircraft = df.groupby(['aircraftType', 'airline'])['carbonEmissionsThisFlight'].mean().reset_index()
+fig2 = px.bar(emissions_by_aircraft, x='aircraftType', y='carbonEmissionsThisFlight', color='airline', title="Average CO₂ Emissions by Aircraft Type and Airline", labels={"carbonEmissionsThisFlight": "Avg CO₂ (kg)"}, barmode='group', color_discrete_sequence=color_palette)
 st.plotly_chart(fig2, use_container_width=True)
 
 # --------------------------
@@ -163,19 +163,19 @@ else:
 # --------------------------
 st.subheader("♻️ Sustainability-Focused Insights")
 df['sustainabilityScore'] = 100 - (df['carbonEmissionsThisFlight'] / df['durationMinutes']) * 10
-score_df = df.groupby('airline')['sustainabilityScore'].mean().sort_values(ascending=False)
-fig3 = px.bar(score_df, title="Sustainability Score by Airline", labels={"value": "Score", "airline": "Airline"}, color_discrete_sequence=color_palette)
+score_df = df.groupby('airline')['sustainabilityScore'].mean().sort_values(ascending=False).reset_index()
+fig3 = px.bar(score_df, x='airline', y='sustainabilityScore', title="Sustainability Score by Airline", labels={"sustainabilityScore": "Score"}, color='airline', color_discrete_sequence=color_palette)
 st.plotly_chart(fig3, use_container_width=True)
 
 # --------------------------
 # TIME-BASED PRICE DISTRIBUTION
 # --------------------------
 st.subheader("🕒 Price Distribution by Time of Day and Weekday")
-price_by_day = df.groupby('weekday')['price'].mean().reindex(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
-price_by_time = df.groupby('timeOfDay')['price'].mean().reindex(['Morning', 'Afternoon', 'Evening', 'Night'])
+price_by_day = df.groupby(['weekday', 'airline'])['price'].mean().reset_index()
+price_by_time = df.groupby(['timeOfDay', 'airline'])['price'].mean().reset_index()
 
-fig_day = px.bar(price_by_day, title="Average Price by Day of Week", labels={"value": "Avg Price", "index": "Day"}, color_discrete_sequence=color_palette)
-fig_time = px.bar(price_by_time, title="Average Price by Time of Day", labels={"value": "Avg Price", "index": "Time of Day"}, color_discrete_sequence=color_palette)
+fig_day = px.bar(price_by_day, x='weekday', y='price', color='airline', title="Average Price by Day of Week and Airline", labels={"price": "Avg Price"}, barmode='group', category_orders={"weekday": ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']}, color_discrete_sequence=color_palette)
+fig_time = px.bar(price_by_time, x='timeOfDay', y='price', color='airline', title="Average Price by Time of Day and Airline", labels={"price": "Avg Price"}, barmode='group', category_orders={"timeOfDay": ['Morning', 'Afternoon', 'Evening', 'Night']}, color_discrete_sequence=color_palette)
 
 st.plotly_chart(fig_day, use_container_width=True)
 st.plotly_chart(fig_time, use_container_width=True)
