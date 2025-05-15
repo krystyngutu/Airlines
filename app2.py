@@ -152,8 +152,8 @@ st.subheader("⛽ Route Efficiency Analytics")
 
 df['efficiency'] = df['durationMinutes'] / df['carbonEmissionsThisFlight']
 # Detect possible origin/destination columns
-origin_col = next((col for col in df.columns if 'origin' in col.lower()), None)
-destination_col = next((col for col in df.columns if 'destination' in col.lower()), None)
+origin_col = next((col for col in df.columns if 'departureAairportID' in col.lower()), None)
+destination_col = next((col for col in df.columns if 'arrivalAirportID' in col.lower()), None)
 
 if origin_col and destination_col:
     efficiency_by_route = (
