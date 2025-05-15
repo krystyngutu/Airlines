@@ -21,7 +21,25 @@ direct_airlines = ['SWISS', 'United', 'Delta']
 lufthansa_group = ['Austrian', 'Brussels Airlines', 'Discover Airlines', 'Eurowings', 'Edelweiss Air', 'ITA', 'Air Dolomiti', 'Lufthansa', 'SWISS']
 star_alliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zealand', 'ANA', 'Asiana Airlines', 'Austrian', 'Avianca', 'Brussels Airlines', 'CopaAirlines', 'Croatia Airlines', 'Egyptair', 'Ethiopian Airlines', 'Eva Air', 'LOT Polish Airlines', 'Lufthansa', 'Shenzhen Airlines', 'Singapore Airlines', 'South African Airways', 'SWISS', 'Tap Air Portugal', 'Thai', 'Turkish Airlines', 'United']
 
-color_palette = ['#00235f', '#f9ba00', '#ff6361', '#58508d', '#bc5090', '#ffa600']
+custom_colors = ['#d71920', '#00235f', '#f9ba00', '#660000', '#800080', '#3366ff',
+                '#c3f550', '#fbaa3f', '#000000']
+
+airline_colors = {
+    'Lufthansa': '#ffd700',
+    'SWISS': '#d71920',
+    'Delta': '#00235f',
+    'United': '#1a75ff',
+    'Edelweiss Air': '#800080',
+    'Air Dolomiti': '#32cd32',
+    'Austrian': '#c3f550',
+    'ITA': '#fbaa3f',
+    'Brussels Airlines': '#00235f',
+    'Eurowings': '#1a75ff',
+    'Aegean': '#767676',
+    'Air Canada': '#00235f',
+    'Tap Air Portugal': '#fbaa3f',
+    'Turkish Airlines': '#800080'
+}
 
 # ----------------------
 # HELPER FUNCTIONS
@@ -93,7 +111,7 @@ df = df[df['airline'].isin(selected_airlines)]
 # --------------------------
 st.subheader("📈 Historical Price Trends")
 price_by_date = df.groupby(['date', 'airline'])['price'].mean().reset_index()
-fig1 = px.line(price_by_date, x='date', y='price', color='airline', title="Average Ticket Price Over Time", color_discrete_sequence=color_palette)
+fig1 = px.line(price_by_date, x='date', y='price', color='airline', title="Average Ticket Price Over Time", color_discrete_map=airline_colors)
 st.plotly_chart(fig1, use_container_width=True)
 
 # --------------------------
@@ -128,7 +146,7 @@ st.success(f"📌 Best time to book: **Hour {best_hour}:00**, Month {best_month}
 st.subheader("🌍 Carbon Emissions Overview")
 df['aircraftType'] = df['aircraft'].apply(classify_aircraft)
 emissions_by_aircraft = df.groupby(['aircraftType', 'airline'])['carbonEmissionsThisFlight'].mean().reset_index()
-fig2 = px.bar(emissions_by_aircraft, x='aircraftType', y='carbonEmissionsThisFlight', color='airline', title="Average CO₂ Emissions by Aircraft Type and Airline", labels={"carbonEmissionsThisFlight": "Avg CO₂ (kg)"}, barmode='group', color_discrete_sequence=color_palette)
+fig2 = px.bar(emissions_by_aircraft, x='aircraftType', y='carbonEmissionsThisFlight', color='airline', title="Average CO₂ Emissions by Aircraft Type and Airline", labels={"carbonEmissionsThisFlight": "Avg CO₂ (kg)"}, barmode='group', color_discrete_map=airline_colors)
 st.plotly_chart(fig2, use_container_width=True)
 
 # --------------------------
@@ -164,7 +182,7 @@ else:
 st.subheader("♻️ Sustainability-Focused Insights")
 df['sustainabilityScore'] = 100 - (df['carbonEmissionsThisFlight'] / df['durationMinutes']) * 10
 score_df = df.groupby('airline')['sustainabilityScore'].mean().sort_values(ascending=False).reset_index()
-fig3 = px.bar(score_df, x='airline', y='sustainabilityScore', title="Sustainability Score by Airline", labels={"sustainabilityScore": "Score"}, color='airline', color_discrete_sequence=color_palette)
+fig3 = px.bar(score_df, x='airline', y='sustainabilityScore', title="Sustainability Score by Airline", labels={"sustainabilityScore": "Score"}, color='airline', color_discrete_map=airline_colors)
 st.plotly_chart(fig3, use_container_width=True)
 
 # --------------------------
@@ -174,19 +192,8 @@ st.subheader("🕒 Price Distribution by Time of Day and Weekday")
 price_by_day = df.groupby(['weekday', 'airline'])['price'].mean().reset_index()
 price_by_time = df.groupby(['timeOfDay', 'airline'])['price'].mean().reset_index()
 
-fig_day = px.bar(price_by_day, x='weekday', y='price', color='airline', title="Average Price by Day of Week and Airline", labels={"price": "Avg Price"}, barmode='group', category_orders={"weekday": ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']}, color_discrete_sequence=color_palette)
-fig_time = px.bar(price_by_time, x='timeOfDay', y='price', color='airline', title="Average Price by Time of Day and Airline", labels={"price": "Avg Price"}, barmode='group', category_orders={"timeOfDay": ['Morning', 'Afternoon', 'Evening', 'Night']}, color_discrete_sequence=color_palette)
+fig_day = px.bar(price_by_day, x='weekday', y='price', color='airline', title="Average Price by Day of Week and Airline", labels={"price": "Avg Price"}, barmode='group', category_orders={"weekday": ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']}, color_discrete_map=airline_colors)
+fig_time = px.bar(price_by_time, x='timeOfDay', y='price', color='airline', title="Average Price by Time of Day and Airline", labels={"price": "Avg Price"}, barmode='group', category_orders={"timeOfDay": ['Morning', 'Afternoon', 'Evening', 'Night']}, color_discrete_map=airline_colors)
 
 st.plotly_chart(fig_day, use_container_width=True)
 st.plotly_chart(fig_time, use_container_width=True)
-
-# --------------------------
-# MAP OF ROUTES (if coords available)
-# --------------------------
-st.subheader("🗺️ Route Map Visualization")
-if {'departureLat', 'departureLon', 'arrivalLat', 'arrivalLon'}.issubset(df.columns):
-    map_df = df[['departureLat', 'departureLon', 'arrivalLat', 'arrivalLon']].dropna().head(200)
-    map_df = map_df.rename(columns={'departureLat': 'lat', 'departureLon': 'lon'})
-    st.map(map_df)
-else:
-    st.info("No coordinates found for mapping. Add 'departureLat', 'departureLon', 'arrivalLat', 'arrivalLon' to enable map view.")
