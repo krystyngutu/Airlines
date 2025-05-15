@@ -2,84 +2,98 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
-from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
+from datetime import datetime
 
-# ----------------------
-# Page Setup
-# ----------------------
-st.set_page_config(layout='wide')
-st.title("✈️ Flight Price Prediction App")
+# Page setup
+st.set_page_config(layout="wide")
+st.title("✈️ Flight Price & Sustainability Insights")
 
-# ----------------------
-# Data Loading
-# ----------------------
+# Load and prepare data
 @st.cache_data
 def load_data():
     df = pd.read_csv("all_flights.csv")
 
-    # Basic cleaning
+    # Clean and engineer features
     df['departureTime'] = pd.to_datetime(df['departureTime'], errors='coerce')
     df['price'] = pd.to_numeric(df['price'], errors='coerce')
     df['durationMinutes'] = pd.to_numeric(df['durationTime'], errors='coerce')
     df['carbonEmissionsThisFlight'] = pd.to_numeric(df.get('carbonEmissionsThisFlight'), errors='coerce')
-    df['legroom'] = pd.to_numeric(df['legroom'].str.extract(r'(\d+)'), errors='coerce')
-
+    df['carbonEmissionsTypicalRoute'] = pd.to_numeric(df.get('carbonEmissionsTypicalRoute'), errors='coerce')
+    df['aircraft'] = df['airplane'].fillna('Unknown')
     df['weekday'] = df['departureTime'].dt.day_name()
     df['hour'] = df['departureTime'].dt.hour
-    df = pd.get_dummies(df, columns=['travelClass', 'weekday'], drop_first=True)
+    df['month'] = df['departureTime'].dt.month
+    df['date'] = df['departureTime'].dt.date
 
-    return df.dropna(subset=['price', 'durationMinutes', 'carbonEmissionsThisFlight', 'legroom'])
+    return df.dropna(subset=['price', 'durationMinutes', 'carbonEmissionsThisFlight'])
 
 df = load_data()
 
-# ----------------------
-# Sidebar
-# ----------------------
-st.sidebar.header("Model Settings")
+# Sidebar filter
+st.sidebar.header("Filters")
+airlines = df['airline'].dropna().unique()
+selected_airlines = st.sidebar.multiselect("Airlines", airlines, default=airlines)
+df = df[df['airline'].isin(selected_airlines)]
 
-all_features = [col for col in df.columns if col not in ['price', 'departureTime', 'arrivalAirportTime']]
-selected_features = st.sidebar.multiselect("Select features for prediction", all_features, default=[
-    'durationMinutes', 'carbonEmissionsThisFlight', 'legroom'
-])
+# --------------------------
+# 1. Flight Price Trends
+# --------------------------
+st.subheader("📈 Historical Price Trends")
+price_by_date = df.groupby('date')['price'].mean().reset_index()
+fig1 = px.line(price_by_date, x='date', y='price', title="Average Ticket Price Over Time")
+st.plotly_chart(fig1, use_container_width=True)
 
-model_choice = st.sidebar.radio("Select Model", ['Linear Regression', 'Random Forest'])
+# --------------------------
+# 2. Predict Best Time to Buy
+# --------------------------
+st.subheader("🤖 Predictive Modeling: When to Buy")
+model_df = df[['price', 'hour', 'month']]
+X = model_df[['hour', 'month']]
+y = model_df['price']
 
-# ----------------------
-# Model Training
-# ----------------------
-if selected_features:
-    X = df[selected_features]
-    y = df['price']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+model = LinearRegression()
+model.fit(X_train, y_train)
+y_pred = model.predict(X_test)
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+st.markdown(f"**Model RMSE**: ${rmse:.2f}")
+best_hour = int(X.groupby('hour')['price'].mean().idxmin())
+best_month = int(X.groupby('month')['price'].mean().idxmin())
+st.success(f"📌 Best time to book: **Hour {best_hour}:00**, Month {best_month}")
 
-    if model_choice == 'Linear Regression':
-        model = LinearRegression()
-    else:
-        model = RandomForestRegressor(n_estimators=100, random_state=42)
+# --------------------------
+# 3. Carbon Emissions Analysis
+# --------------------------
+st.subheader("🌍 Carbon Emissions Overview")
 
-    model.fit(X_train, y_train)
-    y_pred = model.predict(X_test)
+emissions_by_aircraft = df.groupby('aircraft')['carbonEmissionsThisFlight'].mean().sort_values()
+fig2 = px.bar(emissions_by_aircraft, title="Average CO₂ Emissions by Aircraft Type")
+st.plotly_chart(fig2, use_container_width=True)
 
-    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-    r2 = r2_score(y_test, y_pred)
+# --------------------------
+# 4. Fuel Efficiency by Route
+# --------------------------
+st.subheader("⛽ Route Efficiency Analytics")
 
-    st.subheader("📊 Model Performance")
-    st.metric("RMSE", f"${rmse:.2f}")
-    st.metric("R² Score", f"{r2:.2f}")
+df['efficiency'] = df['durationMinutes'] / df['carbonEmissionsThisFlight']
+efficiency_by_route = df.groupby(['originAirport', 'destinationAirport'])['efficiency'].mean().sort_values(ascending=False).reset_index()
 
-    if model_choice == 'Random Forest':
-        st.subheader("🔍 Feature Importance")
-        importances = pd.Series(model.feature_importances_, index=selected_features).sort_values()
-        fig = px.bar(importances, orientation='h', labels={'value': 'Importance', 'index': 'Feature'})
-        st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.subheader("📈 Actual vs Predicted")
-        comparison_df = pd.DataFrame({'Actual': y_test, 'Predicted': y_pred})
-        fig = px.scatter(comparison_df, x='Actual', y='Predicted', trendline='ols', title="Predicted vs Actual Prices")
-        st.plotly_chart(fig, use_container_width=True)
-else:
-    st.warning("Please select at least one feature.")
+st.dataframe(efficiency_by_route.head(10).rename(columns={
+    'originAirport': 'From',
+    'destinationAirport': 'To',
+    'efficiency': 'Minutes per kg CO₂'
+}), use_container_width=True)
+
+# --------------------------
+# 5. Sustainability Scoring
+# --------------------------
+st.subheader("♻️ Sustainability-Focused Insights")
+
+df['sustainabilityScore'] = 100 - (df['carbonEmissionsThisFlight'] / df['durationMinutes']) * 10
+score_df = df.groupby('airline')['sustainabilityScore'].mean().sort_values(ascending=False)
+fig3 = px.bar(score_df, title="Sustainability Score by Airline")
+st.plotly_chart(fig3, use_container_width=True)
