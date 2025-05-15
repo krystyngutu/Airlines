@@ -151,13 +151,29 @@ st.plotly_chart(fig2, use_container_width=True)
 st.subheader("⛽ Route Efficiency Analytics")
 
 df['efficiency'] = df['durationMinutes'] / df['carbonEmissionsThisFlight']
-efficiency_by_route = df.groupby(['originAirport', 'destinationAirport'])['efficiency'].mean().sort_values(ascending=False).reset_index()
+# Detect possible origin/destination columns
+origin_col = next((col for col in df.columns if 'origin' in col.lower()), None)
+destination_col = next((col for col in df.columns if 'destination' in col.lower()), None)
 
-st.dataframe(efficiency_by_route.head(10).rename(columns={
-    'originAirport': 'From',
-    'destinationAirport': 'To',
-    'efficiency': 'Minutes per kg CO₂'
-}), use_container_width=True)
+if origin_col and destination_col:
+    efficiency_by_route = (
+        df.groupby([origin_col, destination_col])['efficiency']
+        .mean()
+        .sort_values(ascending=False)
+        .reset_index()
+    )
+
+    st.dataframe(
+        efficiency_by_route.head(10).rename(columns={
+            origin_col: 'From',
+            destination_col: 'To',
+            'efficiency': 'Minutes per kg CO₂'
+        }),
+        use_container_width=True
+    )
+else:
+    st.warning("⚠️ Could not find columns for origin and destination airports. Please check your CSV.")
+
 
 # --------------------------
 # 5. Sustainability Scoring
