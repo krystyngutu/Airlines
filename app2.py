@@ -193,7 +193,7 @@ st.plotly_chart(fig3, use_container_width=True)
 # TIME-BASED PRICE DISTRIBUTION
 # --------------------------
 st.subheader("🕒 Price Distribution by Time of Day and Weekday")
-st.markdown("**Time of day breakdown:** Morning (5–12), Afternoon (12–17), Evening (17–22), Night (22–5)")
+st.markdown("**Time of day breakdown:** Morning (5:00–12:00), Afternoon (12:00–17:00), Evening (17:00–22:00), Night (22:00–5:00)")
 
 price_by_day = df.groupby(['weekday', 'airline'])['price'].mean().reset_index()
 price_by_time = df.groupby(['timeOfDay', 'airline'])['price'].mean().reset_index()
@@ -216,7 +216,7 @@ df['timeOfDayLabel'] = df['timeOfDay'].map(time_of_day_labels)
 price_by_time = df.groupby(['timeOfDayLabel', 'airline'])['price'].mean().reset_index()
 
 # Define the order of categories for consistent plotting
-category_order = ['Morning (5–12)', 'Afternoon (12–17)', 'Evening (17–22)', 'Night (22–5)']
+category_order = ['Morning', 'Afternoon', 'Evening', 'Night']
 
 # Create the bar chart with Plotly
 fig_time = px.bar(
@@ -234,3 +234,110 @@ fig_time = px.bar(
 # Display the chart in Streamlit
 st.plotly_chart(fig_day, use_container_width=True)
 st.plotly_chart(fig_time, use_container_width=True)
+
+
+price_by_day = df.groupby(['weekday', 'airline'])['price'].mean().reset_index()
+weekday_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+fig = px.bar(
+    price_by_day,
+    x='weekday',
+    y='price',
+    color='airline',
+    barmode='group',
+    category_orders={'weekday': weekday_order},
+    title='📅 Cheapest Days to Fly by Airline',
+    labels={'price': 'Average Price ($)', 'weekday': 'Day of Week'},
+    color_discrete_map=airline_colors
+)
+
+fig.update_traces(text=price_by_day['price'].round(0), textposition='outside')
+fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
+
+st.plotly_chart(fig, use_container_width=True)
+
+# --------------------------
+# Annotated Bar Chart - Cheapest Day to Fly by Airline
+# --------------------------
+price_by_day = df.groupby(['weekday', 'airline'])['price'].mean().reset_index()
+weekday_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+fig = px.bar(
+    price_by_day,
+    x='weekday',
+    y='price',
+    color='airline',
+    barmode='group',
+    category_orders={'weekday': weekday_order},
+    title='📅 Cheapest Days to Fly by Airline',
+    labels={'price': 'Average Price ($)', 'weekday': 'Day of Week'},
+    color_discrete_map=airline_colors
+)
+
+fig.update_traces(text=price_by_day['price'].round(0), textposition='outside')
+fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
+
+st.plotly_chart(fig, use_container_width=True)
+
+# --------------------------
+# Side-by-Side Breakdown - Average Price vs CO₂ Emissions
+# --------------------------
+avg_df = df.groupby('airline').agg({
+    'price': 'mean',
+    'carbonEmissionsThisFlight': 'mean'
+}).reset_index()
+
+fig_price = px.bar(
+    avg_df,
+    x='airline',
+    y='price',
+    title='💵 Avg Ticket Price by Airline',
+    labels={'price': 'Price ($)'},
+    color='airline',
+    color_discrete_map=airline_colors
+)
+
+fig_emissions = px.bar(
+    avg_df,
+    x='airline',
+    y='carbonEmissionsThisFlight',
+    title='🌱 Avg CO₂ Emissions by Airline',
+    labels={'carbonEmissionsThisFlight': 'CO₂ (kg)'},
+    color='airline',
+    color_discrete_map=airline_colors
+)
+
+st.plotly_chart(fig_price, use_container_width=True)
+st.plotly_chart(fig_emissions, use_container_width=True)
+
+
+# --------------------------
+# Price Density Chart (Consumer-Friendly Visual)
+# --------------------------
+fig_density = px.violin(
+    df,
+    x='airline',
+    y='price',
+    box=True,
+    points='all',
+    color='airline',
+    color_discrete_map=airline_colors,
+    title='📈 Price Distribution per Airline'
+)
+st.plotly_chart(fig_density, use_container_width=True)
+
+# --------------------------
+# Flight Length vs Carbon Emissions (Quadrant Chart)
+# --------------------------
+fig_quad = px.scatter(
+    df,
+    x='durationMinutes',
+    y='carbonEmissionsThisFlight',
+    color='airline',
+    hover_data=['aircraft'],
+    color_discrete_map=airline_colors,
+    title='🛬 Flight Duration vs CO₂ Emissions',
+    labels={'durationMinutes': 'Duration (min)', 'carbonEmissionsThisFlight': 'CO₂ (kg)'}
+)
+fig_quad.update_traces(marker=dict(size=6, opacity=0.6))
+st.plotly_chart(fig_quad, use_container_width=True)
