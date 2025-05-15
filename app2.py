@@ -201,5 +201,38 @@ price_by_time = df.groupby(['timeOfDay', 'airline'])['price'].mean().reset_index
 fig_day = px.bar(price_by_day, x='weekday', y='price', color='airline', title="Average Price by Day of Week and Airline", labels={"price": "Avg Price", "weekday": "Day of Week"}, barmode='group', category_orders={"weekday": ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']}, color_discrete_map=airline_colors)
 fig_time = px.bar(price_by_time, x='timeOfDay', y='price', color='airline', title="Average Price by Time of Day and Airline", labels={"price": "Avg Price", "timeOfDay": "Time of Day"}, barmode='group', category_orders={"timeOfDay": ['Morning', 'Afternoon', 'Evening', 'Night']}, color_discrete_map=airline_colors)
 
+# Define the mapping for time of day with hour ranges
+time_of_day_labels = {
+    'Morning': 'Morning (5–12)',
+    'Afternoon': 'Afternoon (12–17)',
+    'Evening': 'Evening (17–22)',
+    'Night': 'Night (22–5)'
+}
+
+# Apply the mapping to create a new column
+df['timeOfDayLabel'] = df['timeOfDay'].map(time_of_day_labels)
+
+# Group the data by the new timeOfDayLabel and airline
+price_by_time = df.groupby(['timeOfDayLabel', 'airline'])['price'].mean().reset_index()
+
+# Define the order of categories for consistent plotting
+category_order = ['Morning (5–12)', 'Afternoon (12–17)', 'Evening (17–22)', 'Night (22–5)']
+
+# Create the bar chart with Plotly
+fig_time = px.bar(
+    price_by_time,
+    x='timeOfDayLabel',
+    y='price',
+    color='airline',
+    title='Average Price by Time of Day and Airline',
+    labels={'price': 'Avg Price', 'timeOfDayLabel': 'Time of Day'},
+    barmode='group',
+    category_orders={'timeOfDayLabel': category_order},
+    color_discrete_map=airline_colors
+)
+
+# Display the chart in Streamlit
+st.plotly_chart(fig_time, use_container_width=True)
+
 st.plotly_chart(fig_day, use_container_width=True)
 st.plotly_chart(fig_time, use_container_width=True)
