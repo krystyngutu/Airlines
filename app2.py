@@ -7,11 +7,82 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 from datetime import datetime
 
-# Page setup
+
+# ----------------------
+# PAGE SETUP
+# ----------------------
 st.set_page_config(layout="wide")
 st.title("✈️ Flight Price & Sustainability Insights")
 
-# Load and prepare data
+# ----------------------
+# CONSTANTS
+# ----------------------
+# Define airline groups
+direct_airlines = ['SWISS', 'United', 'Delta']
+lufthansa_group = ['Austrian', 'Brussels Airlines', 'Discover Airlines', 'Eurowings', 'Edelweiss Air', 'ITA', 'Air Dolomiti', 'Lufthansa', 'SWISS']
+star_alliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zealand', 'ANA', 'Asiana Airlines', 'Austrian', 'Avianca', 'Brussels Airlines', 'CopaAirlines', 'Croatia Airlines', 'Egyptair', 'Ethiopian Airlines', 'Eva Air', 'LOT Polish Airlines', 'Lufthansa', 'Shenzhen Airlines', 'Singapore Airlines', 'South African Airways', 'SWISS', 'Tap Air Portugal', 'Thai', 'Turkish Airlines', 'United']
+
+# Define airports to include
+nyc_airports = ["JFK", "EWR", "LGA"]
+swiss_airports = ["ZRH", "GVA", "BSL"]
+
+# Define airline colors
+custom_colors = ['#d71920', '#00235f', '#f9ba00', '#660000', '#800080', '#3366ff',
+                '#c3f550', '#fbaa3f', '#000000']
+
+airline_colors = {
+    'Lufthansa': '#ffd700',           # gold
+    'SWISS': '#d71920',               # red
+    'Delta': '#00235f',               # dark blue
+    'United': '#1a75ff',              # light blue
+    'Edelweiss Air': '#800080',       # purple
+    'Air Dolomiti': '#32cd32',        # lime green
+    'Austrian': '#c3f550',            # lime
+    'ITA': '#fbaa3f',                 # orange
+    'Brussels Airlines': '#00235f',   # dark blue
+    'Eurowings': '#1a75ff',           # light blue
+    'Aegean': '#767676',              # gray
+    'Air Canada': '#00235f',          # dark blue
+    'Tap Air Portugal': '#fbaa3f',    # orange
+    'Turkish Airlines': '#800080'     # purple    
+}
+
+# ----------------------
+# HELPER FUNCTIONS
+# ----------------------
+def extract_parens_or_keep(val):
+    """Extract text from parentheses or keep the original value."""
+    if pd.isna(val):
+        return val
+    import re
+    match = re.search(r'\((.*?)\)', val)
+    return match.group(1) if match else val.strip()
+
+def classify_aircraft(aircraft):
+    """Standardize aircraft types into categories."""
+    if pd.isna(aircraft):
+        return "Other"
+    aircraft = str(aircraft).lower()
+    if aircraft.startswith("airbus"):
+        return "Airbus"
+    elif aircraft.startswith("boeing"):
+        return "Boeing"
+    elif aircraft.startswith("canadair"):
+        return "Canadair"
+    elif aircraft.startswith("embraer"):
+        return "Embraer"
+    else:
+        return "Other"
+
+def classify_flight_type(row, nyc_airports, swiss_airports):
+    """Label flights as Direct or Connecting based on airports."""
+    if row['departureAirportID'] in nyc_airports and row['arrivalAirportID'] in swiss_airports:
+        return 'Direct'
+    return 'Connecting'
+
+# ----------------------
+# DATA LOADING & FILTERING
+# ----------------------
 @st.cache_data
 def load_data():
     df = pd.read_csv("all_flights.csv")
