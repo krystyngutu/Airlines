@@ -7,7 +7,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 from datetime import datetime
 
-
 # ----------------------
 # PAGE SETUP
 # ----------------------
@@ -17,49 +16,33 @@ st.title("✈️ Flight Price & Sustainability Insights")
 # ----------------------
 # CONSTANTS
 # ----------------------
-# Define airline groups
 direct_airlines = ['SWISS', 'United', 'Delta']
 lufthansa_group = ['Austrian', 'Brussels Airlines', 'Discover Airlines', 'Eurowings', 'Edelweiss Air', 'ITA', 'Air Dolomiti', 'Lufthansa', 'SWISS']
 star_alliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zealand', 'ANA', 'Asiana Airlines', 'Austrian', 'Avianca', 'Brussels Airlines', 'CopaAirlines', 'Croatia Airlines', 'Egyptair', 'Ethiopian Airlines', 'Eva Air', 'LOT Polish Airlines', 'Lufthansa', 'Shenzhen Airlines', 'Singapore Airlines', 'South African Airways', 'SWISS', 'Tap Air Portugal', 'Thai', 'Turkish Airlines', 'United']
 
-# Define airports to include
-nyc_airports = ["JFK", "EWR", "LGA"]
-swiss_airports = ["ZRH", "GVA", "BSL"]
-
-# Define airline colors
-custom_colors = ['#d71920', '#00235f', '#f9ba00', '#660000', '#800080', '#3366ff',
-                '#c3f550', '#fbaa3f', '#000000']
+custom_colors = ['#d71920', '#00235f', '#f9ba00', '#660000', '#800080', '#3366ff', '#c3f550', '#fbaa3f', '#000000']
 
 airline_colors = {
-    'Lufthansa': '#ffd700',           # gold
-    'SWISS': '#d71920',               # red
-    'Delta': '#00235f',               # dark blue
-    'United': '#1a75ff',              # light blue
-    'Edelweiss Air': '#800080',       # purple
-    'Air Dolomiti': '#32cd32',        # lime green
-    'Austrian': '#c3f550',            # lime
-    'ITA': '#fbaa3f',                 # orange
-    'Brussels Airlines': '#00235f',   # dark blue
-    'Eurowings': '#1a75ff',           # light blue
-    'Aegean': '#767676',              # gray
-    'Air Canada': '#00235f',          # dark blue
-    'Tap Air Portugal': '#fbaa3f',    # orange
-    'Turkish Airlines': '#800080'     # purple    
+    'Lufthansa': '#ffd700',
+    'SWISS': '#d71920',
+    'Delta': '#00235f',
+    'United': '#1a75ff',
+    'Edelweiss Air': '#800080',
+    'Air Dolomiti': '#32cd32',
+    'Austrian': '#c3f550',
+    'ITA': '#fbaa3f',
+    'Brussels Airlines': '#00235f',
+    'Eurowings': '#1a75ff',
+    'Aegean': '#767676',
+    'Air Canada': '#00235f',
+    'Tap Air Portugal': '#fbaa3f',
+    'Turkish Airlines': '#800080'
 }
 
 # ----------------------
 # HELPER FUNCTIONS
 # ----------------------
-def extract_parens_or_keep(val):
-    """Extract text from parentheses or keep the original value."""
-    if pd.isna(val):
-        return val
-    import re
-    match = re.search(r'\((.*?)\)', val)
-    return match.group(1) if match else val.strip()
-
 def classify_aircraft(aircraft):
-    """Standardize aircraft types into categories."""
     if pd.isna(aircraft):
         return "Other"
     aircraft = str(aircraft).lower()
@@ -74,20 +57,13 @@ def classify_aircraft(aircraft):
     else:
         return "Other"
 
-def classify_flight_type(row, nyc_airports, swiss_airports):
-    """Label flights as Direct or Connecting based on airports."""
-    if row['departureAirportID'] in nyc_airports and row['arrivalAirportID'] in swiss_airports:
-        return 'Direct'
-    return 'Connecting'
-
 # ----------------------
-# DATA LOADING & FILTERING
+# LOAD DATA
 # ----------------------
 @st.cache_data
+
 def load_data():
     df = pd.read_csv("all_flights.csv")
-
-    # Clean and engineer features
     df['departureTime'] = pd.to_datetime(df['departureTime'], errors='coerce')
     df['price'] = pd.to_numeric(df['price'], errors='coerce')
     df['durationMinutes'] = pd.to_numeric(df['durationTime'], errors='coerce')
@@ -98,13 +74,13 @@ def load_data():
     df['hour'] = df['departureTime'].dt.hour
     df['month'] = df['departureTime'].dt.month
     df['date'] = df['departureTime'].dt.date
-
     return df.dropna(subset=['price', 'durationMinutes', 'carbonEmissionsThisFlight'])
 
 df = load_data()
 
-# Sidebar filter
-# Sidebar filter
+# ----------------------
+# SIDEBAR FILTER
+# ----------------------
 st.sidebar.header("Filters")
 group_option = st.sidebar.radio("Airline Group", ['Direct Airlines', 'Lufthansa Group', 'Star Alliance'])
 
@@ -118,7 +94,7 @@ else:
 df = df[df['airline'].isin(selected_airlines)]
 
 # --------------------------
-# 1. Flight Price Trends
+# PRICE TRENDS
 # --------------------------
 st.subheader("📈 Historical Price Trends")
 price_by_date = df.groupby('date')['price'].mean().reset_index()
@@ -126,7 +102,7 @@ fig1 = px.line(price_by_date, x='date', y='price', title="Average Ticket Price O
 st.plotly_chart(fig1, use_container_width=True)
 
 # --------------------------
-# 2. Predict Best Time to Buy
+# BEST TIME TO BUY
 # --------------------------
 st.subheader("🤖 Predictive Modeling: When to Buy")
 model_df = df[['price', 'hour', 'month']]
@@ -145,10 +121,9 @@ best_month = int(df.groupby('month')['price'].mean().idxmin())
 st.success(f"📌 Best time to book: **Hour {best_hour}:00**, Month {best_month}")
 
 # --------------------------
-# 3. Carbon Emissions Analysis
+# CARBON EMISSIONS
 # --------------------------
 st.subheader("🌍 Carbon Emissions Overview")
-
 df['aircraftType'] = df['aircraft'].apply(classify_aircraft)
 emissions_by_aircraft = df.groupby('aircraftType')['carbonEmissionsThisFlight'].mean().sort_values()
 
@@ -162,18 +137,16 @@ fig2 = px.bar(
 fig2.update_layout(showlegend=False)
 st.plotly_chart(fig2, use_container_width=True)
 
-
 # --------------------------
-# 4. Fuel Efficiency by Route
+# ROUTE EFFICIENCY
 # --------------------------
-st.subheader("⛽ Route Efficiency Analytics")
-
+st.subheader("⛽️ Route Efficiency Analytics")
 df['efficiency'] = df['durationMinutes'] / df['carbonEmissionsThisFlight']
-# Detect possible origin/destination columns
-origin_col = next((col for col in df.columns if 'departureAairportid' in col.lower()), None)
-destination_col = next((col for col in df.columns if 'arrivalAirportID' in col.lower()), None)
 
-if origin_col and destination_col:
+origin_col = 'departureAirportID'
+destination_col = 'arrivalAirportID'
+
+if origin_col in df.columns and destination_col in df.columns:
     efficiency_by_route = (
         df.groupby([origin_col, destination_col])['efficiency']
         .mean()
@@ -192,13 +165,24 @@ if origin_col and destination_col:
 else:
     st.warning("⚠️ Could not find columns for origin and destination airports. Please check your CSV.")
 
-
 # --------------------------
-# 5. Sustainability Scoring
+# SUSTAINABILITY SCORE
 # --------------------------
 st.subheader("♻️ Sustainability-Focused Insights")
-
 df['sustainabilityScore'] = 100 - (df['carbonEmissionsThisFlight'] / df['durationMinutes']) * 10
 score_df = df.groupby('airline')['sustainabilityScore'].mean().sort_values(ascending=False)
-fig3 = px.bar(score_df, title="Sustainability Score by Airline")
+
+fig3 = px.bar(
+    score_df,
+    title="Sustainability Score by Airline",
+    labels={"value": "Score", "airline": "Airline"},
+    color=score_df.index,
+    color_discrete_map=airline_colors
+)
 st.plotly_chart(fig3, use_container_width=True)
+
+# --------------------------
+# EXPORT OPTIONS
+# --------------------------
+st.download_button("📄 Download Route Efficiency (Top 10)", efficiency_by_route.head(10).to_csv(index=False), file_name="route_efficiency.csv")
+st.download_button("📄 Download Sustainability Scores", score_df.reset_index().to_csv(index=False), file_name="sustainability_scores.csv")
