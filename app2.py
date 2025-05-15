@@ -104,9 +104,17 @@ def load_data():
 df = load_data()
 
 # Sidebar filter
+# Sidebar filter
 st.sidebar.header("Filters")
-airlines = df['airline'].dropna().unique()
-selected_airlines = st.sidebar.multiselect("Airlines", airlines, default=airlines)
+group_option = st.sidebar.radio("Airline Group", ['Direct Airlines', 'Lufthansa Group', 'Star Alliance'])
+
+if group_option == 'Direct Airlines':
+    selected_airlines = direct_airlines
+elif group_option == 'Lufthansa Group':
+    selected_airlines = lufthansa_group
+else:
+    selected_airlines = star_alliance
+
 df = df[df['airline'].isin(selected_airlines)]
 
 # --------------------------
@@ -141,9 +149,19 @@ st.success(f"📌 Best time to book: **Hour {best_hour}:00**, Month {best_month}
 # --------------------------
 st.subheader("🌍 Carbon Emissions Overview")
 
-emissions_by_aircraft = df.groupby('aircraft')['carbonEmissionsThisFlight'].mean().sort_values()
-fig2 = px.bar(emissions_by_aircraft, title="Average CO₂ Emissions by Aircraft Type")
+df['aircraftType'] = df['aircraft'].apply(classify_aircraft)
+emissions_by_aircraft = df.groupby('aircraftType')['carbonEmissionsThisFlight'].mean().sort_values()
+
+fig2 = px.bar(
+    emissions_by_aircraft,
+    title="Average CO₂ Emissions by Aircraft Type",
+    labels={"value": "Avg CO₂ (kg)", "aircraftType": "Aircraft"},
+    color=emissions_by_aircraft.index,
+    color_discrete_sequence=custom_colors
+)
+fig2.update_layout(showlegend=False)
 st.plotly_chart(fig2, use_container_width=True)
+
 
 # --------------------------
 # 4. Fuel Efficiency by Route
@@ -152,7 +170,7 @@ st.subheader("⛽ Route Efficiency Analytics")
 
 df['efficiency'] = df['durationMinutes'] / df['carbonEmissionsThisFlight']
 # Detect possible origin/destination columns
-origin_col = next((col for col in df.columns if 'departureAairportID' in col.lower()), None)
+origin_col = next((col for col in df.columns if 'departureAairportid' in col.lower()), None)
 destination_col = next((col for col in df.columns if 'arrivalAirportID' in col.lower()), None)
 
 if origin_col and destination_col:
