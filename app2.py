@@ -63,8 +63,24 @@ except Exception as e:
 st.sidebar.header("Filters")
 
 # Airline selection
-all_airlines = sorted(df['airline'].unique())
-airline_filter = st.sidebar.multiselect(
+direct_airlines = ['SWISS', 'United', 'Delta']
+lufthansa_group = ['Austrian', 'Brussels Airlines', 'Discover Airlines', 'Eurowings', 'Edelweiss Air', 'ITA', 'Air Dolomiti', 'Lufthansa', 'SWISS']
+star_alliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zealand', 'ANA', 'Asiana Airlines', 'Austrian', 'Avianca', 'Brussels Airlines',
+    'CopaAirlines', 'Croatia Airlines', 'Egyptair', 'Ethiopian Airlines', 'Eva Air', 'LOT Polish Airlines', 'Lufthansa', 'Shenzhen Airlines',
+    'Singapore Airlines', 'South African Airways', 'SWISS', 'Tap Air Portugal', 'Thai', 'Turkish Airlines', 'United']
+group_option = st.sidebar.radio("Airline Group", ['All Airlines', 'Direct Airlines', 'Lufthansa Group', 'Star Alliance'])
+
+if group_option == 'Direct Airlines':
+    airline_filter = direct_airlines
+elif group_option == 'Lufthansa Group':
+    airline_filter = lufthansa_group
+elif group_option == 'Star Alliance':
+    airline_filter = star_alliance
+else:
+    airline_filter = sorted(df['airline'].unique())
+
+# Apply filters
+df_filtered = df[df['airline'].isin(airline_filter)]
     "Select Airlines",
     options=all_airlines,
     default=all_airlines[:5]  # Default to first 5 airlines
@@ -175,7 +191,9 @@ Revenue management and pricing teams use these models to optimize flight pricing
 # Prepare modeling data
 @st.cache_data
 def prepare_model_data(df):
-    features = ['day_of_week', 'hour', 'month', 'airline', 'durationTime']
+    df['wifi_encoded'] = df['wifi'].fillna('Unknown').astype('category').cat.codes
+df['airplane_encoded'] = df['airplane'].fillna('Unknown').astype('category').cat.codes
+features = ['day_of_week', 'hour', 'month', 'airline', 'durationTime', 'carbonEmissionsThisFlight', 'wifi_encoded', 'airplane_encoded']
     target = 'price'
     
     # Convert categorical features to numeric
