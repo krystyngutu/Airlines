@@ -424,14 +424,16 @@ with col3:
                      title='Carbon Emissions by Airline',
                      labels={'carbonEmissionsThisFlight': 'Carbon Emissions (kg)'})
         st.plotly_chart(fig, use_container_width=True)
-
-    if 'airplane' in df_filtered.columns:
+st.markdown('---')
+if 'airplane' in df_filtered.columns:
         df_aircraft = df_filtered.dropna(subset=['airplane'])
         fig = px.box(df_aircraft, x='airplane', y='price', title='Price by Aircraft Type',
                      labels={'price': 'Price ($)', 'airplane': 'Aircraft'})
         fig.update_layout(xaxis_tickangle=-45)
         st.plotly_chart(fig, use_container_width=True)
 
+
+    
 with col4:
     if 'legroom' in df_filtered.columns:
         df_legroom = df_filtered.dropna(subset=['legroom'])
@@ -442,15 +444,7 @@ with col4:
                      labels={'legroom': 'Legroom (in)'})
         st.plotly_chart(fig, use_container_width=True)
 
-    if 'wifi' in df_filtered.columns:
-        df_wifi = df_filtered.copy()
-        fig = px.histogram(df_wifi, x='wifi', color='airline',
-                           color_discrete_map=airline_colors,
-                           title='Wi-Fi Availability Distribution',
-                           labels={'wifi': 'Wi-Fi Type'})
-        fig.update_layout(barmode='group')
-        st.plotly_chart(fig, use_container_width=True)
-
+    
 # ----------------------
 # ADVANCED MODELING WITH OPERATIONAL FEATURES
 # ----------------------
