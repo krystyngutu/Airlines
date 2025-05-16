@@ -149,13 +149,13 @@ def prepare_model_data(df):
     df['wifi_encoded'] = df['wifi'].fillna('Unknown').astype('category').cat.codes
     df['airplane_encoded'] = df['airplane'].fillna('Unknown').astype('category').cat.codes
     features = ['day_of_week', 'hour', 'month', 'airline', 'durationTime', 'carbonEmissionsThisFlight', 'wifi_encoded', 'airplane_encoded']
-        target = 'price'
+    target = 'price'
     
     # Convert categorical features to numeric
-        X = df[features].copy()
-        y = df[target]
+    X = df[features].copy()
+    y = df[target]
     
-        return X, y
+    return X, y
 
 # Create models tab system
 model_tab1, model_tab2, model_tab3 = st.tabs(["Linear Models", "Regularized Models", "Ensemble Models"])
