@@ -139,10 +139,10 @@ with col1:
         y='mean',
         color='airline',
         color_discrete_map=airline_colors,  # ✅ use the dictionary here
-        error_y=df_airline['mean'] * 0.1,
+        error_y=df['mean'] * 0.1,
         labels={'mean': 'Average Price ($)', 'airline': 'Airline'},
         title='Average Price by Airline',
-        text=df_airline['mean'].round(0)
+        text=df['mean'].round(0)
     )
     fig.update_traces(texttemplate='$%{text:.0f}', textposition='outside')
     st.plotly_chart(fig, use_container_width=True)
