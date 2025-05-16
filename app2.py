@@ -405,3 +405,63 @@ try:
 
 except Exception as e:
     st.error(f"Error in model building: {e}")
+
+
+# ----------------------
+# ADVANCED MODELING WITH OPERATIONAL FEATURES
+# ----------------------
+st.header("🔬 Advanced Modeling with Operational Features")
+
+# Feature engineering
+df_filtered['wifi_encoded'] = df_filtered['wifi'].fillna('Unknown').astype('category').cat.codes
+df_filtered['airplane_encoded'] = df_filtered['airplane'].fillna('Unknown').astype('category').cat.codes
+if 'legroom' in df_filtered.columns:
+    df_filtered['legroom'] = pd.to_numeric(df_filtered['legroom'].str.extract(r'(\d+)')[0], errors='coerce')
+else:
+    df_filtered['legroom'] = np.nan
+
+advanced_features = ['day_of_week', 'hour', 'month', 'durationTime', 'carbonEmissionsThisFlight',
+                     'wifi_encoded', 'airplane_encoded', 'legroom']
+categorical_features = []
+numerical_features = ['day_of_week', 'hour', 'month', 'durationTime', 'carbonEmissionsThisFlight', 'wifi_encoded', 'airplane_encoded', 'legroom']
+
+# Drop rows with missing advanced features
+df_model_ready = df_filtered.dropna(subset=numerical_features + ['price'])
+
+X_adv = df_model_ready[advanced_features]
+y_adv = df_model_ready['price']
+
+# Train/test split
+X_train_adv, X_test_adv, y_train_adv, y_test_adv = train_test_split(X_adv, y_adv, test_size=0.2, random_state=42)
+
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train_adv)
+X_test_scaled = scaler.transform(X_test_adv)
+
+# Train additional models
+model_results = {}
+
+for name, model in {
+    'Linear (Adv)': LinearRegression(),
+    'Ridge (Adv)': Ridge(alpha=1.0),
+    'Random Forest (Adv)': RandomForestRegressor(n_estimators=100, random_state=42),
+    'Gradient Boosting (Adv)': GradientBoostingRegressor(n_estimators=100, random_state=42)
+}.items():
+    model.fit(X_train_scaled, y_train_adv)
+    preds = model.predict(X_test_scaled)
+    rmse = np.sqrt(mean_squared_error(y_test_adv, preds))
+    r2 = r2_score(y_test_adv, preds)
+    model_results[name] = rmse
+    st.metric(f"{name} RMSE", f"${rmse:.2f}")
+    st.caption(f"{name} R²: {r2:.4f}")
+
+# Summary plot
+fig = px.bar(
+    x=list(model_results.keys()),
+    y=list(model_results.values()),
+    title="Advanced Model RMSE Comparison",
+    labels={'x': 'Model', 'y': 'RMSE'},
+    color_discrete_sequence=['#18bf8a'] * len(model_results)
+)
+fig.update_traces(texttemplate='$%{y:.2f}', textposition='outside')
+st.plotly_chart(fig, use_container_width=True)
