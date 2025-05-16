@@ -465,3 +465,33 @@ fig = px.bar(
 )
 fig.update_traces(texttemplate='$%{y:.2f}', textposition='outside')
 st.plotly_chart(fig, use_container_width=True)
+
+
+
+# ----------------------
+# FEATURE IMPORTANCE VISUALIZATION
+# ----------------------
+st.header("🔎 Feature Importance from Advanced Models")
+
+# Use Random Forest for importance (or Gradient Boosting if preferred)
+rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
+rf_model.fit(X_train_scaled, y_train_adv)
+
+feature_names = advanced_features
+importances = rf_model.feature_importances_
+
+importance_df = pd.DataFrame({
+    'Feature': feature_names,
+    'Importance': importances
+}).sort_values(by='Importance', ascending=False)
+
+fig = px.bar(
+    importance_df,
+    x='Importance',
+    y='Feature',
+    orientation='h',
+    title='Feature Importance (Random Forest)',
+    labels={'Importance': 'Relative Importance', 'Feature': 'Feature'},
+    color_discrete_sequence=['#18bf8a']
+)
+st.plotly_chart(fig, use_container_width=True)
