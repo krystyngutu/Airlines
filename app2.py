@@ -34,7 +34,11 @@ def load_data():
     df['hour'] = df['departureTime'].dt.hour
     df['month'] = df['departureTime'].dt.month
     
-    # Create time of day category
+    
+    if 'wifi' not in df.columns:
+        df['wifi'] = 'Unknown'
+
+# Create time of day category
     def time_of_day(hour):
         if 5 <= hour < 12:
             return 'Morning'
@@ -56,6 +60,25 @@ try:
 except Exception as e:
     st.error(f"Error loading data: {e}")
     st.stop()
+
+
+airline_colors = {
+    'Lufthansa': '#ffd700',
+    'SWISS': '#d71920',
+    'Delta': '#00235f',
+    'United': '#1a75ff',
+    'Edelweiss Air': '#800080',
+    'Air Dolomiti': '#32cd32',
+    'Austrian': '#c3f550',
+    'ITA': '#fbaa3f',
+    'Brussels Airlines': '#00235f',
+    'Eurowings': '#1a75ff',
+    'Aegean': '#767676',
+    'Air Canada': '#00235f',
+    'Tap Air Portugal': '#fbaa3f',
+    'Turkish Airlines': '#800080'
+}
+
 
 # ----------------------
 # SIDEBAR FILTERS
@@ -185,13 +208,13 @@ def prepare_model_data(df):
     df['wifi_encoded'] = df['wifi'].fillna('Unknown').astype('category').cat.codes
     df['airplane_encoded'] = df['airplane'].fillna('Unknown').astype('category').cat.codes
     features = ['day_of_week', 'hour', 'month', 'airline', 'durationTime', 'carbonEmissionsThisFlight', 'wifi_encoded', 'airplane_encoded']
-    target = 'price'
+        target = 'price'
     
     # Convert categorical features to numeric
-    X = df[features].copy()
-    y = df[target]
+        X = df[features].copy()
+        y = df[target]
     
-    return X, y
+        return X, y
 
 # Create models tab system
 model_tab1, model_tab2, model_tab3 = st.tabs(["Linear Models", "Regularized Models", "Ensemble Models"])
