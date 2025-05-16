@@ -63,20 +63,20 @@ except Exception as e:
 
 
 airline_colors = {
-    'Lufthansa': '#ffd700',
-    'SWISS': '#d71920',
-    'Delta': '#00235f',
-    'United': '#1a75ff',
-    'Edelweiss Air': '#800080',
-    'Air Dolomiti': '#32cd32',
-    'Austrian': '#c3f550',
-    'ITA': '#fbaa3f',
-    'Brussels Airlines': '#00235f',
-    'Eurowings': '#1a75ff',
-    'Aegean': '#767676',
-    'Air Canada': '#00235f',
-    'Tap Air Portugal': '#fbaa3f',
-    'Turkish Airlines': '#800080'
+    'Lufthansa': '#ffd700',           # gold
+    'SWISS': '#d71920',               # red
+    'Delta': '#00235f',               # dark blue
+    'United': '#1a75ff',              # light blue
+    'Edelweiss Air': '#800080',       # purple
+    'Air Dolomiti': '#32cd32',        # lime green
+    'Austrian': '#c3f550',            # lime
+    'ITA': '#fbaa3f',                 # orange
+    'Brussels Airlines': '#00235f',   # dark blue
+    'Eurowings': '#1a75ff',           # light blue
+    'Aegean': '#767676',              # gray
+    'Air Canada': '#00235f',          # dark blue
+    'Tap Air Portugal': '#fbaa3f',    # orange
+    'Turkish Airlines': '#800080'     # purple    
 }
 
 
@@ -208,13 +208,13 @@ def prepare_model_data(df):
     df['wifi_encoded'] = df['wifi'].fillna('Unknown').astype('category').cat.codes
     df['airplane_encoded'] = df['airplane'].fillna('Unknown').astype('category').cat.codes
     features = ['day_of_week', 'hour', 'month', 'airline', 'durationTime', 'carbonEmissionsThisFlight', 'wifi_encoded', 'airplane_encoded']
-    target = 'price'
+        target = 'price'
     
     # Convert categorical features to numeric
-    X = df[features].copy()
-    y = df[target]
+        X = df[features].copy()
+        y = df[target]
     
-    return X, y
+        return X, y
 
 # Create models tab system
 model_tab1, model_tab2, model_tab3 = st.tabs(["Linear Models", "Regularized Models", "Ensemble Models"])
