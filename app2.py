@@ -41,15 +41,34 @@ def load_data():
 df = load_data()
 
 # ----------------------
+# CONSTANTS
+# ----------------------
+direct_airlines = ['SWISS', 'United', 'Delta']
+lufthansa_group = ['Austrian', 'Brussels Airlines', 'Discover Airlines', 'Eurowings', 'Edelweiss Air', 'ITA', 'Air Dolomiti', 'Lufthansa', 'SWISS']
+star_alliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zealand', 'ANA', 'Asiana Airlines', 'Austrian', 'Avianca', 'Brussels Airlines', 'CopaAirlines', 'Croatia Airlines', 'Egyptair', 'Ethiopian Airlines', 'Eva Air', 'LOT Polish Airlines', 'Lufthansa', 'Shenzhen Airlines', 'Singapore Airlines', 'South African Airways', 'SWISS', 'Tap Air Portugal', 'Thai', 'Turkish Airlines', 'United']
+
+airline_colors = {
+    'Lufthansa': '#ffd700',
+    'SWISS': '#d71920',
+    'Delta': '#00235f',
+    'United': '#1a75ff',
+    'Edelweiss Air': '#800080',
+    'Air Dolomiti': '#32cd32',
+    'Austrian': '#c3f550',
+    'ITA': '#fbaa3f',
+    'Brussels Airlines': '#00235f',
+    'Eurowings': '#1a75ff',
+    'Aegean': '#767676',
+    'Air Canada': '#00235f',
+    'Tap Air Portugal': '#fbaa3f',
+    'Turkish Airlines': '#800080'
+}
+
+# ----------------------
 # SIDEBAR FILTERS
 # ----------------------
 st.sidebar.header("Filters")
 group_option = st.sidebar.radio("Airline Group", ['All Airlines', 'Direct Airlines', 'Lufthansa Group', 'Star Alliance'])
-
-# Airline groups
-direct_airlines = ['SWISS', 'United', 'Delta']
-lufthansa_group = ['Austrian', 'Brussels Airlines', 'Discover Airlines', 'Eurowings', 'Edelweiss Air', 'ITA', 'Air Dolomiti', 'Lufthansa', 'SWISS']
-star_alliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zealand', 'ANA', 'Asiana Airlines', 'Austrian', 'Avianca', 'Brussels Airlines', 'CopaAirlines', 'Croatia Airlines', 'Egyptair', 'Ethiopian Airlines', 'Eva Air', 'LOT Polish Airlines', 'Lufthansa', 'Shenzhen Airlines', 'Singapore Airlines', 'South African Airways', 'SWISS', 'Tap Air Portugal', 'Thai', 'Turkish Airlines', 'United']
 
 if group_option == 'Direct Airlines':
     df = df[df['airline'].isin(direct_airlines)]
@@ -73,7 +92,8 @@ if time_chart_type == 'Day of Week':
         x='weekday', y='price', color='airline',
         category_orders={'weekday': day_order},
         labels={'price': 'Avg Price ($)'},
-        title='Average Price by Day of Week'
+        title='Average Price by Day of Week',
+        color_discrete_map=airline_colors
     )
 else:
     tod_order = ['Morning', 'Afternoon', 'Evening', 'Night']
@@ -83,7 +103,8 @@ else:
         x='timeOfDay', y='price', color='airline',
         category_orders={'timeOfDay': tod_order},
         labels={'price': 'Avg Price ($)'},
-        title='Average Price by Time of Day'
+        title='Average Price by Time of Day',
+        color_discrete_map=airline_colors
     )
 
 st.plotly_chart(fig, use_container_width=True)
@@ -104,7 +125,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 model = LinearRegression()
 model.fit(X_train, y_train)
 y_pred = model.predict(X_test)
-rmse = mean_squared_error(y_test, y_pred, squared=False)
+rmse = mean_squared_error(y_test, y_pred) ** 0.5
 
 st.write(f"Model RMSE: ${rmse:.2f}")
 st.success(f"📌 Cheapest predicted time to book: {df.groupby('hour')['price'].mean().idxmin()}:00")
