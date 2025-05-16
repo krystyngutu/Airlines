@@ -134,7 +134,7 @@ with col1:
     df_day = df_day.sort_values('weekday')
 
     fig = px.bar(
-        df_airline,
+        df,
         x='airline',
         y='mean',
         color='airline',
