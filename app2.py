@@ -132,15 +132,17 @@ with col1:
     df_day = df_filtered.groupby('weekday')['price'].agg(['mean', 'median', 'count']).reset_index()
     df_day['weekday'] = pd.Categorical(df_day['weekday'], categories=day_order, ordered=True)
     df_day = df_day.sort_values('weekday')
-    
+
     fig = px.bar(
-        df_day,
-        x='weekday', 
+        df_airline,
+        x='airline',
         y='mean',
-        error_y=df_day['mean'] * 0.1,  # Add error bars for uncertainty visualization
-        labels={'mean': 'Average Price ($)', 'weekday': 'Day of Week'},
-        title='Average Price by Day of Week',
-        text=df_day['mean'].round(0)
+        color='airline',
+        color_discrete_map=airline_colors,  # ✅ use the dictionary here
+        error_y=df_airline['mean'] * 0.1,
+        labels={'mean': 'Average Price ($)', 'airline': 'Airline'},
+        title='Average Price by Airline',
+        text=df_airline['mean'].round(0)
     )
     fig.update_traces(texttemplate='$%{text:.0f}', textposition='outside')
     st.plotly_chart(fig, use_container_width=True)
