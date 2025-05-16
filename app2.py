@@ -93,7 +93,8 @@ if time_chart_type == 'Day of Week':
         category_orders={'weekday': day_order},
         labels={'price': 'Avg Price ($)'},
         title='Average Price by Day of Week',
-        color_discrete_map=airline_colors
+        color_discrete_map=airline_colors,
+        barmode='group'
     )
 else:
     tod_order = ['Morning', 'Afternoon', 'Evening', 'Night']
@@ -104,7 +105,8 @@ else:
         category_orders={'timeOfDay': tod_order},
         labels={'price': 'Avg Price ($)'},
         title='Average Price by Time of Day',
-        color_discrete_map=airline_colors
+        color_discrete_map=airline_colors,
+        barmode='group'
     )
 
 st.plotly_chart(fig, use_container_width=True)
