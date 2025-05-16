@@ -62,6 +62,9 @@ except Exception as e:
     st.stop()
 
 
+
+
+
 airline_colors = {
     'Lufthansa': '#ffd700',           # gold
     'SWISS': '#d71920',               # red
@@ -78,7 +81,8 @@ airline_colors = {
     'Tap Air Portugal': '#fbaa3f',    # orange
     'Turkish Airlines': '#800080'     # purple    
 }
-
+custom_colors = ['#d71920', '#00235f', '#f9ba00', '#660000', '#800080', '#3366ff',
+                '#c3f550', '#fbaa3f', '#000000']
 
 # ----------------------
 # SIDEBAR FILTERS
