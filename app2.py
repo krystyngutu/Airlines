@@ -16,7 +16,7 @@ import datetime
 # PAGE SETUP
 # ----------------------
 st.set_page_config(layout="wide")
-st.title("Flight Price Exploration: Revenue Steering Analysis")
+st.title("🛫 Flight Price Explorer: Revenue Steering Analysis")
 
 # ----------------------
 # LOAD & CLEAN DATA
@@ -28,7 +28,7 @@ def load_data():
     df['price'] = pd.to_numeric(df['price'], errors='coerce')
     df['durationTime'] = pd.to_numeric(df['durationTime'], errors='coerce')
     df['weekday'] = df['departureTime'].dt.day_name()
-    df['day_of_week'] = df['departureTime'].dt.weekday
+    df['dayOfWeek'] = df['departureTime'].dt.weekday
     df['hour'] = df['departureTime'].dt.hour
     df['month'] = df['departureTime'].dt.month
     if 'wifi' not in df.columns:
@@ -125,6 +125,7 @@ with col2:
                  labels={'price': 'Avg Price ($)', 'timeOfDay': 'Time'}, text_auto=True)
     st.plotly_chart(fig, use_container_width=True)
     st.success(f"💰 Cheapest time to fly: **{df_tod.loc[df_tod['price'].idxmin(), 'timeOfDay']}**")
+st.caption("🕐 Morning: 5am–12pm, Afternoon: 12–5pm, Evening: 5–10pm, Night: 10pm–5am")
 
 st.subheader("Airline Price Comparison")
 df_airline = df_filtered.groupby('airline')['price'].mean().reset_index()
@@ -146,9 +147,9 @@ Revenue management and pricing teams use these models to optimize flight pricing
 # Prepare modeling data
 @st.cache_data
 def prepare_model_data(df):
-    df['wifi_encoded'] = df['wifi'].fillna('Unknown').astype('category').cat.codes
-    df['airplane_encoded'] = df['airplane'].fillna('Unknown').astype('category').cat.codes
-    features = ['day_of_week', 'hour', 'month', 'airline', 'durationTime', 'carbonEmissionsThisFlight', 'wifi_encoded', 'airplane_encoded']
+    df['wifiEncoded'] = df['wifi'].fillna('Unknown').astype('category').cat.codes
+    df['airplaneEncoded'] = df['airplane'].fillna('Unknown').astype('category').cat.codes
+    features = ['dayOfWeek', 'hour', 'month', 'airline', 'durationTime', 'carbonEmissionsThisFlight', 'wifiEncoded', 'airplaneEncoded']
     target = 'price'
     
     # Convert categorical features to numeric
@@ -165,7 +166,7 @@ try:
     
     # Handle categorical variables
     categorical_features = ['airline']
-    numerical_features = ['day_of_week', 'hour', 'month', 'durationTime']
+    numerical_features = ['dayOfWeek', 'hour', 'month', 'durationTime']
     
     categorical_transformer = OneHotEncoder(handle_unknown='ignore')
     numerical_transformer = StandardScaler()
@@ -350,7 +351,7 @@ try:
         for hour in all_hours:
             # Create a test instance
             test_data = pd.DataFrame({
-                'day_of_week': [day],
+                'dayOfWeek': [day],
                 'hour': [hour],
                 'month': [current_month],
                 'airline': [most_common_airline],
@@ -407,23 +408,66 @@ except Exception as e:
     st.error(f"Error in model building: {e}")
 
 
+
+# ----------------------
+# ADDITIONAL ANALYTICS
+# ----------------------
+st.header("🧭 Operational Feature Analysis")
+
+col3, col4 = st.columns(2)
+
+with col3:
+    if 'carbonEmissionsThisFlight' in df_filtered.columns:
+        df_carbon = df_filtered.dropna(subset=['carbonEmissionsThisFlight'])
+        fig = px.box(df_carbon, x='airline', y='carbonEmissionsThisFlight', color='airline',
+                     color_discrete_map=airline_colors,
+                     title='Carbon Emissions by Airline',
+                     labels={'carbonEmissionsThisFlight': 'Carbon Emissions (kg)'})
+        st.plotly_chart(fig, use_container_width=True)
+
+    if 'airplane' in df_filtered.columns:
+        df_aircraft = df_filtered.dropna(subset=['airplane'])
+        fig = px.box(df_aircraft, x='airplane', y='price', title='Price by Aircraft Type',
+                     labels={'price': 'Price ($)', 'airplane': 'Aircraft'})
+        fig.update_layout(xaxis_tickangle=-45)
+        st.plotly_chart(fig, use_container_width=True)
+
+with col4:
+    if 'legroom' in df_filtered.columns:
+        df_legroom = df_filtered.dropna(subset=['legroom'])
+        df_legroom['legroom'] = pd.to_numeric(df_legroom['legroom'].str.extract(r'(\d+)')[0], errors='coerce')
+        fig = px.box(df_legroom, x='airline', y='legroom', color='airline',
+                     color_discrete_map=airline_colors,
+                     title='Legroom by Airline',
+                     labels={'legroom': 'Legroom (in)'})
+        st.plotly_chart(fig, use_container_width=True)
+
+    if 'wifi' in df_filtered.columns:
+        df_wifi = df_filtered.copy()
+        fig = px.histogram(df_wifi, x='wifi', color='airline',
+                           color_discrete_map=airline_colors,
+                           title='Wi-Fi Availability Distribution',
+                           labels={'wifi': 'Wi-Fi Type'})
+        fig.update_layout(barmode='group')
+        st.plotly_chart(fig, use_container_width=True)
+
 # ----------------------
 # ADVANCED MODELING WITH OPERATIONAL FEATURES
 # ----------------------
 st.header("🔬 Advanced Modeling with Operational Features")
 
 # Feature engineering
-df_filtered['wifi_encoded'] = df_filtered['wifi'].fillna('Unknown').astype('category').cat.codes
-df_filtered['airplane_encoded'] = df_filtered['airplane'].fillna('Unknown').astype('category').cat.codes
+df_filtered['wifiEncoded'] = df_filtered['wifi'].fillna('Unknown').astype('category').cat.codes
+df_filtered['airplaneEncoded'] = df_filtered['airplane'].fillna('Unknown').astype('category').cat.codes
 if 'legroom' in df_filtered.columns:
     df_filtered['legroom'] = pd.to_numeric(df_filtered['legroom'].str.extract(r'(\d+)')[0], errors='coerce')
 else:
     df_filtered['legroom'] = np.nan
 
-advanced_features = ['day_of_week', 'hour', 'month', 'durationTime', 'carbonEmissionsThisFlight',
-                     'wifi_encoded', 'airplane_encoded', 'legroom']
+advanced_features = ['dayOfWeek', 'hour', 'month', 'durationTime', 'carbonEmissionsThisFlight',
+                     'wifiEncoded', 'airplaneEncoded', 'legroom']
 categorical_features = []
-numerical_features = ['day_of_week', 'hour', 'month', 'durationTime', 'carbonEmissionsThisFlight', 'wifi_encoded', 'airplane_encoded', 'legroom']
+numerical_features = ['dayOfWeek', 'hour', 'month', 'durationTime', 'carbonEmissionsThisFlight', 'wifiEncoded', 'airplaneEncoded', 'legroom']
 
 # Drop rows with missing advanced features
 df_model_ready = df_filtered.dropna(subset=numerical_features + ['price'])
@@ -461,7 +505,7 @@ fig = px.bar(
     y=list(model_results.values()),
     title="Advanced Model RMSE Comparison",
     labels={'x': 'Model', 'y': 'RMSE'},
-    color_discrete_sequence=['#18bf8a'] * len(model_results)
+    color_discrete_sequence=['#00235f'] * len(model_results)
 )
 fig.update_traces(texttemplate='$%{y:.2f}', textposition='outside')
 st.plotly_chart(fig, use_container_width=True)
@@ -492,6 +536,6 @@ fig = px.bar(
     orientation='h',
     title='Feature Importance (Random Forest)',
     labels={'Importance': 'Relative Importance', 'Feature': 'Feature'},
-    color_discrete_sequence=['#18bf8a']
+    color_discrete_sequence=['#00235f']
 )
 st.plotly_chart(fig, use_container_width=True)
