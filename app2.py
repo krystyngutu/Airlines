@@ -61,10 +61,6 @@ except Exception as e:
     st.error(f"Error loading data: {e}")
     st.stop()
 
-
-
-
-
 airline_colors = {
     'Lufthansa': '#ffd700',           # gold
     'SWISS': '#d71920',               # red
@@ -185,7 +181,7 @@ fig = px.bar(
     df_airline,
     x='airline',
     y='mean',
-    color='airline',
+    color='airline_colors',
     error_y=df_airline['mean'] * 0.1,
     labels={'mean': 'Average Price ($)', 'airline': 'Airline'},
     title='Average Price by Airline',
