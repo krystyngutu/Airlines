@@ -16,7 +16,7 @@ import datetime
 # PAGE SETUP
 # ----------------------
 st.set_page_config(layout="wide")
-st.title("🛫 Flight Price Explorer: Revenue Steering Analysis")
+st.title("Flight Price Exploration: Revenue Steering Analysis")
 
 # ----------------------
 # LOAD & CLEAN DATA
@@ -505,7 +505,7 @@ fig = px.bar(
     y=list(model_results.values()),
     title="Advanced Model RMSE Comparison",
     labels={'x': 'Model', 'y': 'RMSE'},
-    color_discrete_sequence=['#00235f'] * len(model_results)
+    color_discrete_sequence=['#1a75ff'] * len(model_results)
 )
 fig.update_traces(texttemplate='$%{y:.2f}', textposition='outside')
 st.plotly_chart(fig, use_container_width=True)
@@ -536,6 +536,6 @@ fig = px.bar(
     orientation='h',
     title='Feature Importance (Random Forest)',
     labels={'Importance': 'Relative Importance', 'Feature': 'Feature'},
-    color_discrete_sequence=['#00235f']
+    color_discrete_sequence=['#1a75ff']
 )
 st.plotly_chart(fig, use_container_width=True)
