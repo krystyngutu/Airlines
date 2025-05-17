@@ -53,10 +53,10 @@ try:
     nyc_airports = ["JFK", "LGA"]
     swiss_airports = ["ZRH", "GVA", "BSL"]
 
-    if 'departureAairportID' in df.columns and 'destination' in df.columns:
-        df = df[df['departureAairportID'].isin(nyc_airports) & df['destination'].isin(swiss_airports)]
+    if 'departureAirportID' in df.columns and 'departureAirportID' in df.columns:
+        df = df[df['departureAirportID'].isin(nyc_airports) & df['departureAirportID'].isin(swiss_airports)]
     else:
-        st.warning("Columns 'departureAairportID' and 'destination' not found. Skipping route filtering.")
+        st.warning("Columns 'departureAirportID' and 'departureAirportID' not found. Skipping route filtering.")
     
 except Exception as e:
     st.error(f"Error loading data: {e}")
