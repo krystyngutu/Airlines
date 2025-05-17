@@ -49,17 +49,15 @@ def load_data():
 try:
     df = load_data()
 
-# ----------------------
-# ROUTE FILTERING: NYC to SWITZERLAND
-# ----------------------
-nyc_airports = ["JFK", "LGA"]
-swiss_airports = ["ZRH", "GVA", "BSL"]
+    # ROUTE FILTERING: NYC to SWITZERLAND
+    nyc_airports = ["JFK", "LGA"]
+    swiss_airports = ["ZRH", "GVA", "BSL"]
 
-if 'origin' in df.columns and 'destination' in df.columns:
-    df = df[df['origin'].isin(nyc_airports) & df['destination'].isin(swiss_airports)]
-else:
-    st.warning("Columns 'origin' and 'destination' not found. Skipping route filtering.")
-
+    if 'origin' in df.columns and 'destination' in df.columns:
+        df = df[df['origin'].isin(nyc_airports) & df['destination'].isin(swiss_airports)]
+    else:
+        st.warning("Columns 'origin' and 'destination' not found. Skipping route filtering.")
+    
 except Exception as e:
     st.error(f"Error loading data: {e}")
     st.stop()
