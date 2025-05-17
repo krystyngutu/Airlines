@@ -48,6 +48,18 @@ def load_data():
 
 try:
     df = load_data()
+
+# ----------------------
+# ROUTE FILTERING: NYC to SWITZERLAND
+# ----------------------
+nyc_airports = ["JFK", "LGA"]
+swiss_airports = ["ZRH", "GVA", "BSL"]
+
+if 'origin' in df.columns and 'destination' in df.columns:
+    df = df[df['origin'].isin(nyc_airports) & df['destination'].isin(swiss_airports)]
+else:
+    st.warning("Columns 'origin' and 'destination' not found. Skipping route filtering.")
+
 except Exception as e:
     st.error(f"Error loading data: {e}")
     st.stop()
@@ -124,8 +136,8 @@ with col2:
     fig = px.bar(df_tod, x='timeOfDay', y='price', title='Average Price by Time of Day',
                  labels={'price': 'Avg Price ($)', 'timeOfDay': 'Time'}, text_auto=True)
     st.plotly_chart(fig, use_container_width=True)
+    st.caption("🕐 Morning: 5am–12pm, Afternoon: 12–5pm, Evening: 5–10pm, Night: 10pm–5am")
     st.success(f"💰 Cheapest time to fly: **{df_tod.loc[df_tod['price'].idxmin(), 'timeOfDay']}**")
-st.caption("🕐 Morning: 5am–12pm, Afternoon: 12–5pm, Evening: 5–10pm, Night: 10pm–5am")
 
 st.subheader("Airline Price Comparison")
 df_airline = df_filtered.groupby('airline')['price'].mean().reset_index()
