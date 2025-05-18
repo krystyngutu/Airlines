@@ -218,7 +218,7 @@ try:
         
         # Feature importance for linear model (using coefficients)
         # This is simplified and would need more processing for actual feature importance
-        st.text("Linear model helps understand the baseline price drivers")
+        st.text("These linear models are underperforming due the data having nonlinear patterns and interactions")
     
     with model_tab2:
         st.subheader("Regularized Models")
