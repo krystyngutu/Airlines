@@ -96,6 +96,7 @@ star_alliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zeal
                  'Croatia Airlines', 'Egyptair', 'Ethiopian Airlines', 'Eva Air', 'LOT Polish Airlines',
                  'Lufthansa', 'Shenzhen Airlines', 'Singapore Airlines', 'South African Airways',
                  'SWISS', 'Tap Air Portugal', 'Thai', 'Turkish Airlines', 'United']
+
 group_option = st.sidebar.radio("Airline Group", ['All Airlines', 'Direct Airlines', 'Lufthansa Group', 'Star Alliance'])
 
 if group_option == 'Direct Airlines':
@@ -105,7 +106,8 @@ elif group_option == 'Lufthansa Group':
 elif group_option == 'Star Alliance':
     airline_filter = star_alliance
 else:
-    airline_filter = sorted(df['airline'].unique())
+    # Modified to include all airlines plus everything listed in both groups
+    airline_filter = sorted(set(df['airline'].unique()).union(set(lufthansa_group)).union(set(star_alliance)))
 
 df_filtered = df[df['airline'].isin(airline_filter)]
 
