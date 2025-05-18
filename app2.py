@@ -99,16 +99,19 @@ star_alliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zeal
 
 group_option = st.sidebar.radio("Airline Group", ['All Airlines', 'Direct Airlines', 'Lufthansa Group', 'Star Alliance'])
 
+all_airlines_in_data = df['airline'].dropna().unique().tolist()
+
 if group_option == 'Direct Airlines':
-    airline_filter = direct_airlines 
+    airline_filter = [a for a in direct_airlines if a in all_airlines_in_data]
 elif group_option == 'Lufthansa Group':
-    airline_filter = lufthansa_group
+    airline_filter = [a for a in lufthansa_group if a in all_airlines_in_data]
 elif group_option == 'Star Alliance':
-    airline_filter = star_alliance
+    airline_filter = [a for a in star_alliance if a in all_airlines_in_data]
 else:
-    airline_filter = sorted(df['airline'].unique())
+    airline_filter = all_airlines_in_data
 
 df_filtered = df[df['airline'].isin(airline_filter)]
+
 
 if df_filtered['price'].dropna().empty:
     st.warning("No flights found after applying filters. Please adjust your selections.")
