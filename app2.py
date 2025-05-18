@@ -271,13 +271,16 @@ try:
             st.metric("ElasticNet R²", f"{en_r2:.4f}")
         
         st.markdown("""
-        **Revenue Management Applications:**
-        - **Ridge**: Controls for multicollinearity between features (common in seasonal data)
-        - **Lasso**: Feature selection for dynamic pricing models
-        - **ElasticNet**: Hybrid approach for balanced feature selection and coefficient shrinkage
-        Regularized linear regression models are designed to prevent overfitting (when a model learns the data too well) by penalizing large coefficients. Ridge Regressions adds the squared magnitude of the coefficients to the loss function, while Lasso Regression adds the absolute value of coefficients to the loss function. ElasticNet combines the two.
+        Regularized linear regression models are designed to prevent overfitting (when a model learns the data too well) by penalizing large coefficients.
         """)
     
+    st.markdown("""
+        **Revenue Management Applications:**
+        - **Ridge**: Controls for multicollinearity between features (common in seasonal data); adds the squared magnitude of the coefficients to the loss function
+        - **Lasso**: Feature selection for dynamic pricing models; adds the absolute value of coefficients to the loss function
+        - **ElasticNet**: Hybrid approach for balanced feature selection and coefficient shrinkage; combines Ridge and Lasso
+        """)
+
     with model_tab3:
         st.subheader("Ensemble Models")
         
