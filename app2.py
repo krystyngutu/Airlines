@@ -17,6 +17,7 @@ import datetime
 # ----------------------
 st.set_page_config(layout="wide")
 st.title("Flight Price Exploration: Revenue Steering Analysis")
+st.header("NYC to CH")
 
 # ----------------------
 # LOAD & CLEAN DATA
@@ -117,7 +118,7 @@ df_filtered = df_filtered[(df_filtered['price'] >= price_range[0]) & (df_filtere
 # ----------------------
 # PRICE ANALYSIS
 # ----------------------
-st.header("📊 Price Analysis")
+st.header("Price Analysis")
 col1, col2 = st.columns(2)
 
 with col1:
@@ -132,10 +133,10 @@ with col2:
     tod_order = ['Morning', 'Afternoon', 'Evening', 'Night']
     df_tod = df_filtered.groupby('timeOfDay')['price'].mean().reindex(tod_order).reset_index()
     fig = px.bar(df_tod, x='timeOfDay', y='price', title='Average Price by Time of Day',
-                 labels={'price': 'Avg Price ($)', 'timeOfDay': 'Time'}, text_auto=True)
+             labels={'price': 'Avg Price ($)', 'timeOfDay': 'Time'}, text_auto=True)
     st.plotly_chart(fig, use_container_width=True)
-    st.caption("🕐 Morning: 5am–12pm, Afternoon: 12–5pm, Evening: 5–10pm, Night: 10pm–5am")
     st.success(f"💰 Cheapest time to fly: **{df_tod.loc[df_tod['price'].idxmin(), 'timeOfDay']}**")
+    st.caption("🕐 Morning: 5am–12pm, Afternoon: 12–5pm, Evening: 5–10pm, Night: 10pm–5am")
 
 st.subheader("Airline Price Comparison")
 df_airline = df_filtered.groupby('airline')['price'].mean().reset_index()
@@ -146,7 +147,7 @@ fig = px.bar(df_airline, x='airline', y='price', color='airline',
 fig.update_layout(xaxis_tickangle=-45)
 st.plotly_chart(fig, use_container_width=True)
 
-st.header("📈 Revenue Steering Models")
+st.header("Revenue Steering Models")
 st.markdown("""
 Revenue management and pricing teams use these models to optimize flight pricing strategy:
 - **Linear models**: Baseline for understanding price drivers
@@ -340,7 +341,7 @@ try:
         st.plotly_chart(fig, use_container_width=True)
 
     # Optimal booking recommendations
-    st.header("💡 Revenue Optimization Insights")
+    st.header("Revenue Optimization Insights")
     
     # Use the best model to predict prices for different scenarios
     best_pipeline = gb_pipeline if best_model == 'Gradient Boosting' else rf_pipeline
@@ -422,7 +423,7 @@ except Exception as e:
 # ----------------------
 # ADDITIONAL ANALYTICS
 # ----------------------
-st.header("🧭 Operational Feature Analysis")
+st.header("Operational Feature Analysis")
 
 col3, col4 = st.columns(2)
 
@@ -458,7 +459,7 @@ with col4:
 # ----------------------
 # ADVANCED MODELING WITH OPERATIONAL FEATURES
 # ----------------------
-st.header("🔬 Advanced Modeling with Operational Features")
+st.header("Advanced Modeling with Operational Features")
 
 # Feature engineering
 df_filtered['wifiEncoded'] = df_filtered['wifi'].fillna('Unknown').astype('category').cat.codes
@@ -519,7 +520,7 @@ st.plotly_chart(fig, use_container_width=True)
 # ----------------------
 # FEATURE IMPORTANCE VISUALIZATION
 # ----------------------
-st.header("🔎 Feature Importance from Advanced Models")
+st.header("Feature Importance from Advanced Models")
 
 # Use Random Forest for importance (or Gradient Boosting if preferred)
 rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
