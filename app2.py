@@ -16,7 +16,7 @@ import datetime
 # PAGE SETUP
 # ----------------------
 st.set_page_config(layout="wide")
-st.title("Flight Price Exploration (NYC to CH): Revenue Steering Analysis")
+st.title("Flight Price Exploration: Revenue Steering Analysis")
 
 # ----------------------
 # LOAD & CLEAN DATA
@@ -50,7 +50,7 @@ try:
     df = load_data()
 
     # ROUTE FILTERING: NYC to SWITZERLAND
-    nyc_airports = ["LGA", "JFK", "EWR"]
+    nyc_airports = ["JFK", "LGA", "EWR"]
     swiss_airports = ["ZRH", "BSL", "GVA"]
     
     if 'departureAirportID' in df.columns and 'arrivalAirportID' in df.columns:
@@ -96,11 +96,10 @@ star_alliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zeal
                  'Croatia Airlines', 'Egyptair', 'Ethiopian Airlines', 'Eva Air', 'LOT Polish Airlines',
                  'Lufthansa', 'Shenzhen Airlines', 'Singapore Airlines', 'South African Airways',
                  'SWISS', 'Tap Air Portugal', 'Thai', 'Turkish Airlines', 'United']
-
 group_option = st.sidebar.radio("Airline Group", ['All Airlines', 'Direct Airlines', 'Lufthansa Group', 'Star Alliance'])
 
 if group_option == 'Direct Airlines':
-    airline_filter = direct_airlines 
+    airline_filter = direct_airlines
 elif group_option == 'Lufthansa Group':
     airline_filter = lufthansa_group
 elif group_option == 'Star Alliance':
@@ -110,25 +109,15 @@ else:
 
 df_filtered = df[df['airline'].isin(airline_filter)]
 
-
-if df_filtered['price'].dropna().empty:
-    st.warning("No flights found after applying filters. Please adjust your selections.")
-    st.stop()
-else:
-    min_price = int(df_filtered['price'].min())
-    max_price = int(df_filtered['price'].max())
-
 min_price = int(df_filtered['price'].min())
 max_price = int(df_filtered['price'].max())
 price_range = st.sidebar.slider("Price Range ($)", min_value=min_price, max_value=max_price, value=(min_price, max_price))
 df_filtered = df_filtered[(df_filtered['price'] >= price_range[0]) & (df_filtered['price'] <= price_range[1])]
 
-df_filtered = df[df['airline'].isin(airline_filter)]
-
 # ----------------------
 # PRICE ANALYSIS
 # ----------------------
-st.header("Price Analysis")
+st.header("📊 Price Analysis")
 col1, col2 = st.columns(2)
 
 with col1:
@@ -143,10 +132,10 @@ with col2:
     tod_order = ['Morning', 'Afternoon', 'Evening', 'Night']
     df_tod = df_filtered.groupby('timeOfDay')['price'].mean().reindex(tod_order).reset_index()
     fig = px.bar(df_tod, x='timeOfDay', y='price', title='Average Price by Time of Day',
-             labels={'price': 'Avg Price ($)', 'timeOfDay': 'Time'}, text_auto=True)
+                 labels={'price': 'Avg Price ($)', 'timeOfDay': 'Time'}, text_auto=True)
     st.plotly_chart(fig, use_container_width=True)
-    st.success(f"💰 Cheapest time to fly: **{df_tod.loc[df_tod['price'].idxmin(), 'timeOfDay']}**")
     st.caption("🕐 Morning: 5am–12pm, Afternoon: 12–5pm, Evening: 5–10pm, Night: 10pm–5am")
+    st.success(f"💰 Cheapest time to fly: **{df_tod.loc[df_tod['price'].idxmin(), 'timeOfDay']}**")
 
 st.subheader("Airline Price Comparison")
 df_airline = df_filtered.groupby('airline')['price'].mean().reset_index()
@@ -157,7 +146,7 @@ fig = px.bar(df_airline, x='airline', y='price', color='airline',
 fig.update_layout(xaxis_tickangle=-45)
 st.plotly_chart(fig, use_container_width=True)
 
-st.header("Revenue Steering Models")
+st.header("📈 Revenue Steering Models")
 st.markdown("""
 Revenue management and pricing teams use these models to optimize flight pricing strategy:
 - **Linear models**: Baseline for understanding price drivers
@@ -220,7 +209,7 @@ try:
         
         # Feature importance for linear model (using coefficients)
         # This is simplified and would need more processing for actual feature importance
-        st.text("The linear model is underperforming due to the data having nonlinear patterns and interactions.")
+        st.text("Linear model helps understand the baseline price drivers")
     
     with model_tab2:
         st.subheader("Regularized Models")
@@ -273,16 +262,12 @@ try:
             st.metric("ElasticNet R²", f"{en_r2:.4f}")
         
         st.markdown("""
-        Regularized linear regression models are designed to prevent overfitting (when a model learns the data too well) by penalizing large coefficients.
+        **Revenue Management Applications:**
+        - **Ridge**: Controls for multicollinearity between features (common in seasonal data)
+        - **Lasso**: Feature selection for dynamic pricing models
+        - **ElasticNet**: Hybrid approach for balanced feature selection and coefficient shrinkage
         """)
     
-        st.markdown("""
-            **Revenue Management Applications:**
-            - **Ridge**: Controls for multicollinearity between features (common in seasonal data); adds the squared magnitude of the coefficients to the loss function
-            - **Lasso**: Feature selection for dynamic pricing models; adds the absolute value of coefficients to the loss function
-            - **ElasticNet**: Hybrid approach for balanced feature selection and coefficient shrinkage; combines Ridge and Lasso
-            """)
-
     with model_tab3:
         st.subheader("Ensemble Models")
         
@@ -355,7 +340,7 @@ try:
         st.plotly_chart(fig, use_container_width=True)
 
     # Optimal booking recommendations
-    st.header("Revenue Optimization Insights")
+    st.header("💡 Revenue Optimization Insights")
     
     # Use the best model to predict prices for different scenarios
     best_pipeline = gb_pipeline if best_model == 'Gradient Boosting' else rf_pipeline
@@ -410,7 +395,7 @@ try:
     
     fig.update_layout(height=500)
     st.plotly_chart(fig, use_container_width=True)
-
+    
     # Find the optimal booking time
     min_idx = prediction_df['price'].idxmin()
     optimal_day = prediction_df.loc[min_idx, 'day_name']
@@ -437,7 +422,7 @@ except Exception as e:
 # ----------------------
 # ADDITIONAL ANALYTICS
 # ----------------------
-st.header("Operational Feature Analysis")
+st.header("🧭 Operational Feature Analysis")
 
 col3, col4 = st.columns(2)
 
@@ -473,7 +458,7 @@ with col4:
 # ----------------------
 # ADVANCED MODELING WITH OPERATIONAL FEATURES
 # ----------------------
-st.header("Advanced Modeling with Operational Features")
+st.header("🔬 Advanced Modeling with Operational Features")
 
 # Feature engineering
 df_filtered['wifiEncoded'] = df_filtered['wifi'].fillna('Unknown').astype('category').cat.codes
@@ -534,7 +519,7 @@ st.plotly_chart(fig, use_container_width=True)
 # ----------------------
 # FEATURE IMPORTANCE VISUALIZATION
 # ----------------------
-st.header("Feature Importance from Advanced Models")
+st.header("🔎 Feature Importance from Advanced Models")
 
 # Use Random Forest for importance (or Gradient Boosting if preferred)
 rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
