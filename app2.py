@@ -218,7 +218,7 @@ try:
         
         # Feature importance for linear model (using coefficients)
         # This is simplified and would need more processing for actual feature importance
-        st.text("The linear model is underperforming due to the data having nonlinear patterns and interactions")
+        st.text("The linear model is underperforming due to the data having nonlinear patterns and interactions.")
     
     with model_tab2:
         st.subheader("Regularized Models")
@@ -275,6 +275,7 @@ try:
         - **Ridge**: Controls for multicollinearity between features (common in seasonal data)
         - **Lasso**: Feature selection for dynamic pricing models
         - **ElasticNet**: Hybrid approach for balanced feature selection and coefficient shrinkage
+        Regularized linear regression models are designed to prevent overfitting (when a model learns the data too well) by penalizing large coefficients. Ridge Regressions adds the squared magnitude of the coefficients to the loss function, while Lasso Regression adds the absolute value of coefficients to the loss function. ElasticNet combines the two.
         """)
     
     with model_tab3:
