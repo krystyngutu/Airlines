@@ -51,7 +51,7 @@ try:
     df = load_data()
 
     # ROUTE FILTERING: NYC to SWITZERLAND
-    nyc_airports = ["JFK", "LGA", "EWR"]
+    nyc_airports = ["JFK"]
     swiss_airports = ["ZRH", "BSL", "GVA"]
     
     if 'departureAirportID' in df.columns and 'arrivalAirportID' in df.columns:
