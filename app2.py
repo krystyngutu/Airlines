@@ -396,7 +396,16 @@ try:
     
     fig.update_layout(height=500)
     st.plotly_chart(fig, use_container_width=True)
-    
+
+    if df_filtered['price'].dropna().empty:
+        st.warning("No flights found after applying filters. Please adjust your selections.")
+        st.stop()
+    else:
+        min_price = int(df_filtered['price'].min())
+        max_price = int(df_filtered['price'].max())
+
+    df_filtered = df[df['airline'].isin(airline_filter)]
+
     # Find the optimal booking time
     min_idx = prediction_df['price'].idxmin()
     optimal_day = prediction_df.loc[min_idx, 'day_name']
