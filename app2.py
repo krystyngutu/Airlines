@@ -31,6 +31,7 @@ def load_data():
     df['dayOfWeek'] = df['departureTime'].dt.weekday
     df['hour'] = df['departureTime'].dt.hour
     df['month'] = df['departureTime'].dt.month
+    df['airline'] = df['airline'].astype(str).str.strip()
     if 'wifi' not in df.columns:
         df['wifi'] = 'Unknown'
 
@@ -43,24 +44,19 @@ def load_data():
             return 'Evening'
         else:
             return 'Night'
+
     df['timeOfDay'] = df['hour'].apply(time_of_day)
     return df.dropna(subset=['price', 'airline'])
 
-try:
-    df = load_data()
+# Load and filter data
+df = load_data()
 
-    # ROUTE FILTERING: NYC to SWITZERLAND
-    nyc_airports = ["LGA", "JFK", "EWR"]
-    swiss_airports = ["ZRH", "BSL", "GVA"]
-    
-    if 'departureAirportID' in df.columns and 'arrivalAirportID' in df.columns:
-        df = df[df['departureAirportID'].isin(nyc_airports) & df['arrivalAirportID'].isin(swiss_airports)]
-    else:
-        st.warning("Columns 'departureAirportID' and/or 'arrivalAirportID' not found. Skipping route filtering.")
-    
-except Exception as e:
-    st.error(f"Error loading data: {e}")
-    st.stop()
+# ROUTE FILTERING: NYC to SWITZERLAND
+nyc_airports = ["LGA", "JFK", "EWR"]
+swiss_airports = ["ZRH", "BSL", "GVA"]
+
+if 'departureAirportID' in df.columns and 'arrivalAirportID' in df.columns:
+    df = df[df['departureAirportID'].isin(nyc_airports) & df['arrivalAirportID'].isin(swiss_airports)]
 
 # ----------------------
 # COLOR PALETTE
@@ -92,13 +88,10 @@ direct_airlines = ['SWISS', 'United', 'Delta']
 lufthansa_group = ['Austrian', 'Brussels Airlines', 'Discover Airlines', 'Eurowings', 'Edelweiss Air', 'ITA', 'Air Dolomiti', 'Lufthansa', 'SWISS']
 star_alliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zealand', 'ANA', 'Asiana Airlines', 'Austrian', 'Avianca', 'Brussels Airlines', 'CopaAirlines', 'Croatia Airlines', 'Egyptair', 'Ethiopian Airlines', 'Eva Air', 'LOT Polish Airlines', 'Lufthansa', 'Shenzhen Airlines', 'Singapore Airlines', 'South African Airways', 'SWISS', 'Tap Air Portugal', 'Thai', 'Turkish Airlines', 'United']
 
-# Combine all allowed airlines
-allowed_airlines = set(direct_airlines) | set(lufthansa_group) | set(star_alliance)
-
-# Sidebar selection
+st.sidebar.header("Filters")
 group_option = st.sidebar.radio("Airline Group", ['All Airlines', 'Direct Airlines', 'Lufthansa Group', 'Star Alliance'])
 
-# Filter based on group
+# Define airline filter
 if group_option == 'Direct Airlines':
     airline_filter = direct_airlines
 elif group_option == 'Lufthansa Group':
@@ -106,11 +99,22 @@ elif group_option == 'Lufthansa Group':
 elif group_option == 'Star Alliance':
     airline_filter = star_alliance
 else:
-    airline_filter = sorted(df['airline'].unique())  
-
+    airline_filter = df['airline'].unique().tolist()
 
 # Apply airline filter
 df_filtered = df[df['airline'].isin(airline_filter)]
+
+# Check if results exist
+if df_filtered.empty:
+    st.warning("No flights found after applying filters. Try a different group or remove filters.")
+    st.stop()
+
+# Show airline distribution
+st.subheader("Airlines Present in Dataset")
+st.write(sorted(df['airline'].unique()))
+st.write("\n**Airlines after filtering:**")
+st.write(sorted(df_filtered['airline'].unique()))
+
 
 # Warn if no results
 if df_filtered['price'].dropna().empty:
