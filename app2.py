@@ -109,9 +109,6 @@ df_filtered = df[df['airline'].isin(airline_filter)]
 if df_filtered['price'].dropna().empty:
     st.warning("No flights found after applying filters. Please adjust your selections.")
     st.stop()
-else:
-    min_price = int(df_filtered['price'].min())
-    max_price = int(df_filtered['price'].max())
 
 min_price = int(df_filtered['price'].min())
 max_price = int(df_filtered['price'].max())
