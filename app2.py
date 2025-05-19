@@ -104,18 +104,6 @@ else:
 # Apply airline filter
 df_filtered = df[df['airline'].isin(airline_filter)]
 
-# Check if results exist
-if df_filtered.empty:
-    st.warning("No flights found after applying filters. Try a different group or remove filters.")
-    st.stop()
-
-# Show airline distribution
-st.subheader("Airlines Present in Dataset")
-st.write(sorted(df['airline'].unique()))
-st.write("\n**Airlines after filtering:**")
-st.write(sorted(df_filtered['airline'].unique()))
-
-
 # Warn if no results
 if df_filtered['price'].dropna().empty:
     st.warning("No flights found after applying filters. Please adjust your selections.")
