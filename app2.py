@@ -88,21 +88,10 @@ direct_airlines = ['SWISS', 'United', 'Delta']
 lufthansa_group = ['Austrian', 'Brussels Airlines', 'Discover Airlines', 'Eurowings', 'Edelweiss Air', 'ITA', 'Air Dolomiti', 'Lufthansa', 'SWISS']
 star_alliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zealand', 'ANA', 'Asiana Airlines', 'Austrian', 'Avianca', 'Brussels Airlines', 'CopaAirlines', 'Croatia Airlines', 'Egyptair', 'Ethiopian Airlines', 'Eva Air', 'LOT Polish Airlines', 'Lufthansa', 'Shenzhen Airlines', 'Singapore Airlines', 'South African Airways', 'SWISS', 'Tap Air Portugal', 'Thai', 'Turkish Airlines', 'United']
 
-st.sidebar.header("Filters")
-group_option = st.sidebar.radio("Airline Group", ['All Airlines', 'Direct Airlines', 'Lufthansa Group', 'Star Alliance'])
-
-# Define airline filter
-if group_option == 'Direct Airlines':
-    airline_filter = direct_airlines
-elif group_option == 'Lufthansa Group':
-    airline_filter = lufthansa_group
-elif group_option == 'Star Alliance':
-    airline_filter = star_alliance
-else:
-    airline_filter = df['airline'].unique().tolist()
-
-# Apply airline filter
+# Force filter to only include direct airlines
+airline_filter = ['SWISS', 'United', 'Delta']
 df_filtered = df[df['airline'].isin(airline_filter)]
+
 
 # Warn if no results
 if df_filtered['price'].dropna().empty:
