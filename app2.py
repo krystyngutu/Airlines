@@ -118,7 +118,6 @@ max_price = int(df_filtered['price'].max())
 price_range = st.sidebar.slider("Price Range ($)", min_value=min_price, max_value=max_price, value=(min_price, max_price))
 df_filtered = df_filtered[(df_filtered['price'] >= price_range[0]) & (df_filtered['price'] <= price_range[1])]
 
-df_filtered = df[df['airline'].isin(airline_filter)]
 
 # ----------------------
 # PRICE ANALYSIS
