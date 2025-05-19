@@ -118,9 +118,6 @@ else:
 
 df_filtered = df[df['airline'].isin(airline_filter)]
 
-st.caption(f"Airlines included: {', '.join(sorted(df_filtered['airline'].unique()))}")
-
-
 
 if df_filtered['price'].dropna().empty:
     st.warning("No flights found after applying filters. Please adjust your selections.")
