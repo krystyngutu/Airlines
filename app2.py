@@ -106,7 +106,8 @@ elif group_option == 'Lufthansa Group':
 elif group_option == 'Star Alliance':
     airline_filter = star_alliance
 else:
-    airline_filter = sorted(df['airline'].unique())
+    airline_filter = sorted(df['airline'].unique())  
+
 
 # Apply airline filter
 df_filtered = df[df['airline'].isin(airline_filter)]
