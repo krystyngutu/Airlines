@@ -95,9 +95,6 @@ star_alliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zeal
 # Combine all allowed airlines
 allowed_airlines = set(direct_airlines) | set(lufthansa_group) | set(star_alliance)
 
-# Filter original data to only relevant airlines
-df = df[df['airline'].isin(allowed_airlines)].copy()
-
 # Sidebar selection
 group_option = st.sidebar.radio("Airline Group", ['All Airlines', 'Direct Airlines', 'Lufthansa Group', 'Star Alliance'])
 
