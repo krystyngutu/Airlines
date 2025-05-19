@@ -88,33 +88,25 @@ custom_colors = ['#d71920', '#00235f', '#f9ba00', '#660000', '#800080', '#3366ff
 # SIDEBAR FILTERS
 # ----------------------
 st.sidebar.header("Filters")
-direct_airlines = ['SWISS', 'Delta', 'United']
-
-lufthansa_group = [
-    'Austrian', 'Brussels Airline', 'Discover Airlines', 'Eurowings', 
-    'Edelweiss Air', 'ITA Airways', 'Air Dolomiti', 'Lufthansa'
-]
-
-star_alliance = [
-    'Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zealand', 'ANA',
-    'Asiana Airlines', 'Austrian', 'Avianca', 'Brussels Airport', 'CopaAirlines',
-    'Croatia Airlines', 'Egyptair', 'Ethiopian Airlines', 'Eva Air', 'LOT Polish Airlines',
-    'Lufthansa', 'Shenzhen Airlines', 'Singapore Airlines', 'South African Airways',
-    'SWISS', 'TAP AirPortugal', 'Thai', 'Turkish Airlines', 'United'
-]
+direct_airlines = ['SWISS', 'United', 'Delta']
+lufthansa_group = ['Austrian', 'Brussels Airlines', 'Discover Airlines', 'Eurowings',
+                   'Edelweiss Air', 'ITA', 'Air Dolomiti', 'Lufthansa', 'SWISS']
+star_alliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zealand', 'ANA',
+                 'Asiana Airlines', 'Austrian', 'Avianca', 'Brussels Airlines', 'CopaAirlines',
+                 'Croatia Airlines', 'Egyptair', 'Ethiopian Airlines', 'Eva Air', 'LOT Polish Airlines',
+                 'Lufthansa', 'Shenzhen Airlines', 'Singapore Airlines', 'South African Airways',
+                 'SWISS', 'Tap Air Portugal', 'Thai', 'Turkish Airlines', 'United']
 
 group_option = st.sidebar.radio("Airline Group", ['All Airlines', 'Direct Airlines', 'Lufthansa Group', 'Star Alliance'])
 
-all_airlines_in_data = df['airline'].dropna().unique().tolist()
-
 if group_option == 'Direct Airlines':
-    airline_filter = [a for a in direct_airlines if a in all_airlines_in_data]
+    airline_filter = direct_airlines 
 elif group_option == 'Lufthansa Group':
-    airline_filter = [a for a in lufthansa_group if a in all_airlines_in_data]
+    airline_filter = lufthansa_group
 elif group_option == 'Star Alliance':
-    airline_filter = [a for a in star_alliance if a in all_airlines_in_data]
+    airline_filter = star_alliance
 else:
-    airline_filter = all_airlines_in_data
+    airline_filter = sorted(df['airline'].unique())
 
 df_filtered = df[df['airline'].isin(airline_filter)]
 
@@ -122,13 +114,16 @@ df_filtered = df[df['airline'].isin(airline_filter)]
 if df_filtered['price'].dropna().empty:
     st.warning("No flights found after applying filters. Please adjust your selections.")
     st.stop()
+else:
+    min_price = int(df_filtered['price'].min())
+    max_price = int(df_filtered['price'].max())
 
 min_price = int(df_filtered['price'].min())
 max_price = int(df_filtered['price'].max())
 price_range = st.sidebar.slider("Price Range ($)", min_value=min_price, max_value=max_price, value=(min_price, max_price))
-
 df_filtered = df_filtered[(df_filtered['price'] >= price_range[0]) & (df_filtered['price'] <= price_range[1])]
 
+df_filtered = df[df['airline'].isin(airline_filter)]
 
 # ----------------------
 # PRICE ANALYSIS
