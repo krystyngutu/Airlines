@@ -92,29 +92,35 @@ direct_airlines = ['SWISS', 'United', 'Delta']
 lufthansa_group = ['Austrian', 'Brussels Airlines', 'Discover Airlines', 'Eurowings', 'Edelweiss Air', 'ITA', 'Air Dolomiti', 'Lufthansa', 'SWISS']
 star_alliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zealand', 'ANA', 'Asiana Airlines', 'Austrian', 'Avianca', 'Brussels Airlines', 'CopaAirlines', 'Croatia Airlines', 'Egyptair', 'Ethiopian Airlines', 'Eva Air', 'LOT Polish Airlines', 'Lufthansa', 'Shenzhen Airlines', 'Singapore Airlines', 'South African Airways', 'SWISS', 'Tap Air Portugal', 'Thai', 'Turkish Airlines', 'United']
 
-group_option = st.sidebar.radio("Airline Group", ['All Airlines', 'Direct Airlines', 'Lufthansa Group', 'Star Alliance'])
+# Combine all allowed airlines into a unified set
+allowed_airlines = set(direct_airlines) | set(lufthansa_group) | set(star_alliance)
 
+# Filter the original dataset to only those airlines
+df = df[df['airline'].isin(allowed_airlines)].copy()
+
+# Airline group selection
+group_option = st.sidebar.radio("Airline Group", ['Direct Airlines', 'Lufthansa Group', 'Star Alliance'])
+
+# Apply group filter
 if group_option == 'Direct Airlines':
     airline_filter = direct_airlines 
 elif group_option == 'Lufthansa Group':
     airline_filter = lufthansa_group
 elif group_option == 'Star Alliance':
     airline_filter = star_alliance
-else:
-    airline_filter = sorted(df['airline'].unique())
 
 df_filtered = df[df['airline'].isin(airline_filter)]
 
-
+# Handle empty case
 if df_filtered['price'].dropna().empty:
     st.warning("No flights found after applying filters. Please adjust your selections.")
     st.stop()
 
+# Price slider filter
 min_price = int(df_filtered['price'].min())
 max_price = int(df_filtered['price'].max())
 price_range = st.sidebar.slider("Price Range ($)", min_value=min_price, max_value=max_price, value=(min_price, max_price))
 df_filtered = df_filtered[(df_filtered['price'] >= price_range[0]) & (df_filtered['price'] <= price_range[1])]
-
 
 # ----------------------
 # PRICE ANALYSIS
