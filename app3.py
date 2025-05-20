@@ -55,9 +55,6 @@ df = load_data()
 nyc_airports = ["LGA", "JFK", "EWR"]
 swiss_airports = ["ZRH", "BSL", "GVA"]
 
-if 'departureAirportID' in df.columns and 'arrivalAirportID' in df.columns:
-    df = df[df['departureAirportID'].isin(nyc_airports) & df['arrivalAirportID'].isin(swiss_airports)]
-
 # ----------------------
 # COLOR PALETTE
 # ----------------------
