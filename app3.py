@@ -23,7 +23,7 @@ st.title("Flight Price Exploration (NYC to CH): Revenue Steering Analysis")
 # ----------------------
 @st.cache_data
 def load_data():
-    df = pd.read_csv("all_flights.csv")
+    df = pd.read_csv("allFlights.csv")
     df['departureTime'] = pd.to_datetime(df['departureTime'], errors='coerce')
     df['price'] = pd.to_numeric(df['price'], errors='coerce')
     df['durationTime'] = pd.to_numeric(df['durationTime'], errors='coerce')
