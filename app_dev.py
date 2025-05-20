@@ -24,109 +24,186 @@ st.title("Flight Price Exploration (NYC to CH): Revenue Steering Analysis")
 @st.cache_data
 def load_data():
     df = pd.read_csv("allFlights.csv")
-    df['departureTime'] = pd.to_datetime(df['departureTime'], errors='coerce')
-    df['price'] = pd.to_numeric(df['price'], errors='coerce')
-    df['durationTime'] = pd.to_numeric(df['durationTime'], errors='coerce')
-    df['weekday'] = df['departureTime'].dt.day_name()
-    df['dayOfWeek'] = df['departureTime'].dt.weekday
-    df['hour'] = df['departureTime'].dt.hour
-    df['month'] = df['departureTime'].dt.month
-    df['airline'] = df['airline'].astype(str).str.strip()
+    # parse times & numeric columns
+    df['departureTime']   = pd.to_datetime(df['departureTime'], errors='coerce')
+    df['price']           = pd.to_numeric(df['price'], errors='coerce')
+    df['durationTime']    = pd.to_numeric(df['durationTime'], errors='coerce')
+    # basic time features
+    df['weekday']         = df['departureTime'].dt.day_name()
+    df['dayOfWeek']       = df['departureTime'].dt.weekday
+    df['hour']            = df['departureTime'].dt.hour
+    df['month']           = df['departureTime'].dt.month
+    # NEW: season mapping
+    season_map = {
+        12: 'Winter', 1: 'Winter', 2: 'Winter',
+        3: 'Spring', 4: 'Spring', 5: 'Spring',
+        6: 'Summer', 7: 'Summer', 8: 'Summer',
+        9: 'Fall', 10: 'Fall', 11: 'Fall'
+    }
+    df['season']          = df['month'].map(season_map)
+    # airline cleanup
+    df['airline']         = df['airline'].astype(str).str.strip()
+    # wifi fallback
     if 'wifi' not in df.columns:
         df['wifi'] = 'Unknown'
-
-    def time_of_day(hour):
-        if 5 <= hour < 12:
-            return 'Morning'
-        elif 12 <= hour < 17:
-            return 'Afternoon'
-        elif 17 <= hour < 22:
-            return 'Evening'
-        else:
-            return 'Night'
-
-    df['timeOfDay'] = df['hour'].apply(time_of_day)
+    # time of day
+    def time_of_day(h):
+        if 5 <= h < 12: return 'Morning'
+        if 12 <= h < 17: return 'Afternoon'
+        if 17 <= h < 22: return 'Evening'
+        return 'Night'
+    df['timeOfDay']       = df['hour'].apply(time_of_day)
+    # NEW: travel class
+    if 'travelClass' in df.columns:
+        df['travelClass'] = df['travelClass'].fillna('Unknown').astype(str).str.title()
+    else:
+        df['travelClass'] = 'Unknown'
+    # NEW: layover parsing
+    if 'layovers' in df.columns:
+        df['layovers'] = df['layovers'].fillna('').astype(str)
+        df['numLayovers'] = df['layovers'].apply(
+            lambda x: 0 if x.strip()=='' else x.count(',')+1
+        )
+    else:
+        df['numLayovers'] = 0
+    # NEW: legroom parsing from 'extensions'
+    if 'extensions' in df.columns:
+        df['legroom'] = df['extensions'] \
+            .str.extract(r'Average legroom\((\d+)\s*in\)', expand=False)
+        df['legroom'] = pd.to_numeric(df['legroom'], errors='coerce')
+    elif 'legroom' in df.columns:
+        df['legroom'] = pd.to_numeric(
+            df['legroom'].astype(str).str.extract(r'(\d+)', expand=False),
+            errors='coerce'
+        )
+    else:
+        df['legroom'] = np.nan
+    # return only rows with price & airline
     return df.dropna(subset=['price', 'airline'])
 
-# Load and filter data
 df = load_data()
 
-# ROUTE FILTERING: NYC to SWITZERLAND
-nyc_airports = ["LGA", "JFK", "EWR"]
-swiss_airports = ["ZRH", "BSL", "GVA"]
+# ----------------------
+# ROUTE FILTERING: NYC → CH
+# ----------------------
+nyc_airports   = ["LGA","JFK","EWR"]
+swiss_airports = ["ZRH","BSL","GVA"]
+df = df[
+    df['departureAirportID'].isin(nyc_airports) &
+    df['arrivalAirportID'].isin(swiss_airports)
+]
 
 # ----------------------
 # COLOR PALETTE
 # ----------------------
 airline_colors = {
-    'Lufthansa': '#ffd700',
-    'SWISS': '#d71920',
-    'Delta': '#00235f',
-    'United': '#1a75ff',
-    'Edelweiss Air': '#800080',
+    'Lufthansa':    '#ffd700',
+    'SWISS':        '#d71920',
+    'Delta':        '#00235f',
+    'United':       '#1a75ff',
+    'Edelweiss Air':'#800080',
     'Air Dolomiti': '#32cd32',
-    'Austrian': '#c3f550',
-    'ITA': '#fbaa3f',
-    'Brussels Airlines': '#00235f',
-    'Eurowings': '#1a75ff',
-    'Aegean': '#767676',
-    'Air Canada': '#00235f',
-    'Tap Air Portugal': '#fbaa3f',
-    'Turkish Airlines': '#800080'
+    'Austrian':     '#c3f550',
+    'ITA':          '#fbaa3f',
+    'Brussels Airlines':'#00235f',
+    'Eurowings':    '#1a75ff',
+    'Aegean':       '#767676',
+    'Air Canada':   '#00235f',
+    'Tap Air Portugal':'#fbaa3f',
+    'Turkish Airlines':'#800080'
 }
-custom_colors = ['#d71920', '#00235f', '#f9ba00', '#660000', '#800080', '#3366ff',
-                 '#c3f550', '#fbaa3f', '#000000']
 
 # ----------------------
 # SIDEBAR FILTERS
 # ----------------------
 st.sidebar.header("Airline Filters")
-
-# Define airline groups
-direct_airlines = ['SWISS', 'United', 'Delta']
-lufthansa_group = ['Austrian', 'Brussels Airlines', 'Discover Airlines', 'Eurowings', 'Edelweiss Air', 'ITA', 'Air Dolomiti', 'Lufthansa', 'SWISS']
-star_alliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zealand', 'ANA', 'Asiana Airlines',
-    'Austrian', 'Avianca', 'Brussels Airlines', 'CopaAirlines', 'Croatia Airlines', 'Egyptair',
-    'Ethiopian Airlines', 'Eva Air', 'LOT Polish Airlines', 'Lufthansa', 'Shenzhen Airlines',
-    'Singapore Airlines', 'South African Airways', 'SWISS', 'Tap Air Portugal', 'Thai',
-    'Turkish Airlines', 'United']
-
-# Radio button filter
-airline_group = st.sidebar.radio(
-    "Select Flight Group:",
-    options=["All Flights", "Direct Airlines", "Lufthansa Group", "Star Alliance"]
-)
-
-# Apply airline group filter
-if airline_group == "Direct Airlines":
-    df = df[df["airline"].isin(direct_airlines)]
-elif airline_group == "Lufthansa Group":
-    df = df[df["airline"].isin(lufthansa_group)]
-elif airline_group == "Star Alliance":
-    df = df[df["airline"].isin(star_alliance)]
-
-# Price slider
-min_price = int(df['price'].min())
-max_price = int(df['price'].max())
-
-price_range = st.sidebar.slider(
-    "Price Range ($)",
-    min_value=min_price,
-    max_value=max_price,
-    value=(min_price, max_price)
-)
-
-# Apply price filter
-df = df[
-    (df['price'] >= price_range[0]) & (df['price'] <= price_range[1])
+direct_airlines = ['SWISS','United','Delta']
+lufthansa_group = ['Austrian','Brussels Airlines','Discover Airlines','Eurowings','Edelweiss Air','ITA','Air Dolomiti','Lufthansa','SWISS']
+star_alliance   = [
+    'Aegean','Air Canada','Air China','Air India','Air New Zealand','ANA','Asiana Airlines',
+    'Austrian','Avianca','Brussels Airlines','CopaAirlines','Croatia Airlines','Egyptair',
+    'Ethiopian Airlines','Eva Air','LOT Polish Airlines','Lufthansa','Shenzhen Airlines',
+    'Singapore Airlines','South African Airways','SWISS','Tap Air Portugal','Thai',
+    'Turkish Airlines','United'
 ]
-min_price = int(df['price'].min())
-max_price = int(df['price'].max())
+group = st.sidebar.radio("Select Flight Group:", ["All Flights","Direct Airlines","Lufthansa Group","Star Alliance"])
+if group=="Direct Airlines":
+    df = df[df['airline'].isin(direct_airlines)]
+elif group=="Lufthansa Group":
+    df = df[df['airline'].isin(lufthansa_group)]
+elif group=="Star Alliance":
+    df = df[df['airline'].isin(star_alliance)]
 
-# Apply price filter
-df = df[
-    (df['price'] >= price_range[0]) & (df['price'] <= price_range[1])
-]
+# price slider
+min_p = int(df['price'].min())
+max_p = int(df['price'].max())
+price_range = st.sidebar.slider("Price Range ($)", min_p, max_p, (min_p,max_p))
+df = df[(df['price']>=price_range[0]) & (df['price']<=price_range[1])]
+
+# ----------------------
+# PRICE OVER TIME BREAKDOWNS
+# ----------------------
+st.header("Price Over Time")
+# by month
+st.subheader("Average Price by Month")
+df_mo = df.groupby(['month','airline'])['price'].mean().reset_index()
+fig_mo = px.line(
+    df_mo, x='month', y='price',
+    color='airline',
+    color_discrete_map=airline_colors,
+    markers=True,
+    title="Avg Price by Month & Airline",
+    labels={'month':'Month','price':'Avg Price ($)'}
+)
+st.plotly_chart(fig_mo, use_container_width=True)
+
+# by season
+st.subheader("Average Price by Season")
+df_se = df.groupby(['season','airline'])['price'].mean().reset_index()
+# ensure season ordering
+season_order = ['Winter','Spring','Summer','Fall']
+fig_se = px.line(
+    df_se, x='season', y='price',
+    color='airline',
+    category_orders={'season': season_order},
+    color_discrete_map=airline_colors,
+    markers=True,
+    title="Avg Price by Season & Airline",
+    labels={'season':'Season','price':'Avg Price ($)'}
+)
+st.plotly_chart(fig_se, use_container_width=True)
+
+# ----------------------
+# LAYOVER ANALYSIS
+# ----------------------
+st.header("Layover Analysis")
+df_lo = df.groupby('numLayovers')['price'].mean().reset_index()
+fig_lo = px.bar(
+    df_lo, x='numLayovers', y='price', text_auto=True,
+    title="Avg Price by Number of Layovers",
+    labels={'numLayovers':'# of Layovers','price':'Avg Price ($)'}
+)
+st.plotly_chart(fig_lo, use_container_width=True)
+
+# ----------------------
+# TRAVEL CLASS ANALYSIS
+# ----------------------
+st.header("Travel Class Analysis")
+df_tc = df.groupby('travelClass')['price'].mean().reset_index().sort_values('price')
+fig_tc = px.bar(
+    df_tc, x='travelClass', y='price', text_auto=True,
+    title="Avg Price by Travel Class",
+    labels={'travelClass':'Class','price':'Avg Price ($)'}
+)
+fig_tc.update_layout(xaxis_tickangle=-45)
+st.plotly_chart(fig_tc, use_container_width=True)
+
+# ----------------------
+# EXISTING PRICE ANALYSIS + MODELS + ADDITIONAL ANALYTICS continue below...
+# ----------------------
+# (the rest of your Price Analysis, Revenue Steering Models,
+#  Operational Feature Analysis, etc. remains unchanged)
+
 
 # ----------------------
 # PRICE ANALYSIS
