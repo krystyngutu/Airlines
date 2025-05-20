@@ -80,7 +80,6 @@ airline_colors = {
 custom_colors = ['#d71920', '#00235f', '#f9ba00', '#660000', '#800080', '#3366ff',
                  '#c3f550', '#fbaa3f', '#000000']
 
-
 # ----------------------
 # SIDEBAR FILTERS
 # ----------------------
@@ -440,7 +439,6 @@ except Exception as e:
     st.error(f"Error in model building: {e}")
 
 
-
 # ----------------------
 # ADDITIONAL ANALYTICS
 # ----------------------
@@ -463,8 +461,6 @@ if 'airplane' in df.columns:
                      labels={'price': 'Price ($)', 'airplane': 'Aircraft'})
         fig.update_layout(xaxis_tickangle=-45)
         st.plotly_chart(fig, use_container_width=True)
-
-
     
 with col4:
     if 'legroom' in df.columns:
@@ -535,8 +531,6 @@ fig = px.bar(
 )
 fig.update_traces(texttemplate='$%{y:.2f}', textposition='outside')
 st.plotly_chart(fig, use_container_width=True)
-
-
 
 # ----------------------
 # FEATURE IMPORTANCE VISUALIZATION
