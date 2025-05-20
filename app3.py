@@ -26,8 +26,11 @@ elif filter_option == "Star Alliance":
 else:
     df_filtered = df.copy()
 
-# Header
-st.title("Flight Explorer")
+# ----------------------
+# PAGE SETUP
+# ----------------------
+st.set_page_config(layout="wide")
+st.title("Flight Price Exploration (NYC to CH): Revenue Steering Analysis")
 
 # Summary stats
 st.subheader("Summary Statistics")
