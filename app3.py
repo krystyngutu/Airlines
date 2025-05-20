@@ -55,6 +55,14 @@ df = load_data()
 nyc_airports = ["LGA", "JFK", "EWR"]
 swiss_airports = ["ZRH", "BSL", "GVA"]
 
+# Apply airline group filter
+if airline_group == "Direct Airlines":
+    df = df[df["airline"].isin(direct_airlines)]
+elif airline_group == "Lufthansa Group":
+    df = df[df["airline"].isin(lufthansa_group)]
+elif airline_group == "Star Alliance":
+    df = df[df["airline"].isin(star_alliance)]
+
 if 'departureAirportID' in df.columns and 'arrivalAirportID' in df.columns:
     df = df[df['departureAirportID'].isin(nyc_airports) & df['arrivalAirportID'].isin(swiss_airports)]
 
@@ -99,14 +107,6 @@ airline_group = st.sidebar.radio(
     "Select Flight Group:",
     options=["All Flights", "Direct Airlines", "Lufthansa Group", "Star Alliance"]
 )
-
-# Apply airline group filter
-if airline_group == "Direct Airlines":
-    df = df[df["airline"].isin(direct_airlines)]
-elif airline_group == "Lufthansa Group":
-    df = df[df["airline"].isin(lufthansa_group)]
-elif airline_group == "Star Alliance":
-    df = df[df["airline"].isin(star_alliance)]
 
 # Price slider
 min_price = int(df['price'].min())
