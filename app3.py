@@ -29,7 +29,6 @@ else:
 # ----------------------
 # PAGE SETUP
 # ----------------------
-st.set_page_config(layout="wide")
 st.title("Flight Price Exploration (NYC to CH): Revenue Steering Analysis")
 
 # Summary stats
