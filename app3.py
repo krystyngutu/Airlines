@@ -89,8 +89,8 @@ lufthansa_group = ['Austrian', 'Brussels Airlines', 'Discover Airlines', 'Eurowi
 star_alliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zealand', 'ANA', 'Asiana Airlines', 'Austrian', 'Avianca', 'Brussels Airlines', 'CopaAirlines', 'Croatia Airlines', 'Egyptair', 'Ethiopian Airlines', 'Eva Air', 'LOT Polish Airlines', 'Lufthansa', 'Shenzhen Airlines', 'Singapore Airlines', 'South African Airways', 'SWISS', 'Tap Air Portugal', 'Thai', 'Turkish Airlines', 'United']
 
 # Price slider
-min_price = int(df_filtered['price'].min())
-max_price = int(df_filtered['price'].max())
+min_price = int(df['price'].min())
+max_price = int(df['price'].max())
 
 price_range = st.sidebar.slider(
     "Price Range ($)",
@@ -100,8 +100,8 @@ price_range = st.sidebar.slider(
 )
 
 # Apply price filter
-df_filtered = df_filtered[
-    (df_filtered['price'] >= price_range[0]) & (df_filtered['price'] <= price_range[1])
+df = df[
+    (df['price'] >= price_range[0]) & (df['price'] <= price_range[1])
 ]
 
 # ----------------------
@@ -112,7 +112,7 @@ col1, col2 = st.columns(2)
 
 with col1:
     day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-    df_day = df_filtered.groupby('weekday')['price'].mean().reindex(day_order).reset_index()
+    df_day = df.groupby('weekday')['price'].mean().reindex(day_order).reset_index()
     fig = px.bar(df_day, x='weekday', y='price', title='Average Price by Day of Week',
                  labels={'price': 'Avg Price ($)', 'weekday': 'Day'}, text_auto=True)
     st.plotly_chart(fig, use_container_width=True)
@@ -120,7 +120,7 @@ with col1:
 
 with col2:
     tod_order = ['Morning', 'Afternoon', 'Evening', 'Night']
-    df_tod = df_filtered.groupby('timeOfDay')['price'].mean().reindex(tod_order).reset_index()
+    df_tod = df.groupby('timeOfDay')['price'].mean().reindex(tod_order).reset_index()
     fig = px.bar(df_tod, x='timeOfDay', y='price', title='Average Price by Time of Day',
              labels={'price': 'Avg Price ($)', 'timeOfDay': 'Time'}, text_auto=True)
     st.plotly_chart(fig, use_container_width=True)
@@ -128,7 +128,7 @@ with col2:
     st.caption("🕐 Morning: 5am–12pm, Afternoon: 12–5pm, Evening: 5–10pm, Night: 10pm–5am")
 
 st.subheader("Airline Price Comparison")
-df_airline = df_filtered.groupby('airline')['price'].mean().reset_index()
+df_airline = df.groupby('airline')['price'].mean().reset_index()
 fig = px.bar(df_airline, x='airline', y='price', color='airline',
              color_discrete_map=airline_colors,
              title='Average Price by Airline',
@@ -162,7 +162,7 @@ def prepare_model_data(df):
 model_tab1, model_tab2, model_tab3 = st.tabs(["Linear Models", "Regularized Models", "Ensemble Models"])
 
 try:
-    X, y = prepare_model_data(df_filtered)
+    X, y = prepare_model_data(df)
     
     # Handle categorical variables
     categorical_features = ['airline']
@@ -421,16 +421,16 @@ st.header("Operational Feature Analysis")
 col3, col4 = st.columns(2)
 
 with col3:
-    if 'carbonEmissionsThisFlight' in df_filtered.columns:
-        df_carbon = df_filtered.dropna(subset=['carbonEmissionsThisFlight'])
+    if 'carbonEmissionsThisFlight' in df.columns:
+        df_carbon = df.dropna(subset=['carbonEmissionsThisFlight'])
         fig = px.box(df_carbon, x='airline', y='carbonEmissionsThisFlight', color='airline',
                      color_discrete_map=airline_colors,
                      title='Carbon Emissions by Airline',
                      labels={'carbonEmissionsThisFlight': 'Carbon Emissions (kg)'})
         st.plotly_chart(fig, use_container_width=True)
 st.markdown('---')
-if 'airplane' in df_filtered.columns:
-        df_aircraft = df_filtered.dropna(subset=['airplane'])
+if 'airplane' in df.columns:
+        df_aircraft = df.dropna(subset=['airplane'])
         fig = px.box(df_aircraft, x='airplane', y='price', title='Price by Aircraft Type',
                      labels={'price': 'Price ($)', 'airplane': 'Aircraft'})
         fig.update_layout(xaxis_tickangle=-45)
@@ -439,8 +439,8 @@ if 'airplane' in df_filtered.columns:
 
     
 with col4:
-    if 'legroom' in df_filtered.columns:
-        df_legroom = df_filtered.dropna(subset=['legroom'])
+    if 'legroom' in df.columns:
+        df_legroom = df.dropna(subset=['legroom'])
         df_legroom['legroom'] = pd.to_numeric(df_legroom['legroom'].str.extract(r'(\d+)')[0], errors='coerce')
         fig = px.box(df_legroom, x='airline', y='legroom', color='airline',
                      color_discrete_map=airline_colors,
@@ -455,12 +455,12 @@ with col4:
 st.header("Advanced Modeling with Operational Features")
 
 # Feature engineering
-df_filtered['wifiEncoded'] = df_filtered['wifi'].fillna('Unknown').astype('category').cat.codes
-df_filtered['airplaneEncoded'] = df_filtered['airplane'].fillna('Unknown').astype('category').cat.codes
-if 'legroom' in df_filtered.columns:
-    df_filtered['legroom'] = pd.to_numeric(df_filtered['legroom'].str.extract(r'(\d+)')[0], errors='coerce')
+df['wifiEncoded'] = df['wifi'].fillna('Unknown').astype('category').cat.codes
+df['airplaneEncoded'] = df['airplane'].fillna('Unknown').astype('category').cat.codes
+if 'legroom' in df.columns:
+    df['legroom'] = pd.to_numeric(df['legroom'].str.extract(r'(\d+)')[0], errors='coerce')
 else:
-    df_filtered['legroom'] = np.nan
+    df['legroom'] = np.nan
 
 advanced_features = ['dayOfWeek', 'hour', 'month', 'durationTime', 'carbonEmissionsThisFlight',
                      'wifiEncoded', 'airplaneEncoded', 'legroom']
@@ -468,7 +468,7 @@ categorical_features = []
 numerical_features = ['dayOfWeek', 'hour', 'month', 'durationTime', 'carbonEmissionsThisFlight', 'wifiEncoded', 'airplaneEncoded', 'legroom']
 
 # Drop rows with missing advanced features
-df_model_ready = df_filtered.dropna(subset=numerical_features + ['price'])
+df_model_ready = df.dropna(subset=numerical_features + ['price'])
 
 X_adv = df_model_ready[advanced_features]
 y_adv = df_model_ready['price']
