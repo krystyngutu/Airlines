@@ -233,7 +233,36 @@ with col6:
     st.plotly_chart(fig_tc, use_container_width=True)
     st.success(f"💰 Cheapest class: **{tc.loc[tc['price'].idxmin(),'travelClass']}**")
 
-# 5. Airline Price Comparison
+# 5. Carbon & Wi-Fi Analysis
+col5, col6 = st.columns(2)
+
+with col5:
+    st.subheader("Average Price by Carbon Emissions")
+    cr = df.groupby('carbon')['price'].mean().reset_index()
+    cr['price'] = np.ceil(cr['price'])
+    fig_cr = px.bar(
+        cr, x='carbon', y='price',
+        labels={'carbon':'Carbon Emissions (kg)','price':'Avg Price ($)'},
+        text_auto=True
+    )
+    st.plotly_chart(fig_cr, use_container_width=True)
+    st.success(f"💰 Lowest avg price at **{int(cr.loc[cr['price'].idxmin(),'carbon'])}** kg")
+
+with col6:
+    st.subheader("Average Price by Wi-Fi Offering")
+    wf = df.dropna(subset=['wifi']).groupby('wifi')['price'].mean().reset_index()
+    wf['price'] = np.ceil(wf['price'])
+    wf['wifi'] = wf['wifi'].map({1:'Free', 0:'Paid'})
+    fig_wf = px.bar(
+        wf, x='wifi', y='price',
+        labels={'wifi':'Wi-Fi','price':'Avg Price ($)'},
+        text_auto=True
+    )
+    fig_wf.update_layout(xaxis={'categoryorder':'array','categoryarray':['Free','Paid']})
+    st.plotly_chart(fig_wf, use_container_width=True)
+    st.success(f"💰 Cheapest Wi-Fi option: **{wf.loc[wf['price'].idxmin(),'wifi']}**")
+
+# 6. Airline Price Comparison
 st.subheader("Average Price by Airline")
 air = df.groupby('airline')['price'].mean().reset_index()
 air['price'] = np.ceil(air['price'])
