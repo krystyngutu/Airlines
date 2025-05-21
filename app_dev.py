@@ -16,7 +16,7 @@ import calendar
 # PAGE SETUP
 # ----------------------
 st.set_page_config(layout="wide")
-st.title("Aviation Revenue Steering Analysis: NYC → CH (May 2025 - March 2026)")
+st.title("Transatlantic Fare Explorer: NYC → Switzerland")
 
 # ----------------------
 # LOAD & CLEAN DATA
@@ -24,54 +24,63 @@ st.title("Aviation Revenue Steering Analysis: NYC → CH (May 2025 - March 2026)
 @st.cache_data
 def load_data():
     df = pd.read_csv("allFlights.csv")
-    # parse and round price
+    # parse datetime and price
     df['departureTime'] = pd.to_datetime(df['departureTime'], errors='coerce')
-    df['price'] = pd.to_numeric(df['price'], errors='coerce')
-    df['price'] = np.ceil(df['price'])  # round up to next dollar
-    df['durationTime'] = pd.to_numeric(df['durationTime'], errors='coerce')
+    df['price'] = np.ceil(pd.to_numeric(df['price'], errors='coerce'))
+    df['durationTime'] = pd.to_numeric(df.get('durationTime', np.nan), errors='coerce')
 
-    # wifi encoding: 1=free, 0=none/unknown
-    df['wifiEncoded'] = np.where(
-        df.get('wifi', '').str.contains('free', case=False, na=False), 1, 0)
+    # wifi encoding: 1 = free wifi, 0 = none/unknown
+    if 'wifi' in df.columns:
+        df['wifiEncoded'] = np.where(
+            df['wifi'].fillna('').str.contains('free', case=False, na=False),
+            1,
+            0
+        )
+    else:
+        df['wifiEncoded'] = 0
 
     # datetime features
-    df['weekday'] = df['departureTime'].dt.day_name()
-    df['dayOfWeek'] = df['departureTime'].dt.weekday
     df['hour'] = df['departureTime'].dt.hour
+    df['weekday'] = df['departureTime'].dt.day_name()
     df['month'] = df['departureTime'].dt.month
+
     # season mapping
-    def assign_season(m):
-        if m in [12, 1, 2]: return 'Winter'
-        if m in [3, 4, 5]: return 'Spring'
-        if m in [6, 7, 8]: return 'Summer'
-        return 'Fall'
-    df['season'] = df['month'].apply(assign_season)
+    df['season'] = df['month'].apply(lambda m: (
+        'Winter' if m in [12,1,2] else
+        'Spring' if m in [3,4,5] else
+        'Summer' if m in [6,7,8] else
+        'Fall'
+    ))
 
-    # airline and class
-    df['airline'] = df['airline'].astype(str).str.strip()
-    df['travelClass'] = df['travelClass'].astype(str).str.strip()
+    # travel class
+    df['travelClass'] = df.get('travelClass', '').fillna('Unknown').str.strip()
 
-    # layover analysis
-    def count_layovers(s):
-        if pd.isna(s) or s == '': return 0
-        return s.count(',') + 1
-    df['numLayovers'] = df.get('layovers', '').apply(count_layovers)
+    # layover count
+    df['numLayovers'] = df.get('layovers', '').fillna('').apply(lambda s: 0 if s == '' else s.count(',') + 1)
 
     # time of day
-    def time_of_day(hr):
-        if 5 <= hr < 12: return 'Morning'
-        if 12 <= hr < 17: return 'Afternoon'
-        if 17 <= hr < 22: return 'Evening'
-        return 'Night'
-    df['timeOfDay'] = df['hour'].apply(time_of_day)
+    df['timeOfDay'] = df['hour'].apply(lambda h: (
+        'Morning' if 5 <= h < 12 else
+        'Afternoon' if 12 <= h < 17 else
+        'Evening' if 17 <= h < 22 else
+        'Night'
+    ))
 
-    return df.dropna(subset=['price', 'airline'])
+    # airline cleanup
+    df['airline'] = df.get('airline', '').fillna('Unknown').str.strip()
+
+    return df.dropna(subset=['departureTime', 'price', 'airline'])
 
 # load data
-df = load_data()
+try:
+    df = load_data()
+except Exception as e:
+    st.error(f"Error loading data: {e}")
+    st.stop()
 
-# determine top 5 busiest airlines by flight count
+# determine top 5 busiest airlines by count
 top5_airlines = df['airline'].value_counts().nlargest(5).index.tolist()
+
 
 # ----------------------
 # ROUTE FILTERING & COLOR PALETTE
