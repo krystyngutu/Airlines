@@ -90,11 +90,6 @@ min_price = int(df['price'].min())
 max_price = int(df['price'].max())
 
 
-# Apply price filter
-df = df[
-    (df['price'] >= price_range[0]) & (df['price'] <= price_range[1])
-]
-
 # ----------------------
 # SIDEBAR FILTERS
 # ----------------------
