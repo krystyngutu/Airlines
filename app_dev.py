@@ -121,10 +121,15 @@ fig_time = px.line(
 )
 st.plotly_chart(fig_time, use_container_width=True)
 
-# 2. Avg Price by Month & Season\ ncol1, col2 = st.columns(2)
+# 2. Avg Price by Month & Season
+col1, col2 = st.columns(2)
+
 with col1:
     st.subheader("Average Price by Month")
-    mon = df.groupby('month')['price'].mean().reindex(range(1,13)).reset_index()
+    mon = (df.groupby('month')['price']
+             .mean()
+             .reindex(range(1,13))
+             .reset_index())
     mon['price'] = np.ceil(mon['price'])
     mon['month_name'] = mon['month'].map(lambda x: calendar.month_abbr[x])
     fig_mon = px.bar(
@@ -133,9 +138,13 @@ with col1:
     )
     st.plotly_chart(fig_mon, use_container_width=True)
     st.success(f"💰 Cheapest month: **{mon.loc[mon['price'].idxmin(),'month_name']}**")
+
 with col2:
     st.subheader("Average Price by Season")
-    sea = df.groupby('season')['price'].mean().reindex(['Winter','Spring','Summer','Fall']).reset_index()
+    sea = (df.groupby('season')['price']
+             .mean()
+             .reindex(['Winter','Spring','Summer','Fall'])
+             .reset_index())
     sea['price'] = np.ceil(sea['price'])
     fig_sea = px.bar(
         sea, x='season', y='price',
@@ -143,6 +152,7 @@ with col2:
     )
     st.plotly_chart(fig_sea, use_container_width=True)
     st.success(f"💰 Cheapest season: **{sea.loc[sea['price'].idxmin(),'season']}**")
+
 
 # 3. Avg Price by Day & Time of Day
 col3, col4 = st.columns(2)
