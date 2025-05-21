@@ -1,882 +1,574 @@
-import pandas as pd
 import streamlit as st
+import pandas as pd
+import numpy as np
+import plotly.express as px
 import plotly.graph_objects as go
+from sklearn.linear_model import LinearRegression, Ridge, Lasso, ElasticNet
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+import datetime
 
 # ----------------------
 # PAGE SETUP
 # ----------------------
 st.set_page_config(layout="wide")
-st.title("Flights from NYC to CH")
+st.title("Flight Price Exploration (NYC to CH): Revenue Steering Analysis")
 
 # ----------------------
-# HELPER FUNCTIONS
+# LOAD & CLEAN DATA
 # ----------------------
-def extract_parens_or_keep(val):
-    """Extract text from parentheses or keep the original value."""
-    if pd.isna(val):
-        return val
-    import re
-    match = re.search(r'\((.*?)\)', val)
-    return match.group(1) if match else val.strip()
-
-def classify_aircraft(aircraft):
-    """Standardize aircraft types into categories."""
-    if pd.isna(aircraft):
-        return "Other"
-    aircraft = str(aircraft).lower()
-    if aircraft.startswith("airbus"):
-        return "Airbus"
-    elif aircraft.startswith("boeing"):
-        return "Boeing"
-    elif aircraft.startswith("canadair"):
-        return "Canadair"
-    elif aircraft.startswith("embraer"):
-        return "Embraer"
-    else:
-        return "Other"
-
-def classify_flight_type(row, nyc_airports, swiss_airports):
-    """Label flights as Direct or Connecting based on airports."""
-    if row['departureAirportID'] in nyc_airports and row['arrivalAirportID'] in swiss_airports:
-        return 'Direct'
-    return 'Connecting'
-
-# Create traces for time series plots
-def create_traces(df):
-    """Create traces for time series plots."""
-    traces = []
-    for airline in sorted(df['airline'].unique()):
-        data = df[df['airline'] == airline]
-        traces.append(go.Scatter(
-            x=data['departureTime'],
-            y=data['price'],
-            mode='markers+lines',
-            name=airline,
-            hovertext=data['flightNumber'],
-            marker=dict(color=airline_colors.get(airline, 'gray'))
-        ))
-    return traces
-
-# Bar chart helper with toggle for Direct vs Connecting
-def plot_stacked_bars(direct_df, connecting_df, group_col, sub_col, legend_title, colors, show_direct, show_connecting):
-    """Create stacked bar charts with toggles between direct and connecting flights."""
-    def build_count(df):
-        # Handle empty dataframes
-        if df.empty:
-            return pd.DataFrame()
-            
-        if not pd.api.types.is_categorical_dtype(df[sub_col]):
-            df[sub_col] = pd.Categorical(df[sub_col])  # Ensure consistency
-        counts = df.groupby([group_col, sub_col]).size().unstack(fill_value=0)
-
-        for cat in df[sub_col].cat.categories:
-            if cat not in counts.columns:
-                counts[cat] = 0
-
-        counts = counts.reindex(sorted(counts.columns), axis=1)
-        return counts
-
-    direct_count = build_count(direct_df)
-    connecting_count = build_count(connecting_df)
-
-    fig = go.Figure()
-    direct_traces = []
-    connecting_traces = []
-
-    # Add direct traces
-    if not direct_count.empty:
-        for i, sub_category in enumerate(direct_count.columns):
-            trace = go.Bar(
-                x=direct_count.index,
-                y=direct_count[sub_category],
-                name=f'{sub_category}',
-                marker_color=colors[i % len(colors)],
-                visible=show_direct,
-                legendgroup=f'{sub_category}',
-                showlegend=True
-            )
-            fig.add_trace(trace)
-            direct_traces.append(True)
-            connecting_traces.append(False)
-    
-    # Add connecting traces
-    if not connecting_count.empty:
-        for i, sub_category in enumerate(connecting_count.columns):
-            trace = go.Bar(
-                x=connecting_count.index,
-                y=connecting_count[sub_category],
-                name=f'{sub_category}',
-                marker_color=colors[i % len(colors)],
-                visible=show_connecting,
-                legendgroup=f'{sub_category}',
-                showlegend=True
-            )
-            fig.add_trace(trace)
-            direct_traces.append(False)
-            connecting_traces.append(True)
-
-    # If no traces were added, add a default "no data" message
-    if len(direct_traces) == 0 and len(connecting_traces) == 0:
-        fig.add_annotation(
-            text="No data available for the selected filters",
-            xref="paper", yref="paper",
-            x=0.5, y=0.5, showarrow=False,
-            font=dict(size=14)
-        )
-
-    fig.update_layout(
-        barmode='stack',
-        xaxis_title=group_col.capitalize(),
-        yaxis_title='Number of Flights',
-        legend_title=legend_title,
-        xaxis_tickangle=0,
-        plot_bgcolor='white',
-        bargap=0.2,
-        font=dict(size=12),
-        height=500,
-        updatemenus=[
-            dict(
-                active=0 if show_direct else 1,
-                buttons=[
-                    dict(label="Direct Flights", method="update", args=[{"visible": direct_traces or [False]}]),
-                    dict(label="Connecting Flights", method="update", args=[{"visible": connecting_traces or [False]}])
-                ],
-                direction="down",
-                showactive=True,
-                x=0.5,
-                xanchor="center",
-                y=1.15,
-                yanchor="top"
-            )
-        ]
-    )
-
-    st.plotly_chart(fig, use_container_width=True)
-
-# Bubble chart helper function with flight type toggle
-def plot_bubble_chart(direct_df, connecting_df, airline_col, metric_col, yaxis_title, show_direct, show_connecting, width=800, height=500):
-    """Create bubble charts with toggles between direct and connecting flights."""
-    def build_bubble(df):
-        if df.empty:
-            return pd.DataFrame()
-            
-        df['airline'] = pd.Categorical(df['airline'], categories=sorted(df['airline'].unique()), ordered=True)
-        count_df = df.groupby(['airline', metric_col]).size().reset_index(name='count')
-        count_df = count_df.sort_values('airline')  # Alphabetical order
-        return count_df
-
-    direct_data = build_bubble(direct_df)
-    connecting_data = build_bubble(connecting_df)
-
-    fig = go.Figure()
-    
-    # Add direct trace if data exists
-    if not direct_data.empty:
-        trace_direct = go.Scatter(
-            x=direct_data[airline_col],
-            y=direct_data[metric_col],
-            mode='markers',
-            text=direct_data['count'],
-            marker=dict(
-                size=direct_data['count'],
-                color=direct_data[metric_col],
-                colorscale='RdBu',
-                showscale=True,
-                sizemode='area',
-                sizeref=2. * direct_data['count'].max() / (100 ** 2) if not direct_data.empty else 1,
-                sizemin=4
-            ),
-            visible=show_direct
-        )
-        fig.add_trace(trace_direct)
-    
-    # Add connecting trace if data exists
-    if not connecting_data.empty:
-        trace_connecting = go.Scatter(
-            x=connecting_data[airline_col],
-            y=connecting_data[metric_col],
-            mode='markers',
-            text=connecting_data['count'],
-            marker=dict(
-                size=connecting_data['count'],
-                color=connecting_data[metric_col],
-                colorscale='RdBu',
-                showscale=True,
-                sizemode='area',
-                sizeref=2. * connecting_data['count'].max() / (100 ** 2) if not connecting_data.empty else 1,
-                sizemin=4
-            ),
-            visible=show_connecting
-        )
-        fig.add_trace(trace_connecting)
-    
-    # If no data available for either type, add a message
-    if direct_data.empty and connecting_data.empty:
-        fig.add_annotation(
-            text="No data available for the selected filters",
-            xref="paper", yref="paper",
-            x=0.5, y=0.5, showarrow=False,
-            font=dict(size=14)
-        )
-
-    fig.update_layout(
-        xaxis_title='Airline',
-        yaxis_title=yaxis_title,
-        template='plotly_white',
-        showlegend=False,
-        width=width,
-        height=height,
-        updatemenus=[
-            dict(
-                active=0 if show_direct else 1,
-                buttons=[
-                    dict(label="Direct Flights",
-                         method="update",
-                         args=[{"visible": [True, False]}]),
-                    dict(label="Connecting Flights",
-                         method="update",
-                         args=[{"visible": [False, True]}])
-                ],
-                direction="down",
-                showactive=True,
-                x=0.5,
-                xanchor="center",
-                y=1.15,
-                yanchor="top"
-            )
-        ]
-    )
-
-    st.plotly_chart(fig, use_container_width=True)
-
-# Heatmap helper function with flight type toggle
-def plot_heatmap(direct_df, connecting_df, value_col, show_direct, show_connecting, colorscale='Blues', width=800, height=500):
-    """Create heatmaps with toggles between direct and connecting flights."""
-    def build_heatmap_data(df):
-        df_clean = df[[value_col, 'airline']].dropna()
-        if df_clean.empty:
-            return pd.DataFrame()
-
-        # Sort airline names alphabetically
-        df_clean['airline'] = df_clean['airline'].astype(str)
-        airline_order = sorted(df_clean['airline'].unique())
-        df_clean['airline'] = pd.Categorical(df_clean['airline'], categories=airline_order, ordered=True)
-
-        binned_col = pd.cut(df_clean[value_col], bins=10)
-        pivot = df_clean.groupby(['airline', binned_col]).size().unstack(fill_value=0)
-        pivot = pivot.sort_index(level=0)
-        return pivot
-
-    direct_data = build_heatmap_data(direct_df)
-    connecting_data = build_heatmap_data(connecting_df)
-
-    fig = go.Figure()
-    
-    # Add direct trace if data exists
-    if not direct_data.empty:
-        trace_direct = go.Heatmap(
-            z=direct_data.values,
-            x=[str(col) for col in direct_data.columns],
-            y=direct_data.index.tolist(),
-            colorscale=colorscale,
-            colorbar=dict(title='Number of Flights'),
-            visible=show_direct
-        )
-        fig.add_trace(trace_direct)
-    
-    # Add connecting trace if data exists
-    if not connecting_data.empty:
-        trace_connecting = go.Heatmap(
-            z=connecting_data.values,
-            x=[str(col) for col in connecting_data.columns],
-            y=connecting_data.index.tolist(),
-            colorscale=colorscale,
-            colorbar=dict(title='Number of Flights'),
-            visible=show_connecting
-        )
-        fig.add_trace(trace_connecting)
-    
-    # Add annotation if no data
-    if direct_data.empty and connecting_data.empty:
-        fig.add_annotation(
-            text="No data available for the selected filters",
-            xref="paper", yref="paper",
-            x=0.5, y=0.5, showarrow=False,
-            font=dict(size=14)
-        )
-
-    fig.update_layout(
-        xaxis_title='Value Bin',
-        yaxis_title='Airline',
-        template='plotly_white',
-        width=width,
-        height=height,
-        updatemenus=[
-            dict(
-                active=0 if show_direct else 1,
-                buttons=[
-                    dict(label="Direct Flights", method="update", args=[{"visible": [True, False] if not direct_data.empty and not connecting_data.empty else [True]}]),
-                    dict(label="Connecting Flights", method="update", args=[{"visible": [False, True] if not direct_data.empty and not connecting_data.empty else [True]}])
-                ],
-                direction="down",
-                showactive=True,
-                x=0.5,
-                xanchor="center",
-                y=1.15,
-                yanchor="top"
-            )
-        ]
-    )
-
-    st.plotly_chart(fig, use_container_width=True)
-
-# Cache data loading for better performance
 @st.cache_data
 def load_data():
-    """Load and preprocess flight data."""
-    try:
-        df = pd.read_csv("all_flights.csv")
-        
-        # Convert columns
-        df['departureTime'] = pd.to_datetime(df['departureTime'], errors='coerce')
-        df['arrivalAirportTime'] = pd.to_datetime(df['arrivalAirportTime'], errors='coerce')
-        df['price'] = pd.to_numeric(df['price'], errors='coerce')
-        df['durationMinutes'] = pd.to_numeric(df['durationTime'], errors='coerce')
-        df['totalDurationMinutes'] = pd.to_numeric(df['totalTripDuration'], errors='coerce')
-        df['carbonEmissionsThisFlight'] = pd.to_numeric(df.get('carbonEmissionsThisFlight'), errors='coerce')
+    df = pd.read_csv("all_flights.csv")
+    df['departureTime'] = pd.to_datetime(df['departureTime'], errors='coerce')
+    df['price'] = pd.to_numeric(df['price'], errors='coerce')
+    df['durationTime'] = pd.to_numeric(df['durationTime'], errors='coerce')
+    df['weekday'] = df['departureTime'].dt.day_name()
+    df['dayOfWeek'] = df['departureTime'].dt.weekday
+    df['hour'] = df['departureTime'].dt.hour
+    df['month'] = df['departureTime'].dt.month
+    df['airline'] = df['airline'].astype(str).str.strip()
+    if 'wifi' not in df.columns:
+        df['wifi'] = 'Unknown'
 
-        # Extract features from extensions if present
-        if 'extensions' in df.columns:
-            df['extensions'] = df['extensions'].fillna(',')
-            split_ext = df['extensions'].str.split(',', n=2, expand=True).apply(lambda col: col.str.strip())
-            df['recliningAndLegroom'] = split_ext[0]
-            df['wifi'] = split_ext[1]
-            df['carbonEmssionsEstimate'] = split_ext[2]
+    def time_of_day(hour):
+        if 5 <= hour < 12:
+            return 'Morning'
+        elif 12 <= hour < 17:
+            return 'Afternoon'
+        elif 17 <= hour < 22:
+            return 'Evening'
+        else:
+            return 'Night'
 
-        df['recliningAndLegroom'] = df['recliningAndLegroom'].apply(extract_parens_or_keep)
-        df['legroom'] = df['legroom'].fillna(df['recliningAndLegroom'])
-        
-        # Handle wifi column if it exists
-        if 'wifi' in df.columns:
-            df.loc[df['wifi'].str.startswith('Carbon', na=False), 'wifi'] = 'Status Unknown'
+    df['timeOfDay'] = df['hour'].apply(time_of_day)
+    return df.dropna(subset=['price', 'airline'])
 
-        # Derived features
-        df['pricePerMinute'] = df['price'] / df['totalDurationMinutes']
-        df['carbonDifferencePercent'] = (
-            (df['carbonEmissionsThisFlight'] - df['carbonEmissionsThisFlight'].mean()) /
-            df['carbonEmissionsThisFlight'].mean() * 100
-        )
-        
-        return df
-    except Exception as e:
-        st.error(f"Error loading data: {e}")
-        return pd.DataFrame()  # Return empty DataFrame if error
+# Load and filter data
+df = load_data()
+
+# ROUTE FILTERING: NYC to SWITZERLAND
+nyc_airports = ["LGA", "JFK", "EWR"]
+swiss_airports = ["ZRH", "BSL", "GVA"]
+
+if 'departureAirportID' in df.columns and 'arrivalAirportID' in df.columns:
+    df = df[df['departureAirportID'].isin(nyc_airports) & df['arrivalAirportID'].isin(swiss_airports)]
 
 # ----------------------
-# CONSTANTS
+# COLOR PALETTE
 # ----------------------
+airline_colors = {
+    'Lufthansa': '#ffd700',
+    'SWISS': '#d71920',
+    'Delta': '#00235f',
+    'United': '#1a75ff',
+    'Edelweiss Air': '#800080',
+    'Air Dolomiti': '#32cd32',
+    'Austrian': '#c3f550',
+    'ITA': '#fbaa3f',
+    'Brussels Airlines': '#00235f',
+    'Eurowings': '#1a75ff',
+    'Aegean': '#767676',
+    'Air Canada': '#00235f',
+    'Tap Air Portugal': '#fbaa3f',
+    'Turkish Airlines': '#800080'
+}
+custom_colors = ['#d71920', '#00235f', '#f9ba00', '#660000', '#800080', '#3366ff',
+                 '#c3f550', '#fbaa3f', '#000000']
+
+
+# ----------------------
+# SIDEBAR FILTERS
+# ----------------------
+st.sidebar.header("Airline Filters")
+
 # Define airline groups
 direct_airlines = ['SWISS', 'United', 'Delta']
 lufthansa_group = ['Austrian', 'Brussels Airlines', 'Discover Airlines', 'Eurowings', 'Edelweiss Air', 'ITA', 'Air Dolomiti', 'Lufthansa', 'SWISS']
-star_alliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zealand', 'ANA', 'Asiana Airlines', 'Austrian', 'Avianca', 'Brussels Airlines', 'CopaAirlines', 'Croatia Airlines', 'Egyptair', 'Ethiopian Airlines', 'Eva Air', 'LOT Polish Airlines', 'Lufthansa', 'Shenzhen Airlines', 'Singapore Airlines', 'South African Airways', 'SWISS', 'Tap Air Portugal', 'Thai', 'Turkish Airlines', 'United']
+star_alliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zealand', 'ANA', 'Asiana Airlines',
+    'Austrian', 'Avianca', 'Brussels Airlines', 'CopaAirlines', 'Croatia Airlines', 'Egyptair',
+    'Ethiopian Airlines', 'Eva Air', 'LOT Polish Airlines', 'Lufthansa', 'Shenzhen Airlines',
+    'Singapore Airlines', 'South African Airways', 'SWISS', 'Tap Air Portugal', 'Thai',
+    'Turkish Airlines', 'United']
 
-# Define airports to include
-nyc_airports = ["JFK", "EWR", "LGA"]
-swiss_airports = ["ZRH", "GVA", "BSL"]
-
-# Define airline colors
-custom_colors = ['#d71920', '#00235f', '#f9ba00', '#660000', '#800080', '#3366ff',
-                '#c3f550', '#fbaa3f', '#000000']
-
-airline_colors = {
-    'Lufthansa': '#ffd700',           # gold
-    'SWISS': '#d71920',               # red
-    'Delta': '#00235f',               # dark blue
-    'United': '#1a75ff',              # light blue
-    'Edelweiss Air': '#800080',       # purple
-    'Air Dolomiti': '#32cd32',        # lime green
-    'Austrian': '#c3f550',            # lime
-    'ITA': '#fbaa3f',                 # orange
-    'Brussels Airlines': '#00235f',   # dark blue
-    'Eurowings': '#1a75ff',           # light blue
-    'Aegean': '#767676',              # gray
-    'Air Canada': '#00235f',          # dark blue
-    'Tap Air Portugal': '#fbaa3f',    # orange
-    'Turkish Airlines': '#800080'     # purple    
-}
-
-# ----------------------
-# DATA LOADING & FILTERING
-# ----------------------
-df = load_data()
-
-if df.empty:
-    st.error("Failed to load data. Please check your CSV file.")
-    st.stop()
-
-# Dropdown: default = Direct for general, Connecting for LHG and Star Alliance
-filter_options = ['Airlines That Fly Both Direct and Connecting', 'Lufthansa Group', 'Star Alliance']
-default_index = 0  # Default to general group
-
-# Create session state if it doesn't exist
-if 'filterChoice' not in st.session_state:
-    st.session_state.filterChoice = filter_options[default_index]
-
-filter_choice = st.selectbox("Select airlines to view:", options=filter_options, index=default_index, key='airline_filter')
-st.session_state.filterChoice = filter_choice
-
-# Set filtered airline list and default flight type
-if filter_choice == 'Lufthansa Group':
-    filtered_airlines = lufthansa_group
-    show_direct = False
-    show_connecting = True
-elif filter_choice == 'Star Alliance':
-    filtered_airlines = star_alliance
-    show_direct = False
-    show_connecting = True
-else:
-    filtered_airlines = direct_airlines
-    show_direct = True
-    show_connecting = False
-
-# Filter DataFrame based on the selected airline group
-try:
-    df_filtered = df[df['airline'].isin(filtered_airlines)].copy()
-except Exception as e:
-    st.error(f"Error filtering data: {e}")
-    st.stop()
-
-# Label flights as Direct or Connecting
-df_filtered['flightType'] = df_filtered.apply(
-    lambda row: classify_flight_type(row, nyc_airports, swiss_airports), 
-    axis=1
+# Radio button filter
+airline_group = st.sidebar.radio(
+    "Select Flight Group:",
+    options=["All Flights", "Direct Airlines", "Lufthansa Group", "Star Alliance"]
 )
 
-# Apply aircraft classification to all filtered data
-df_filtered['airplaneLumped'] = df_filtered['airplane'].apply(classify_aircraft)
+# Apply airline group filter
+if airline_group == "Direct Airlines":
+    df = df[df["airline"].isin(direct_airlines)]
+elif airline_group == "Lufthansa Group":
+    df = df[df["airline"].isin(lufthansa_group)]
+elif airline_group == "Star Alliance":
+    df = df[df["airline"].isin(star_alliance)]
 
-# Split into direct and connecting flights
-direct_flights = df_filtered[df_filtered['flightType'] == 'Direct'].copy()
-connecting_flights = df_filtered[df_filtered['flightType'] == 'Connecting'].copy()
+# Price slider
+min_price = int(df['price'].min())
+max_price = int(df['price'].max())
 
-# Drop rows with missing values for key comparisons
-price_df = df_filtered.dropna(subset=['price', 'durationMinutes', 'carbonEmissionsThisFlight', 'legroom', 'travelClass', 'airplane'])
-
-# ----------------------
-# CHARTS ORGANIZED BY TOPIC
-# ----------------------
-
-# ===== 1. PRICE SECTION =====
-st.header("1. Price Analysis")
-
-# Price Over Time
-st.subheader("Price Over Time")
-direct_traces = create_traces(direct_flights)
-connecting_traces = create_traces(connecting_flights)
-
-fig = go.Figure()
-
-# Add direct traces
-for trace in direct_traces:
-    trace.visible = show_direct
-    fig.add_trace(trace)
-
-# Add connecting traces
-for trace in connecting_traces:
-    trace.visible = show_connecting
-    fig.add_trace(trace)
-
-fig.update_layout(
-    updatemenus=[
-        dict(
-            active=0 if show_direct else 1,
-            buttons=[
-                dict(label='Direct Flights',
-                     method='update',
-                     args=[{'visible':[True]*len(direct_traces) + [False]*len(connecting_traces)}]),
-                dict(label='Connecting Flights',
-                     method='update',
-                     args=[{'visible':[False]*len(direct_traces) + [True]*len(connecting_traces)}])
-            ],
-            direction='down',
-            showactive=True,
-            x=0.5,
-            xanchor='center',
-            y=1.1,
-            yanchor='top'
-        )
-    ],
-    xaxis_title="Departure Date",
-    yaxis_title="Price (USD)",
-    legend_title_text="Airline",
-    hovermode="closest",
-    height=600,
-    legend=dict(
-        title_font=dict(size=12),
-        font=dict(size=11),
-        orientation="v",
-        x=1,
-        y=1,
-        xanchor='left',
-        yanchor='top',
-        borderwidth=1,
-        itemclick='toggle',
-        itemdoubleclick='toggleothers'
-    )
+price_range = st.sidebar.slider(
+    "Price Range ($)",
+    min_value=min_price,
+    max_value=max_price,
+    value=(min_price, max_price)
 )
 
+# Apply price filter
+df = df[
+    (df['price'] >= price_range[0]) & (df['price'] <= price_range[1])
+]
+min_price = int(df['price'].min())
+max_price = int(df['price'].max())
+
+price_range = st.sidebar.slider(
+    "Price Range ($)",
+    min_value=min_price,
+    max_value=max_price,
+    value=(min_price, max_price)
+)
+
+# Apply price filter
+df = df[
+    (df['price'] >= price_range[0]) & (df['price'] <= price_range[1])
+]
+
+# ----------------------
+# PRICE ANALYSIS
+# ----------------------
+st.header("Price Analysis")
+col1, col2 = st.columns(2)
+
+with col1:
+    day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    df_day = df.groupby('weekday')['price'].mean().reindex(day_order).reset_index()
+    fig = px.bar(df_day, x='weekday', y='price', title='Average Price by Day of Week',
+                 labels={'price': 'Avg Price ($)', 'weekday': 'Day'}, text_auto=True)
+    st.plotly_chart(fig, use_container_width=True)
+    st.success(f"💰 Cheapest day to fly: **{df_day.loc[df_day['price'].idxmin(), 'weekday']}**")
+
+with col2:
+    tod_order = ['Morning', 'Afternoon', 'Evening', 'Night']
+    df_tod = df.groupby('timeOfDay')['price'].mean().reindex(tod_order).reset_index()
+    fig = px.bar(df_tod, x='timeOfDay', y='price', title='Average Price by Time of Day',
+             labels={'price': 'Avg Price ($)', 'timeOfDay': 'Time'}, text_auto=True)
+    st.plotly_chart(fig, use_container_width=True)
+    st.success(f"💰 Cheapest time to fly: **{df_tod.loc[df_tod['price'].idxmin(), 'timeOfDay']}**")
+    st.caption("🕐 Morning: 5am–12pm, Afternoon: 12–5pm, Evening: 5–10pm, Night: 10pm–5am")
+
+st.subheader("Airline Price Comparison")
+df_airline = df.groupby('airline')['price'].mean().reset_index()
+fig = px.bar(df_airline, x='airline', y='price', color='airline',
+             color_discrete_map=airline_colors,
+             title='Average Price by Airline',
+             labels={'price': 'Average Price ($)'}, text_auto=True)
+fig.update_layout(xaxis_tickangle=-45)
 st.plotly_chart(fig, use_container_width=True)
 
-# Price vs Duration
-st.subheader("Price vs Duration")
-st.plotly_chart(go.Figure(
-    data=[go.Scatter(
-        x=price_df['totalDurationMinutes'],
-        y=price_df['price'],
-        mode='markers',
-        marker=dict(color='blue'),
-        name='Duration'
-    )],
-    layout=go.Layout(
-        xaxis_title="Duration (minutes)",
-        yaxis_title="Price (USD)",
-        height=450
-    )
-), use_container_width=True)
+st.header("Revenue Steering Models")
+st.markdown("""
+Revenue management and pricing teams use these models to optimize flight pricing strategy:
+- **Linear models**: Baseline for understanding price drivers
+- **Regularized models (Ridge, Lasso, ElasticNet)**: Control for overfitting in dynamic pricing
+- **Ensemble models (Random Forest, Gradient Boosting)**: Capture complex patterns for demand forecasting
+""")
 
-# Price by Travel Class
-st.subheader("Price by Travel Class")
-st.plotly_chart(go.Figure(
-    data=[go.Box(
-        x=price_df['travelClass'],
-        y=price_df['price'],
-        name='Travel Class',
-        marker_color='purple'
-    )],
-    layout=go.Layout(
-        xaxis_title="Travel Class",
-        yaxis_title="Price (USD)",
-        height=450
-    )
-), use_container_width=True)
+# Prepare modeling data
+@st.cache_data
+def prepare_model_data(df):
+    df['wifiEncoded'] = df['wifi'].fillna('Unknown').astype('category').cat.codes
+    df['airplaneEncoded'] = df['airplane'].fillna('Unknown').astype('category').cat.codes
+    features = ['dayOfWeek', 'hour', 'month', 'airline', 'durationTime', 'carbonEmissionsThisFlight', 'wifiEncoded', 'airplaneEncoded']
+    target = 'price'
+    
+    # Convert categorical features to numeric
+    X = df[features].copy()
+    y = df[target]
+    
+    return X, y
 
-# Price Heatmap
-st.subheader('Price Distribution by Airline')
-plot_heatmap(direct_flights, connecting_flights, 'price', show_direct, show_connecting, colorscale='Reds')
+# Create models tab system
+model_tab1, model_tab2, model_tab3 = st.tabs(["Linear Models", "Regularized Models", "Ensemble Models"])
 
-# ===== 2. LEGROOM SECTION =====
-st.header("2. Legroom Analysis")
-
-# Price vs Legroom
-st.subheader("Price vs Legroom")
-
-# Filter valid values
-valid_legroom = df_filtered[df_filtered['legroom'].notna() & df_filtered['price'].notna()]
-legroom_grouped = valid_legroom.groupby('legroom')['price'].mean().reset_index()
-legroom_grouped = legroom_grouped.sort_values(by='legroom')
-
-fig_legroom = go.Figure(go.Scatter(
-    x=legroom_grouped['legroom'],
-    y=legroom_grouped['price'],
-    mode='lines+markers',
-    line=dict(color='#d71920'),
-    marker=dict(size=8)
-))
-
-fig_legroom.update_layout(
-    xaxis_title='Legroom (inches or category)',
-    yaxis_title='Average Price (USD)',
-    template='plotly_white',
-    height=450
-)
-
-st.plotly_chart(fig_legroom, use_container_width=True)
-
-# Price by Legroom (box)
-st.subheader("Price Distribution by Legroom")
-st.plotly_chart(go.Figure(
-    data=[go.Box(
-        x=price_df['legroom'],
-        y=price_df['price'],
-        name='Legroom',
-        marker_color='orange'
-    )],
-    layout=go.Layout(
-        xaxis_title="Legroom (inches or category)",
-        yaxis_title="Price (USD)",
-        height=450
-    )
-), use_container_width=True)
-
-# Legroom breakdown by airline
-st.subheader('Legroom Options by Airline')
-plot_stacked_bars(
-    direct_flights,
-    connecting_flights,
-    group_col='airline',
-    sub_col='legroom',
-    legend_title='Legroom',
-    colors=custom_colors,
-    show_direct=show_direct,
-    show_connecting=show_connecting
-)
-
-# ===== 3. AIRCRAFT SECTION =====
-st.header("3. Aircraft Analysis")
-
-# Price vs Aircraft (lumped groups)
-st.subheader("Price by Aircraft Type")
-
-# Filter and group
 try:
-    valid_aircraft = df_filtered[df_filtered['airplaneLumped'].notna() & df_filtered['price'].notna()]
-    aircraft_grouped = valid_aircraft.groupby('airplaneLumped')['price'].mean().reset_index()
+    X, y = prepare_model_data(df)
+    
+    # Handle categorical variables
+    categorical_features = ['airline']
+    numerical_features = ['dayOfWeek', 'hour', 'month', 'durationTime']
+    
+    categorical_transformer = OneHotEncoder(handle_unknown='ignore')
+    numerical_transformer = StandardScaler()
+    
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ('num', numerical_transformer, numerical_features),
+            ('cat', categorical_transformer, categorical_features)
+        ])
+    
+    # Split the data
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    
+    with model_tab1:
+        st.subheader("Linear Regression Models")
+        
+        # Linear Regression
+        lr_pipeline = Pipeline(steps=[
+            ('preprocessor', preprocessor),
+            ('model', LinearRegression())
+        ])
+        
+        lr_pipeline.fit(X_train, y_train)
+        lr_preds = lr_pipeline.predict(X_test)
+        lr_rmse = np.sqrt(mean_squared_error(y_test, lr_preds))
+        lr_r2 = r2_score(y_test, lr_preds)
+        
+        st.metric("Linear Regression RMSE", f"${lr_rmse:.2f}")
+        st.metric("Linear Regression R²", f"{lr_r2:.4f}")
+        
+        # Feature importance for linear model (using coefficients)
+        # This is simplified and would need more processing for actual feature importance
+        st.text("The linear model is underperforming due to the data having nonlinear patterns and interactions.")
+    
+    with model_tab2:
+        st.subheader("Regularized Models")
+        
+        col1, col2, col3 = st.columns(3)
+        
+        # Ridge Regression
+        with col1:
+            ridge_pipeline = Pipeline(steps=[
+                ('preprocessor', preprocessor),
+                ('model', Ridge(alpha=1.0))
+            ])
+            
+            ridge_pipeline.fit(X_train, y_train)
+            ridge_preds = ridge_pipeline.predict(X_test)
+            ridge_rmse = np.sqrt(mean_squared_error(y_test, ridge_preds))
+            ridge_r2 = r2_score(y_test, ridge_preds)
+            
+            st.metric("Ridge RMSE", f"${ridge_rmse:.2f}")
+            st.metric("Ridge R²", f"{ridge_r2:.4f}")
+        
+        # Lasso Regression
+        with col2:
+            lasso_pipeline = Pipeline(steps=[
+                ('preprocessor', preprocessor),
+                ('model', Lasso(alpha=0.1))
+            ])
+            
+            lasso_pipeline.fit(X_train, y_train)
+            lasso_preds = lasso_pipeline.predict(X_test)
+            lasso_rmse = np.sqrt(mean_squared_error(y_test, lasso_preds))
+            lasso_r2 = r2_score(y_test, lasso_preds)
+            
+            st.metric("Lasso RMSE", f"${lasso_rmse:.2f}")
+            st.metric("Lasso R²", f"{lasso_r2:.4f}")
+        
+        # ElasticNet
+        with col3:
+            en_pipeline = Pipeline(steps=[
+                ('preprocessor', preprocessor),
+                ('model', ElasticNet(alpha=0.1, l1_ratio=0.5))
+            ])
+            
+            en_pipeline.fit(X_train, y_train)
+            en_preds = en_pipeline.predict(X_test)
+            en_rmse = np.sqrt(mean_squared_error(y_test, en_preds))
+            en_r2 = r2_score(y_test, en_preds)
+            
+            st.metric("ElasticNet RMSE", f"${en_rmse:.2f}")
+            st.metric("ElasticNet R²", f"{en_r2:.4f}")
+        
+        st.markdown("""
+        Regularized linear regression models are designed to prevent overfitting (when a model learns the data too well) by penalizing large coefficients.
+        """)
+    
+        st.markdown("""
+            **Revenue Management Applications:**
+            - **Ridge**: Controls for multicollinearity between features (common in seasonal data); adds the squared magnitude of the coefficients to the loss function
+            - **Lasso**: Feature selection for dynamic pricing models; adds the absolute value of coefficients to the loss function
+            - **ElasticNet**: Hybrid approach for balanced feature selection and coefficient shrinkage; combines Ridge and Lasso
+            """)
 
-    fig_aircraft = go.Figure(go.Scatter(
-        x=aircraft_grouped['airplaneLumped'],
-        y=aircraft_grouped['price'],
-        mode='lines+markers',
-        line=dict(color='#00235f'),
-        marker=dict(size=8)
-    ))
-
-    fig_aircraft.update_layout(
-        xaxis_title='Aircraft Type',
-        yaxis_title='Average Price (USD)',
-        template='plotly_white',
-        height=450
-    )
-
-    st.plotly_chart(fig_aircraft, use_container_width=True)
-except Exception as e:
-    st.error(f"Error creating aircraft price chart: {e}")
-
-# Price by Aircraft (box)
-st.subheader("Price Distribution by Aircraft Type")
-st.plotly_chart(go.Figure(
-    data=[go.Box(
-        x=price_df['airplane'],
-        y=price_df['price'],
-        name='Aircraft',
-        marker_color='darkred'
-    )],
-    layout=go.Layout(
-        xaxis_title="Aircraft Type",
-        yaxis_title="Price (USD)",
-        height=450
-    )
-), use_container_width=True)
-
-# Aircraft by Airline
-st.subheader('Aircraft Types by Airline')
-plot_stacked_bars(
-    direct_flights,
-    connecting_flights,
-    group_col='airline',
-    sub_col='airplaneLumped',
-    legend_title='Aircraft',
-    colors=custom_colors,
-    show_direct=show_direct,
-    show_connecting=show_connecting
-)
-
-# ===== 4. CARBON EMISSIONS SECTION =====
-st.header("4. Carbon Emissions Analysis")
-
-# Price vs Carbon Emissions
-st.subheader("Price vs Carbon Emissions")
-
-# Prepare traces for scatter plot
-carbon_direct_traces = []
-carbon_connecting_traces = []
-
-for airline in sorted(df_filtered['airline'].unique()):
-    # Direct flights
-    data_direct = direct_flights[direct_flights['airline'] == airline]
-    if not data_direct.empty:
-        carbon_direct_traces.append(go.Scatter(
-            x=data_direct['carbonEmissionsThisFlight'],
-            y=data_direct['price'],
-            mode='markers',
-            name=airline,
-            hovertext=data_direct['flightNumber'],
-            marker=dict(color=airline_colors.get(airline, 'gray'))
-        ))
-
-    # Connecting flights
-    data_connecting = connecting_flights[connecting_flights['airline'] == airline]
-    if not data_connecting.empty:
-        carbon_connecting_traces.append(go.Scatter(
-            x=data_connecting['carbonEmissionsThisFlight'],
-            y=data_connecting['price'],
-            mode='markers',
-            name=airline,
-            hovertext=data_connecting['flightNumber'],
-            marker=dict(color=airline_colors.get(airline, 'gray'))
-        ))
-
-# Combine into figure
-carbon_fig = go.Figure()
-
-# Add direct traces
-for trace in carbon_direct_traces:
-    trace.visible = show_direct
-    carbon_fig.add_trace(trace)
-
-# Add connecting traces
-for trace in carbon_connecting_traces:
-    trace.visible = show_connecting
-    carbon_fig.add_trace(trace)
-
-carbon_fig.update_layout(
-    updatemenus=[
-        dict(
-            active=0 if show_direct else 1,
-            buttons=[
-                dict(label="Direct Flights",
-                     method="update",
-                     args=[{"visible": [True]*len(carbon_direct_traces) + [False]*len(carbon_connecting_traces)}]),
-                dict(label="Connecting Flights",
-                     method="update",
-                     args=[{"visible": [False]*len(carbon_direct_traces) + [True]*len(carbon_connecting_traces)}])
-            ],
-            direction="down",
-            showactive=True,
-            x=0.5,
-            xanchor="center",
-            y=1.1,
-            yanchor="top"
+    with model_tab3:
+        st.subheader("Ensemble Models")
+        
+        col1, col2 = st.columns(2)
+        
+        # Random Forest
+        with col1:
+            rf_pipeline = Pipeline(steps=[
+                ('preprocessor', preprocessor),
+                ('model', RandomForestRegressor(n_estimators=100, random_state=42))
+            ])
+            
+            rf_pipeline.fit(X_train, y_train)
+            rf_preds = rf_pipeline.predict(X_test)
+            rf_rmse = np.sqrt(mean_squared_error(y_test, rf_preds))
+            rf_r2 = r2_score(y_test, rf_preds)
+            
+            st.metric("Random Forest RMSE", f"${rf_rmse:.2f}")
+            st.metric("Random Forest R²", f"{rf_r2:.4f}")
+            
+            st.markdown("""
+            **Revenue Management Application:**
+            - Demand forecasting for different customer segments
+            - Handles non-linear relationships in seasonal pricing
+            """)
+        
+        # Gradient Boosting
+        with col2:
+            gb_pipeline = Pipeline(steps=[
+                ('preprocessor', preprocessor),
+                ('model', GradientBoostingRegressor(n_estimators=100, random_state=42))
+            ])
+            
+            gb_pipeline.fit(X_train, y_train)
+            gb_preds = gb_pipeline.predict(X_test)
+            gb_rmse = np.sqrt(mean_squared_error(y_test, gb_preds))
+            gb_r2 = r2_score(y_test, gb_preds)
+            
+            st.metric("Gradient Boosting RMSE", f"${gb_rmse:.2f}")
+            st.metric("Gradient Boosting R²", f"{gb_r2:.4f}")
+            
+            st.markdown("""
+            **Revenue Management Application:**
+            - High-precision pricing optimization for premium routes
+            - Real-time fare adjustment based on booking patterns
+            """)
+        
+        # Compare model performance
+        models = {
+            'Linear Regression': lr_rmse,
+            'Ridge': ridge_rmse,
+            'Lasso': lasso_rmse,
+            'ElasticNet': en_rmse,
+            'Random Forest': rf_rmse,
+            'Gradient Boosting': gb_rmse
+        }
+        
+        best_model = min(models, key=models.get)
+        
+        st.success(f"✅ Best performing model: **{best_model}** with RMSE ${models[best_model]:.2f}")
+        
+        # Model comparison chart
+        fig = px.bar(
+            x=list(models.keys()),
+            y=list(models.values()),
+            labels={'x': 'Model', 'y': 'RMSE (lower is better)'},
+            title='Model Performance Comparison'
         )
-    ],
-    xaxis_title="Carbon Emissions (kg CO₂)",
-    yaxis_title="Price (USD)",
-    legend_title_text="Airline",
-    hovermode="closest",
-    height=600,
-    legend=dict(
-        itemclick="toggle",
-        itemdoubleclick="toggleothers",
-        x=1.02,
-        y=1,
-        borderwidth=1
+        fig.update_traces(texttemplate='$%{y:.2f}', textposition='outside')
+        st.plotly_chart(fig, use_container_width=True)
+
+    # Optimal booking recommendations
+    st.header("Revenue Optimization Insights")
+    
+    # Use the best model to predict prices for different scenarios
+    best_pipeline = gb_pipeline if best_model == 'Gradient Boosting' else rf_pipeline
+
+    # Find optimal day and hour
+    all_days = range(7)  # 0 = Monday, 6 = Sunday
+    all_hours = range(24)
+    
+    current_month = datetime.datetime.now().month
+    
+    # Create a sample flight for prediction (using most common values from data)
+    most_common_airline = df['airline'].mode()[0]
+    avg_duration = df['durationTime'].mean()
+    
+    # Generate price predictions for all day and hour combinations
+    predictions = []
+    for day in all_days:
+        for hour in all_hours:
+            # Create a test instance
+            test_data = pd.DataFrame({
+                'dayOfWeek': [day],
+                'hour': [hour],
+                'month': [current_month],
+                'airline': [most_common_airline],
+                'durationTime': [avg_duration]
+            })
+            
+            # Predict price
+            pred_price = best_pipeline.predict(test_data)[0]
+            predictions.append({'day': day, 'hour': hour, 'price': pred_price})
+    
+    # Convert to DataFrame
+    prediction_df = pd.DataFrame(predictions)
+    
+    # Map day numbers to names
+    day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    prediction_df['day_name'] = prediction_df['day'].apply(lambda x: day_names[x])
+    
+    # Create a heatmap of predicted prices
+    pivot_df = prediction_df.pivot(index='day_name', columns='hour', values='price')
+    
+    # Reorder days to start with Monday
+    pivot_df = pivot_df.reindex(day_names)
+    
+    # Create heatmap
+    fig = px.imshow(
+        pivot_df,
+        labels=dict(x="Hour of Day", y="Day of Week", color="Predicted Price ($)"),
+        title=f"Predicted Prices by Day and Hour (for {most_common_airline})",
+        color_continuous_scale="RdBu_r"
     )
+    
+    fig.update_layout(height=500)
+    st.plotly_chart(fig, use_container_width=True)
+
+    # Find the optimal booking time
+    min_idx = prediction_df['price'].idxmin()
+    optimal_day = prediction_df.loc[min_idx, 'day_name']
+    optimal_hour = prediction_df.loc[min_idx, 'hour']
+    min_price = prediction_df.loc[min_idx, 'price']
+    
+    st.success(f"""
+    ### Revenue Steering Recommendations
+    
+    🎯 **For travelers seeking lowest fares**: 
+    Book on **{optimal_day}** at **{optimal_hour}:00** (predicted price: ${min_price:.2f})
+    
+    💼 **For revenue management**:
+    - Dynamic pricing should adjust for {optimal_day} bookings (lowest demand period)
+    - Highest yield potential on {day_names[prediction_df.groupby('day')['price'].mean().idxmax()]}
+    - Consider time-of-day fare differentiation with {int(prediction_df.groupby('hour')['price'].mean().idxmax())}:00 premium pricing
+    """)
+
+except Exception as e:
+    st.error(f"Error in model building: {e}")
+
+
+
+# ----------------------
+# ADDITIONAL ANALYTICS
+# ----------------------
+st.header("Operational Feature Analysis")
+
+col3, col4 = st.columns(2)
+
+with col3:
+    if 'carbonEmissionsThisFlight' in df.columns:
+        df_carbon = df.dropna(subset=['carbonEmissionsThisFlight'])
+        fig = px.box(df_carbon, x='airline', y='carbonEmissionsThisFlight', color='airline',
+                     color_discrete_map=airline_colors,
+                     title='Carbon Emissions by Airline',
+                     labels={'carbonEmissionsThisFlight': 'Carbon Emissions (kg)'})
+        st.plotly_chart(fig, use_container_width=True)
+st.markdown('---')
+if 'airplane' in df.columns:
+        df_aircraft = df.dropna(subset=['airplane'])
+        fig = px.box(df_aircraft, x='airplane', y='price', title='Price by Aircraft Type',
+                     labels={'price': 'Price ($)', 'airplane': 'Aircraft'})
+        fig.update_layout(xaxis_tickangle=-45)
+        st.plotly_chart(fig, use_container_width=True)
+
+
+    
+with col4:
+    if 'legroom' in df.columns:
+        df_legroom = df.dropna(subset=['legroom'])
+        df_legroom['legroom'] = pd.to_numeric(df_legroom['legroom'].str.extract(r'(\d+)')[0], errors='coerce')
+        fig = px.box(df_legroom, x='airline', y='legroom', color='airline',
+                     color_discrete_map=airline_colors,
+                     title='Legroom by Airline',
+                     labels={'legroom': 'Legroom (in)'})
+        st.plotly_chart(fig, use_container_width=True)
+
+    
+# ----------------------
+# ADVANCED MODELING WITH OPERATIONAL FEATURES
+# ----------------------
+st.header("Advanced Modeling with Operational Features")
+
+# Feature engineering
+df['wifiEncoded'] = df['wifi'].fillna('Unknown').astype('category').cat.codes
+df['airplaneEncoded'] = df['airplane'].fillna('Unknown').astype('category').cat.codes
+if 'legroom' in df.columns:
+    df['legroom'] = pd.to_numeric(df['legroom'].str.extract(r'(\d+)')[0], errors='coerce')
+else:
+    df['legroom'] = np.nan
+
+advanced_features = ['dayOfWeek', 'hour', 'month', 'durationTime', 'carbonEmissionsThisFlight',
+                     'wifiEncoded', 'airplaneEncoded', 'legroom']
+categorical_features = []
+numerical_features = ['dayOfWeek', 'hour', 'month', 'durationTime', 'carbonEmissionsThisFlight', 'wifiEncoded', 'airplaneEncoded', 'legroom']
+
+# Drop rows with missing advanced features
+df_model_ready = df.dropna(subset=numerical_features + ['price'])
+
+X_adv = df_model_ready[advanced_features]
+y_adv = df_model_ready['price']
+
+# Train/test split
+X_train_adv, X_test_adv, y_train_adv, y_test_adv = train_test_split(X_adv, y_adv, test_size=0.2, random_state=42)
+
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train_adv)
+X_test_scaled = scaler.transform(X_test_adv)
+
+# Train additional models
+model_results = {}
+
+for name, model in {
+    'Linear (Adv)': LinearRegression(),
+    'Ridge (Adv)': Ridge(alpha=1.0),
+    'Random Forest (Adv)': RandomForestRegressor(n_estimators=100, random_state=42),
+    'Gradient Boosting (Adv)': GradientBoostingRegressor(n_estimators=100, random_state=42)
+}.items():
+    model.fit(X_train_scaled, y_train_adv)
+    preds = model.predict(X_test_scaled)
+    rmse = np.sqrt(mean_squared_error(y_test_adv, preds))
+    r2 = r2_score(y_test_adv, preds)
+    model_results[name] = rmse
+    st.metric(f"{name} RMSE", f"${rmse:.2f}")
+    st.caption(f"{name} R²: {r2:.4f}")
+
+# Summary plot
+fig = px.bar(
+    x=list(model_results.keys()),
+    y=list(model_results.values()),
+    title="Advanced Model RMSE Comparison",
+    labels={'x': 'Model', 'y': 'RMSE'},
+    color_discrete_sequence=['#1a75ff'] * len(model_results)
 )
+fig.update_traces(texttemplate='$%{y:.2f}', textposition='outside')
+st.plotly_chart(fig, use_container_width=True)
 
-st.plotly_chart(carbon_fig, use_container_width=True)
 
-# Simple scatter for carbon emissions
-st.subheader("Carbon Emissions vs Price (All Airlines)")
-st.plotly_chart(go.Figure(
-    data=[go.Scatter(
-        x=price_df['carbonEmissionsThisFlight'],
-        y=price_df['price'],
-        mode='markers',
-        marker=dict(color='green'),
-        name='Carbon Emissions'
-    )],
-    layout=go.Layout(
-        xaxis_title="Carbon Emissions (kg CO₂)",
-        yaxis_title="Price (USD)",
-        height=450
-    )
-), use_container_width=True)
 
-# Carbon emissions breakdown
-st.subheader('Carbon Emissions by Airline')
-plot_bubble_chart(
-    direct_flights, 
-    connecting_flights, 
-    'airline', 
-    'carbonEmissionsThisFlight', 
-    'Carbon Emissions (kg CO₂)',
-    show_direct,
-    show_connecting
+# ----------------------
+# FEATURE IMPORTANCE VISUALIZATION
+# ----------------------
+st.header("Feature Importance from Advanced Models")
+
+# Use Random Forest for importance (or Gradient Boosting if preferred)
+rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
+rf_model.fit(X_train_scaled, y_train_adv)
+
+feature_names = advanced_features
+importances = rf_model.feature_importances_
+
+importance_df = pd.DataFrame({
+    'Feature': feature_names,
+    'Importance': importances
+}).sort_values(by='Importance', ascending=False)
+
+fig = px.bar(
+    importance_df,
+    x='Importance',
+    y='Feature',
+    orientation='h',
+    title='Feature Importance (Random Forest)',
+    labels={'Importance': 'Relative Importance', 'Feature': 'Feature'},
+    color_discrete_sequence=['#1a75ff']
 )
-
-# Carbon difference breakdown
-st.subheader('Carbon Difference (%) by Airline')
-plot_bubble_chart(
-    direct_flights, 
-    connecting_flights, 
-    'airline', 
-    'carbonDifferencePercent', 
-    'Carbon Difference (%)',
-    show_direct,
-    show_connecting
-)
-
-# Carbon Difference Heatmap
-st.subheader('Carbon Emissions Distribution by Airline')
-plot_heatmap(
-    direct_flights, 
-    connecting_flights, 
-    'carbonDifferencePercent', 
-    show_direct, 
-    show_connecting,
-    colorscale='Reds'
-)
-
-# ===== 5. DURATION SECTION =====
-st.header("5. Duration Analysis")
-
-# Flight duration breakdown
-st.subheader('Flight Duration by Airline')
-plot_bubble_chart(
-    direct_flights, 
-    connecting_flights, 
-    'airline', 
-    'durationMinutes', 
-    'Duration (min)',
-    show_direct,
-    show_connecting
-)
-
-# Duration Heatmap
-st.subheader('Flight Duration Distribution by Airline')
-plot_heatmap(
-    direct_flights, 
-    connecting_flights, 
-    'durationTime', 
-    show_direct, 
-    show_connecting,
-    colorscale='Blues'
-)
-
-# ===== 6. AMENITIES SECTION =====
-st.header("6. Amenities Analysis")
-
-# Get all unique wifi categories
-if 'wifi' in df_filtered.columns:
-    wifi_categories = sorted(set(direct_flights['wifi'].dropna().unique()).union(connecting_flights['wifi'].dropna().unique()))
-
-    # Convert to ordered categorical
-    if not direct_flights.empty and 'wifi' in direct_flights.columns:
-        direct_flights['wifi'] = pd.Categorical(direct_flights['wifi'], categories=wifi_categories, ordered=True)
-    if not connecting_flights.empty and 'wifi' in connecting_flights.columns:
-        connecting_flights['wifi'] = pd.Categorical(connecting_flights['wifi'], categories=wifi_categories, ordered=True)
-
-    # WiFi breakdown
-    st.subheader('WiFi Options by Airline')
-    plot_stacked_bars(
-        direct_flights,
-        connecting_flights,
-        group_col='airline',
-        sub_col='wifi',
-        legend_title='WiFi',
-        colors=custom_colors,
-        show_direct=show_direct,
-        show_connecting=show_connecting
-    )
-
-# Travel Class breakdown
-st.subheader('Travel Classes by Airline')
-plot_stacked_bars(
-    direct_flights,
-    connecting_flights,
-    group_col='airline',
-    sub_col='travelClass',
-    legend_title='Travel Class',
-    colors=custom_colors,
-    show_direct=show_direct,
-    show_connecting=show_connecting
-)
+st.plotly_chart(fig, use_container_width=True)
