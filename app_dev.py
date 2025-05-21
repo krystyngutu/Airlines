@@ -157,7 +157,7 @@ plot_bar(air,'airline','price','Avg Price by Airline',{'airline':'Airline','pric
 # MODEL UTILS & TRAINING
 # ----------------------
 @st.cache_data
- def get_features(df):
+def get_features(df):
     df = df.dropna(subset=['dayOfWeek','hour','month','duration','carbon','price'])
     X = df[['dayOfWeek','hour','month','duration','carbon','airline']].copy()
     y = df['price']
