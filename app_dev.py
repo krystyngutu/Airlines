@@ -14,8 +14,7 @@ import calendar
 # ----------------------
 # CONFIGURATION
 # ----------------------
-DATA_PATH = "all_flights.csv"
-DATE_FORMAT = "%Y-%m-%dT%H:%M:%S"
+DATA_PATH = r"C:/Users/kryst/OneDrive/Desktop/Swiss Airlines/airlines/all_flights.csv"
 
 DIRECT_AIRLINES = ['SWISS', 'United', 'Delta']
 LUFTHANSA_GROUP = [
@@ -43,7 +42,7 @@ AIRLINE_COLORS = {
 # DATA LOADING & FEATURE ENGINEERING
 # ----------------------
 @st.cache_data
- def load_and_prepare(path="C:\Users\kryst\OneDrive\Desktop\Swiss Airlines\airlines"):
+ def load_and_prepare(path=DATA_PATH):
     df = pd.read_csv(path)
     # parse and clean
     df['departureTime'] = pd.to_datetime(df['departureTime'], errors='coerce')
