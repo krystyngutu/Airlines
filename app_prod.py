@@ -32,6 +32,7 @@ def load_data():
     # datetime features
     df['hour'] = df['departureTime'].dt.hour
     df['weekday'] = df['departureTime'].dt.day_name()
+    df['dayOfWeek'] = df['departureTime'].dt.weekday  # numeric for modeling
     df['month'] = df['departureTime'].dt.month
 
     # season mapping
