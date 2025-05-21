@@ -71,22 +71,12 @@ def load_data():
 
 
 def parse_wifi(ext):
-    """
-    From extensions text like
-      "Average legroom (31 in), Wi-Fi for a fee, Carbon emissions estimate: 351 kg"
-    returns:
-      1 if Wi-Fi is offered free,
-      0 if it’s offered “for a fee”,
-      NaN if no “Wi” substring is found.
-    """
-    if not isinstance(ext, str) or 'Wi' not in ext.lower():
+    if not isinstance(ext, str):
         return np.nan
-    low = ext.lower()
-    if 'free' in low:
-        return 1
-    if 'fee' in low:
-        return 0
-    return np.nan
+    m = re.search(r'Wi\W*Fi.*?(free|fee)', ext, flags=re.IGNORECASE)
+    if not m:
+        return np.nan
+    return 1 if m.group(1).lower() == 'free' else 0
 
 
 # load data
@@ -251,16 +241,23 @@ with col5:
 with col6:
     st.subheader("Average Price by Wi-Fi Offering")
     wf = df.dropna(subset=['wifi']).groupby('wifi')['price'].mean().reset_index()
-    wf['price'] = np.ceil(wf['price'])
-    wf['wifi'] = wf['wifi'].map({1:'Free', 0:'Paid'})
-    fig_wf = px.bar(
-        wf, x='wifi', y='price',
-        labels={'wifi':'Wi-Fi','price':'Avg Price ($)'},
-        text_auto=True
-    )
-    fig_wf.update_layout(xaxis={'categoryorder':'array','categoryarray':['Free','Paid']})
-    st.plotly_chart(fig_wf, use_container_width=True)
-    st.success(f"💰 Cheapest Wi-Fi option: **{wf.loc[wf['price'].idxmin(),'wifi']}**")
+    if wf.empty:
+        st.info("No Wi-Fi data available.")
+    else:
+        wf['price'] = np.ceil(wf['price'])
+        wf['wifi']  = wf['wifi'].map({1:'Free', 0:'Paid'})
+        fig_wf = px.bar(
+            wf, x='wifi', y='price',
+            labels={'wifi':'Wi-Fi','price':'Avg Price ($)'},
+            text_auto=True
+        )
+        fig_wf.update_layout(
+            xaxis={'categoryorder':'array','categoryarray':['Free','Paid']}
+        )
+        st.plotly_chart(fig_wf, use_container_width=True)
+        st.success(f"💰 Cheapest Wi-Fi option: **{wf.loc[wf['price'].idxmin(),'wifi']}**")
+
+
 
 # 6. Airline Price Comparison
 st.subheader("Average Price by Airline")
