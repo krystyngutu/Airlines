@@ -30,6 +30,10 @@ def load_data():
     df['price'] = np.ceil(pd.to_numeric(df['price'], errors='coerce'))
     df['durationTime'] = pd.to_numeric(df.get('durationTime', np.nan), errors='coerce')
     df['carbon'] = pd.to_numeric(df['carbonEmissionsThisFlight'], errors='coerce')
+    df['wifi'] = df['extensions'].apply(parse_wifi).astype('Int64')
+    df_wifi = df.dropna(subset=['wifi'])
+    df_wifi.groupby('wifi')['price'].mean()
+
 
     # datetime features
     df['hour'] = df['departureTime'].dt.hour
@@ -66,7 +70,6 @@ def load_data():
     return df.dropna(subset=['departureTime', 'price', 'airline'])
 
 
-# ——— 2) WIFI ———
 def parse_wifi(ext):
     """
     From extensions text like
@@ -85,9 +88,6 @@ def parse_wifi(ext):
         return 0
     return np.nan
 
-df['wifi'] = df['extensions'].apply(parse_wifi).astype('Int64')
-df_wifi = df.dropna(subset=['wifi'])
-df_wifi.groupby('wifi')['price'].mean()
 
 # load data
 try:
