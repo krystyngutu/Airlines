@@ -89,12 +89,6 @@ star_alliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zeal
 min_price = int(df['price'].min())
 max_price = int(df['price'].max())
 
-price_range = st.sidebar.slider(
-    "Price Range ($)",
-    min_value=min_price,
-    max_value=max_price,
-    value=(min_price, max_price)
-)
 
 # Apply price filter
 df = df[
