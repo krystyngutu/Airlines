@@ -198,12 +198,6 @@ fig_tc = px.bar(
 fig_tc.update_layout(xaxis_tickangle=-45)
 st.plotly_chart(fig_tc, use_container_width=True)
 
-# ----------------------
-# EXISTING PRICE ANALYSIS + MODELS + ADDITIONAL ANALYTICS continue below...
-# ----------------------
-# (the rest of your Price Analysis, Revenue Steering Models,
-#  Operational Feature Analysis, etc. remains unchanged)
-
 
 # ----------------------
 # PRICE ANALYSIS
