@@ -107,136 +107,73 @@ airline_colors = {
 st.header("Price Analysis")
 
 # 1. Weekly Avg Price Over Time by Airline
-st.subheader("Weekly Average Price Over Time by Airline")
-weekly = (
-    df.groupby([pd.Grouper(key='departureTime', freq='W'), 'airline'])['price']
-      .mean()
-      .reset_index()
-)
+st.subheader("Weekly Avg Price Over Time by Airline")
+weekly = df.groupby([pd.Grouper(key='departureTime', freq='W'), 'airline'])['price'].mean().reset_index()
 weekly['price'] = np.ceil(weekly['price'])
-fig_time = px.line(
-    weekly,
-    x='departureTime', y='price', color='airline',
-    labels={'departureTime': 'Week', 'price': 'Price (USD)'}
-)
+fig_time = px.line(weekly, x='departureTime', y='price', color='airline', labels={'departureTime':'Week','price':'Price ($)'})
 st.plotly_chart(fig_time, use_container_width=True)
 
 # 2. Average Price by Month & Season
 col1, col2 = st.columns(2)
 with col1:
     st.subheader("Average Price by Month")
-    mon_df = (
-        df.groupby('month')['price'].mean()
-          .reindex(range(1,13))
-          .reset_index()
-    )
+    mon = df.groupby('month')['price'].mean().reindex(range(1,13)).reset_index()
     mon['price'] = np.ceil(mon['price'])
-    mon_df['month_name'] = mon_df['month'].apply(lambda m: calendar.month_abbr[m])
-    fig_mon = px.bar(
-        mon_df,
-        x='month_name', y='price',
-        labels={'month_name': 'Month', 'price': 'Avg Price (USD)'},
-        text_auto=True
-    )
+    mon['month_name'] = mon['month'].apply(lambda m: calendar.month_abbr[m])
+    fig_mon = px.bar(mon, x='month_name', y='price', labels={'month_name':'Month','price':'Avg Price ($)'}, text_auto=True)
     st.plotly_chart(fig_mon, use_container_width=True)
-    cheapest_mon = mon_df.loc[mon_df['price'].idxmin(), 'month_name']
-    st.success(f"💰 Cheapest month to fly: **{cheapest_mon}**")
+    st.success(f"💰 Cheapest month: **{mon.loc[mon['price'].idxmin(),'month_name']}**")
 with col2:
     st.subheader("Average Price by Season")
-    sea_df = (
-        df.groupby('season')['price'].mean()
-          .reindex(['Winter','Spring','Summer','Fall'])
-          .reset_index()
-    )
+    sea = df.groupby('season')['price'].mean().reindex(['Winter','Spring','Summer','Fall']).reset_index()
     sea['price'] = np.ceil(sea['price'])
-    fig_sea = px.bar(
-        sea_df,
-        x='season', y='price',
-        labels={'season': 'Season', 'price': 'Avg Price (USD)'},
-        text_auto=True
-    )
+    fig_sea = px.bar(sea, x='season', y='price', labels={'season':'Season','price':'Avg Price ($)'}, text_auto=True)
     st.plotly_chart(fig_sea, use_container_width=True)
-    cheapest_sea = sea_df.loc[sea_df['price'].idxmin(), 'season']
-    st.success(f"💰 Cheapest season to fly: **{cheapest_sea}**")
+    st.success(f"💰 Cheapest season: **{sea.loc[sea['price'].idxmin(),'season']}**")
 
 # 3. Average Price by Day & Time of Day
 col3, col4 = st.columns(2)
 with col3:
     st.subheader("Average Price by Day of Week")
-    dow_df = (
-        df.groupby('weekday')['price'].mean()
-          .reindex(['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'])
-          .reset_index()
-    )
+    dow = df.groupby('weekday')['price'].mean().reindex(['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']).reset_index()
     dow['price'] = np.ceil(dow['price'])
-    fig_dow = px.bar(
-        dow_df,
-        x='weekday', y='price',
-        labels={'weekday': 'Day', 'price': 'Avg Price (USD)'},
-        text_auto=True
-    )
+    fig_dow = px.bar(dow, x='weekday', y='price', labels={'weekday':'Day','price':'Avg Price ($)'}, text_auto=True)
     st.plotly_chart(fig_dow, use_container_width=True)
-    cheapest_day = dow_df.loc[dow_df['price'].idxmin(), 'weekday']
-    st.success(f"💰 Cheapest day to fly: **{cheapest_day}**")
+    st.success(f"💰 Cheapest day: **{dow.loc[dow['price'].idxmin(),'weekday']}**")
 with col4:
     st.subheader("Average Price by Time of Day")
-    tod_df = (
-        df.groupby('timeOfDay')['price'].mean()
-          .reindex(['Morning','Afternoon','Evening','Night'])
-          .reset_index()
-    )
+    tod = df.groupby('timeOfDay')['price'].mean().reindex(['Morning','Afternoon','Evening','Night']).reset_index()
     tod['price'] = np.ceil(tod['price'])
-    fig_tod = px.bar(
-        tod_df,
-        x='timeOfDay', y='price',
-        labels={'timeOfDay': 'Time of Day', 'price': 'Avg Price (USD)'},
-        text_auto=True
-    )
+    fig_tod = px.bar(tod, x='timeOfDay', y='price', labels={'timeOfDay':'Time of Day','price':'Avg Price ($)'}, text_auto=True)
     st.plotly_chart(fig_tod, use_container_width=True)
-    cheapest_tod = tod_df.loc[tod_df['price'].idxmin(), 'timeOfDay']
-    st.success(f"💰 Cheapest time to fly: **{cheapest_tod}**")
+    st.success(f"💰 Cheapest time: **{tod.loc[tod['price'].idxmin(),'timeOfDay']}**")
 
-# 4. Layovers & Travel Class
+# 4. Layovers & Travel Class Analysis
 col5, col6 = st.columns(2)
 with col5:
     st.subheader("Average Price by Number of Layovers")
-    lay_df = df.groupby('numLayovers')['price'].mean().reset_index()
+    lay = df.groupby('numLayovers')['price'].mean().reset_index()
     lay['price'] = np.ceil(lay['price'])
-    fig_lay = px.bar(
-        lay_df,
-        x='numLayovers', y='price',
-        labels={'numLayovers': '# of Layovers', 'price': 'Avg Price (USD)'},
-        text_auto=True
-    )
+    fig_lay = px.bar(lay, x='numLayovers', y='price', labels={'numLayovers':'# of Layovers','price':'Avg Price ($)'}, text_auto=True)
     st.plotly_chart(fig_lay, use_container_width=True)
-    cheapest_lay = lay_df.loc[lay_df['price'].idxmin(), 'numLayovers']
-    st.success(f"💰 Cheapest with **{cheapest_lay}** layovers")
+    st.success(f"💰 Cheapest with **{int(lay.loc[lay['price'].idxmin(),'numLayovers'])}** layovers")
 with col6:
     st.subheader("Average Price by Travel Class")
-    tc_df = df.groupby('travelClass')['price'].mean().reset_index().sort_values('price')
-    fig_tc = px.bar(
-        tc_df,
-        x='travelClass', y='price',
-        labels={'travelClass': 'Travel Class', 'price': 'Avg Price (USD)'},
-        text_auto=True
-    )
+    tc = df.groupby('travelClass')['price'].mean().reset_index().sort_values('price')
     tc['price'] = np.ceil(tc['price'])
+    fig_tc = px.bar(tc, x='travelClass', y='price', labels={'travelClass':'Travel Class','price':'Avg Price ($)'}, text_auto=True)
     fig_tc.update_layout(xaxis_tickangle=-45)
     st.plotly_chart(fig_tc, use_container_width=True)
-    cheapest_cls = tc_df.loc[tc_df['price'].idxmin(), 'travelClass']
-    st.success(f"💰 Cheapest class: **{cheapest_cls}**")
+    st.success(f"💰 Cheapest class: **{tc.loc[tc['price'].idxmin(),'travelClass']}**")
 
-
-# 5. Airline comparison (bar chart)
-st.subheader("Airline Price Comparison")
-df_air = df.groupby('airline')['price'].mean().reset_index()
+# 5. Airline Price Comparison
+st.subheader("Average Price by Airline")
+air = df.groupby('airline')['price'].mean().reset_index()
 air['price'] = np.ceil(air['price'])
-fig_air = px.bar(df_air, x='airline', y='price', color='airline', labels={'price':'Avg Price ($)'}, text_auto=True)
-for tr in fig_air.data:
-    if tr.name not in top5_airlines:
-        tr.visible = 'legendonly'
+fig_air = px.bar(air, x='airline', y='price', labels={'airline':'Airline','price':'Avg Price ($)'}, text_auto=True)
 fig_air.update_layout(xaxis_tickangle=-45)
 st.plotly_chart(fig_air, use_container_width=True)
+
 
 # ----------------------
 # REVENUE STEERING MODELS
