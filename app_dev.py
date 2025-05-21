@@ -153,16 +153,12 @@ fig_mo = px.line(
     color_discrete_map=airline_colors,
     markers=True,
     title="Average Price by Month & Airline",
-<<<<<<< HEAD
     labels={'month':'Month','price':'Average Price ($)'},
     hover_data={"departureTime": "%mm %Y"}
-=======
     labels={'month':'Month','price':'Average Price (USD)'}
->>>>>>> c51161fc2b738eeecdb1b7c18732b4bc29e92c26
 )
 fig_mo.update_xaxes(dtick="M1", tickformat="%m %Y")
 st.plotly_chart(fig_mo, use_container_width=True, key="chart_layovers")
-
 
 # by season
 st.subheader("Average Price by Season")
