@@ -33,7 +33,7 @@ def load_data():
     df['dayOfWeek']       = df['departureTime'].dt.weekday
     df['hour']            = df['departureTime'].dt.hour
     df['month']           = df['departureTime'].dt.month
-    # NEW: season mapping
+    # season mapping
     season_map = {
         12: 'Winter', 1: 'Winter', 2: 'Winter',
         3: 'Spring', 4: 'Spring', 5: 'Spring',
@@ -146,15 +146,17 @@ df = df[(df['price']>=price_range[0]) & (df['price']<=price_range[1])]
 st.header("Price Over Time")
 # by month
 st.subheader("Average Price by Month")
-df_mo = df.groupby(['month','airline'])['price'].mean().reset_index()
+df_mo = df.groupby(['month', 'departureTime','airline'])['price'].mean().reset_index().sort_values('departureTime')
 fig_mo = px.line(
-    df_mo, x='month', y='price',
+    df_mo, x='departureTime', y='price',
     color='airline',
     color_discrete_map=airline_colors,
     markers=True,
     title="Average Price by Month & Airline",
-    labels={'month':'Month','price':'Average Price ($)'}
+    labels={'month':'Month','price':'Average Price ($)'},
+    hover_data={"departureTime": "%mm %Y"}
 )
+fig_mo.update_xaxes(dtick="M1", tickformat="%m %Y")
 st.plotly_chart(fig_mo, use_container_width=True)
 
 # by season
