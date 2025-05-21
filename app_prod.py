@@ -108,8 +108,8 @@ airline_colors = {
 # ----------------------
 st.header("Price Analysis")
 
-# 1. Weekly Avg Price Over Time by Airline
-st.subheader("Weekly Avg Price Over Time by Airline")
+# 1. Weekly Average Price Over Time by Airline
+st.subheader("Weekly Average Price Over Time by Airline")
 weekly = (
     df.groupby([pd.Grouper(key='departureTime', freq='W'), 'airline'])['price']
       .mean()
@@ -123,7 +123,7 @@ fig_time = px.line(
 )
 st.plotly_chart(fig_time, use_container_width=True)
 
-# 2. Avg Price by Month & Season
+# 2. Average Price by Month & Season
 col1, col2 = st.columns(2)
 
 with col1:
@@ -136,7 +136,7 @@ with col1:
     mon['month_name'] = mon['month'].map(lambda x: calendar.month_abbr[x])
     fig_mon = px.bar(
         mon, x='month_name', y='price',
-        labels={'month_name':'Month','price':'Avg Price ($)'}, text_auto=True
+        labels={'month_name':'Month','price':'Average Price ($)'}, text_auto=True
     )
     st.plotly_chart(fig_mon, use_container_width=True)
     st.success(f"💰 Cheapest month: **{mon.loc[mon['price'].idxmin(),'month_name']}**")
@@ -150,13 +150,13 @@ with col2:
     sea['price'] = np.ceil(sea['price'])
     fig_sea = px.bar(
         sea, x='season', y='price',
-        labels={'season':'Season','price':'Avg Price ($)'}, text_auto=True
+        labels={'season':'Season','price':'Average Price ($)'}, text_auto=True
     )
     st.plotly_chart(fig_sea, use_container_width=True)
     st.success(f"💰 Cheapest season: **{sea.loc[sea['price'].idxmin(),'season']}**")
 
 
-# 3. Avg Price by Day & Time of Day
+# 3. Average Price by Day & Time of Day
 col3, col4 = st.columns(2)
 with col3:
     st.subheader("Average Price by Day of Week")
@@ -166,7 +166,7 @@ with col3:
     dow['price'] = np.ceil(dow['price'])
     fig_dow = px.bar(
         dow, x='weekday', y='price',
-        labels={'weekday':'Day','price':'Avg Price ($)'}, text_auto=True
+        labels={'weekday':'Day','price':'Average Price ($)'}, text_auto=True
     )
     st.plotly_chart(fig_dow, use_container_width=True)
     st.success(f"💰 Cheapest day: **{dow.loc[dow['price'].idxmin(),'weekday']}**")
@@ -178,7 +178,7 @@ with col4:
     tod['price'] = np.ceil(tod['price'])
     fig_tod = px.bar(
         tod, x='timeOfDay', y='price',
-        labels={'timeOfDay':'Time of Day','price':'Avg Price ($)'}, text_auto=True
+        labels={'timeOfDay':'Time of Day','price':'Average Price ($)'}, text_auto=True
     )
     st.plotly_chart(fig_tod, use_container_width=True)
     st.success(f"💰 Cheapest time: **{tod.loc[tod['price'].idxmin(),'timeOfDay']}**")
@@ -191,7 +191,7 @@ with col5:
     lay['price'] = np.ceil(lay['price'])
     fig_lay = px.bar(
         lay, x='numLayovers', y='price',
-        labels={'numLayovers':'# of Layovers','price':'Avg Price ($)'}, text_auto=True
+        labels={'numLayovers':'# of Layovers','price':'Average Price ($)'}, text_auto=True
     )
     st.plotly_chart(fig_lay, use_container_width=True)
     st.success(f"💰 Cheapest with **{int(lay.loc[lay['price'].idxmin(),'numLayovers'])}** layovers")
@@ -201,7 +201,7 @@ with col6:
     tc['price'] = np.ceil(tc['price'])
     fig_tc = px.bar(
         tc, x='travelClass', y='price',
-        labels={'travelClass':'Travel Class','price':'Avg Price ($)'}, text_auto=True
+        labels={'travelClass':'Travel Class','price':'Average Price ($)'}, text_auto=True
     )
     fig_tc.update_layout(xaxis_tickangle=-45)
     st.plotly_chart(fig_tc, use_container_width=True)
@@ -214,7 +214,7 @@ air['price'] = np.ceil(air['price'])
 fig_air = px.bar(
     air, x='airline', y='price', color='airline',
     color_discrete_map=airline_colors,
-    labels={'airline':'Airline','price':'Avg Price ($)'}, text_auto=True
+    labels={'airline':'Airline','price':'Average Price ($)'}, text_auto=True
 )
 fig_air.update_layout(xaxis_tickangle=-45)
 st.plotly_chart(fig_air, use_container_width=True)
@@ -432,7 +432,7 @@ try:
     
     # Create a sample flight for prediction (using most common values from data)
     most_common_airline = df['airline'].mode()[0]
-    avg_duration = df['durationTime'].mean()
+    Average_duration = df['durationTime'].mean()
     
     # Generate price predictions for all day and hour combinations
     predictions = []
@@ -444,7 +444,7 @@ try:
                 'hour': [hour],
                 'month': [current_month],
                 'airline': [most_common_airline],
-                'durationTime': [avg_duration]
+                'durationTime': [Average_duration]
             })
             
             # Predict price
