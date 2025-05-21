@@ -113,6 +113,7 @@ weekly = (
       .mean()
       .reset_index()
 )
+weekly['price'] = np.ceil(weekly['price'])
 fig_time = px.line(
     weekly,
     x='departureTime', y='price', color='airline',
@@ -129,6 +130,7 @@ with col1:
           .reindex(range(1,13))
           .reset_index()
     )
+    mon['price'] = np.ceil(mon['price'])
     mon_df['month_name'] = mon_df['month'].apply(lambda m: calendar.month_abbr[m])
     fig_mon = px.bar(
         mon_df,
@@ -146,6 +148,7 @@ with col2:
           .reindex(['Winter','Spring','Summer','Fall'])
           .reset_index()
     )
+    sea['price'] = np.ceil(sea['price'])
     fig_sea = px.bar(
         sea_df,
         x='season', y='price',
@@ -165,6 +168,7 @@ with col3:
           .reindex(['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'])
           .reset_index()
     )
+    dow['price'] = np.ceil(dow['price'])
     fig_dow = px.bar(
         dow_df,
         x='weekday', y='price',
@@ -181,6 +185,7 @@ with col4:
           .reindex(['Morning','Afternoon','Evening','Night'])
           .reset_index()
     )
+    tod['price'] = np.ceil(tod['price'])
     fig_tod = px.bar(
         tod_df,
         x='timeOfDay', y='price',
@@ -196,6 +201,7 @@ col5, col6 = st.columns(2)
 with col5:
     st.subheader("Average Price by Number of Layovers")
     lay_df = df.groupby('numLayovers')['price'].mean().reset_index()
+    lay['price'] = np.ceil(lay['price'])
     fig_lay = px.bar(
         lay_df,
         x='numLayovers', y='price',
@@ -214,6 +220,7 @@ with col6:
         labels={'travelClass': 'Travel Class', 'price': 'Avg Price (USD)'},
         text_auto=True
     )
+    tc['price'] = np.ceil(tc['price'])
     fig_tc.update_layout(xaxis_tickangle=-45)
     st.plotly_chart(fig_tc, use_container_width=True)
     cheapest_cls = tc_df.loc[tc_df['price'].idxmin(), 'travelClass']
@@ -223,6 +230,7 @@ with col6:
 # 5. Airline comparison (bar chart)
 st.subheader("Airline Price Comparison")
 df_air = df.groupby('airline')['price'].mean().reset_index()
+air['price'] = np.ceil(air['price'])
 fig_air = px.bar(df_air, x='airline', y='price', color='airline', labels={'price':'Avg Price ($)'}, text_auto=True)
 for tr in fig_air.data:
     if tr.name not in top5_airlines:
