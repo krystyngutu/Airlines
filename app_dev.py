@@ -130,7 +130,6 @@ col1, col2 = st.columns(2)
 with col1:
     st.subheader("By Month")
     month_order = list(range(1,13))
-    df['price'] = np.ceil(df['price'])  # round up to next dollar
     df_month = df.groupby('month')['price'].mean().reindex(month_order).reset_index()
     df_month['month_name'] = df_month['month'].apply(lambda m: calendar.month_name[m])
     fig_month = px.bar(df_month, x='month_name', y='price', labels={'price':'Avg Price ($)','month_name':'Month'}, text_auto=True)
