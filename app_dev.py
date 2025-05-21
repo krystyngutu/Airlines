@@ -137,7 +137,7 @@ elif group=="Star Alliance":
 # price slider
 min_p = int(df['price'].min())
 max_p = int(df['price'].max())
-price_range = st.sidebar.slider("Price Range ($)", min_p, max_p, (min_p,max_p))
+price_range = st.sidebar.slider("Price Range (USD)", min_p, max_p, (min_p,max_p))
 df = df[(df['price']>=price_range[0]) & (df['price']<=price_range[1])]
 
 # ----------------------
@@ -153,8 +153,12 @@ fig_mo = px.line(
     color_discrete_map=airline_colors,
     markers=True,
     title="Average Price by Month & Airline",
+<<<<<<< HEAD
     labels={'month':'Month','price':'Average Price ($)'},
     hover_data={"departureTime": "%mm %Y"}
+=======
+    labels={'month':'Month','price':'Average Price (USD)'}
+>>>>>>> c51161fc2b738eeecdb1b7c18732b4bc29e92c26
 )
 fig_mo.update_xaxes(dtick="M1", tickformat="%m %Y")
 st.plotly_chart(fig_mo, use_container_width=True)
@@ -171,33 +175,9 @@ fig_se = px.line(
     color_discrete_map=airline_colors,
     markers=True,
     title="Average Price by Season & Airline",
-    labels={'season':'Season','price':'Average Price ($)'}
+    labels={'season':'Season','price':'Average Price (USD)'}
 )
 st.plotly_chart(fig_se, use_container_width=True)
-
-# ----------------------
-# LAYOVER ANALYSIS
-# ----------------------
-df_lo = df.groupby('numLayovers')['price'].mean().reset_index()
-fig_lo = px.bar(
-    df_lo, x='numLayovers', y='price', text_auto=True,
-    title="Average Price by Number of Layovers",
-    labels={'numLayovers':'# of Layovers','price':'Average Price ($)'}
-)
-st.plotly_chart(fig_lo, use_container_width=True)
-
-# ----------------------
-# TRAVEL CLASS ANALYSIS
-# ----------------------
-df_tc = df.groupby('travelClass')['price'].mean().reset_index().sort_values('price')
-fig_tc = px.bar(
-    df_tc, x='travelClass', y='price', text_auto=True,
-    title="Average Price by Travel Class",
-    labels={'travelClass':'Class','price':'Average Price ($)'}
-)
-fig_tc.update_layout(xaxis_tickangle=-45)
-st.plotly_chart(fig_tc, use_container_width=True)
-
 
 # ----------------------
 # PRICE ANALYSIS
@@ -209,7 +189,7 @@ with col1:
     day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
     df_day = df.groupby('weekday')['price'].mean().reindex(day_order).reset_index()
     fig = px.bar(df_day, x='weekday', y='price', title='Average Price by Day of Week',
-                 labels={'price': 'Average Price ($)', 'weekday': 'Day'}, text_auto=True)
+                 labels={'price': 'Average Price (USD)', 'weekday': 'Day'}, text_auto=True)
     st.plotly_chart(fig, use_container_width=True)
     st.success(f"💰 Cheapest day to fly: **{df_day.loc[df_day['price'].idxmin(), 'weekday']}**")
 
@@ -217,17 +197,47 @@ with col2:
     tod_order = ['Morning', 'Afternoon', 'Evening', 'Night']
     df_tod = df.groupby('timeOfDay')['price'].mean().reindex(tod_order).reset_index()
     fig = px.bar(df_tod, x='timeOfDay', y='price', title='Average Price by Time of Day',
-             labels={'price': 'Average Price ($)', 'timeOfDay': 'Time'}, text_auto=True)
+             labels={'price': 'Average Price (USD)', 'timeOfDay': 'Time'}, text_auto=True)
     st.plotly_chart(fig, use_container_width=True)
     st.success(f"💰 Cheapest time to fly: **{df_tod.loc[df_tod['price'].idxmin(), 'timeOfDay']}**")
     st.caption("🕐 Morning: 5am–12pm, Afternoon: 12–5pm, Evening: 5–10pm, Night: 10pm–5am")
 
+# ----------------------
+# LAYOVER & TRAVEL CLASS ANALYSIS
+# ----------------------
+st.header("Layover and Travel Analysis")
+col1, col2 = st.columns(2)
+
+with col1:
+    df_lo = df.groupby('numLayovers')['price'].mean().reset_index()
+    fig_lo = px.bar(
+        df_lo, x='numLayovers', y='price', text_auto=True,
+        title="Average Price by Number of Layovers",
+        labels={'numLayovers':'# of Layovers','price':'Average Price (USD)'}
+    )
+    fig_lo.update_traces(texttemplate='$%{text:.2f}')
+    st.plotly_chart(fig_lo, use_container_width=True)
+
+with col2:
+    df_tc = df.groupby('travelClass')['price'].mean().reset_index().sort_values('price')
+    fig_tc = px.bar(
+        df_tc, x='travelClass', y='price', text_auto=True,
+        title="Average Price by Travel Class",
+        labels={'travelClass':'Class','price':'Average Price (USD)'}
+    )
+    fig_tc.update_layout(xaxis_tickangle=-45)
+    fig_lo.update_traces(texttemplate='$%{text:.2f}')
+    st.plotly_chart(fig_tc, use_container_width=True)
+
+# ----------------------
+# AIRLINE PRICE ANALYSIS
+# ----------------------
 st.subheader("Airline Price Comparison")
 df_airline = df.groupby('airline')['price'].mean().reset_index()
 fig = px.bar(df_airline, x='airline', y='price', color='airline',
              color_discrete_map=airline_colors,
              title='Average Price by Airline',
-             labels={'price': 'Average Price ($)'}, text_auto=True)
+             labels={'price': 'Average Price (USD)'}, text_auto=True)
 fig.update_layout(xaxis_tickangle=-45)
 st.plotly_chart(fig, use_container_width=True)
 
@@ -289,7 +299,7 @@ try:
         lr_rmse = np.sqrt(mean_squared_error(y_test, lr_preds))
         lr_r2 = r2_score(y_test, lr_preds)
         
-        st.metric("Linear Regression RMSE", f"${lr_rmse:.2f}")
+        st.metric("Linear Regression RMSE", f"USD{lr_rmse:.2f}")
         st.metric("Linear Regression R²", f"{lr_r2:.4f}")
         
         # Feature importance for linear model (using coefficients)
@@ -313,7 +323,7 @@ try:
             ridge_rmse = np.sqrt(mean_squared_error(y_test, ridge_preds))
             ridge_r2 = r2_score(y_test, ridge_preds)
             
-            st.metric("Ridge RMSE", f"${ridge_rmse:.2f}")
+            st.metric("Ridge RMSE", f"USD{ridge_rmse:.2f}")
             st.metric("Ridge R²", f"{ridge_r2:.4f}")
         
         # Lasso Regression
@@ -328,7 +338,7 @@ try:
             lasso_rmse = np.sqrt(mean_squared_error(y_test, lasso_preds))
             lasso_r2 = r2_score(y_test, lasso_preds)
             
-            st.metric("Lasso RMSE", f"${lasso_rmse:.2f}")
+            st.metric("Lasso RMSE", f"USD{lasso_rmse:.2f}")
             st.metric("Lasso R²", f"{lasso_r2:.4f}")
         
         # ElasticNet
@@ -343,7 +353,7 @@ try:
             en_rmse = np.sqrt(mean_squared_error(y_test, en_preds))
             en_r2 = r2_score(y_test, en_preds)
             
-            st.metric("ElasticNet RMSE", f"${en_rmse:.2f}")
+            st.metric("ElasticNet RMSE", f"USD{en_rmse:.2f}")
             st.metric("ElasticNet R²", f"{en_r2:.4f}")
         
         st.markdown("""
@@ -374,7 +384,7 @@ try:
             rf_rmse = np.sqrt(mean_squared_error(y_test, rf_preds))
             rf_r2 = r2_score(y_test, rf_preds)
             
-            st.metric("Random Forest RMSE", f"${rf_rmse:.2f}")
+            st.metric("Random Forest RMSE", f"USD{rf_rmse:.2f}")
             st.metric("Random Forest R²", f"{rf_r2:.4f}")
             
             st.markdown("""
@@ -395,7 +405,7 @@ try:
             gb_rmse = np.sqrt(mean_squared_error(y_test, gb_preds))
             gb_r2 = r2_score(y_test, gb_preds)
             
-            st.metric("Gradient Boosting RMSE", f"${gb_rmse:.2f}")
+            st.metric("Gradient Boosting RMSE", f"USD{gb_rmse:.2f}")
             st.metric("Gradient Boosting R²", f"{gb_r2:.4f}")
             
             st.markdown("""
@@ -416,7 +426,7 @@ try:
         
         best_model = min(models, key=models.get)
         
-        st.success(f"✅ Best performing model: **{best_model}** with RMSE ${models[best_model]:.2f}")
+        st.success(f"✅ Best performing model: **{best_model}** with RMSE USD{models[best_model]:.2f}")
         
         # Model comparison chart
         fig = px.bar(
@@ -425,7 +435,7 @@ try:
             labels={'x': 'Model', 'y': 'RMSE (lower is better)'},
             title='Model Performance Comparison'
         )
-        fig.update_traces(texttemplate='$%{y:.2f}', textposition='outside')
+        fig.update_traces(texttemplate='USD%{y:.2f}', textposition='outside')
         st.plotly_chart(fig, use_container_width=True)
 
     # Optimal booking recommendations
@@ -442,7 +452,7 @@ try:
     
     # Create a sample flight for prediction (using most common values from data)
     most_common_airline = df['airline'].mode()[0]
-    avg_duration = df['durationTime'].mean()
+    Average_duration = df['durationTime'].mean()
     
     # Generate price predictions for all day and hour combinations
     predictions = []
@@ -454,7 +464,7 @@ try:
                 'hour': [hour],
                 'month': [current_month],
                 'airline': [most_common_airline],
-                'durationTime': [avg_duration]
+                'durationTime': [Average_duration]
             })
             
             # Predict price
@@ -477,7 +487,7 @@ try:
     # Create heatmap
     fig = px.imshow(
         pivot_df,
-        labels=dict(x="Hour of Day", y="Day of Week", color="Predicted Price ($)"),
+        labels=dict(x="Hour of Day", y="Day of Week", color="Predicted Price (USD)"),
         title=f"Predicted Prices by Day and Hour (for {most_common_airline})",
         color_continuous_scale="RdBu_r"
     )
@@ -495,7 +505,7 @@ try:
     ### Revenue Steering Recommendations
     
     🎯 **For travelers seeking lowest fares**: 
-    Book on **{optimal_day}** at **{optimal_hour}:00** (predicted price: ${min_price:.2f})
+    Book on **{optimal_day}** at **{optimal_hour}:00** (predicted price: USD{min_price:.2f})
     
     💼 **For revenue management**:
     - Dynamic pricing should adjust for {optimal_day} bookings (lowest demand period)
@@ -526,7 +536,7 @@ st.markdown('---')
 if 'airplane' in df.columns:
         df_aircraft = df.dropna(subset=['airplane'])
         fig = px.box(df_aircraft, x='airplane', y='price', title='Price by Aircraft Type',
-                     labels={'price': 'Price ($)', 'airplane': 'Aircraft'})
+                     labels={'price': 'Price (USD)', 'airplane': 'Aircraft'})
         fig.update_layout(xaxis_tickangle=-45)
         st.plotly_chart(fig, use_container_width=True)
     
@@ -586,7 +596,7 @@ for name, model in {
     rmse = np.sqrt(mean_squared_error(y_test_adv, preds))
     r2 = r2_score(y_test_adv, preds)
     model_results[name] = rmse
-    st.metric(f"{name} RMSE", f"${rmse:.2f}")
+    st.metric(f"{name} RMSE", f"USD{rmse:.2f}")
     st.caption(f"{name} R²: {r2:.4f}")
 
 # Summary plot
@@ -597,7 +607,7 @@ fig = px.bar(
     labels={'x': 'Model', 'y': 'RMSE'},
     color_discrete_sequence=['#1a75ff'] * len(model_results)
 )
-fig.update_traces(texttemplate='$%{y:.2f}', textposition='outside')
+fig.update_traces(texttemplate='USD%{y:.2f}', textposition='outside')
 st.plotly_chart(fig, use_container_width=True)
 
 # ----------------------
