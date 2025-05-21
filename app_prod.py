@@ -538,8 +538,16 @@ if 'airplane' in df.columns:
     
 with col4:
     if 'legroom' in df.columns:
-        df_legroom = df.dropna(subset=['legroom'])
-        df_legroom['legroom'] = pd.to_numeric(df_legroom['legroom'].str.extract(r'(\d+)')[0], errors='coerce')
+        # drop rows where legroom is missing, then force everything to string
+        df_legroom = df.dropna(subset=['legroom']).copy()
+        # extract the numeric part from whatever the column contains
+        df_legroom['legroom'] = (
+            df_legroom['legroom']
+              .astype(str)
+              .str.extract(r'(\d+)', expand=False)
+        )
+        # convert to numeric, coercing any leftovers to NaN
+        df_legroom['legroom'] = pd.to_numeric(df_legroom['legroom'], errors='coerce')
         fig = px.box(df_legroom, x='airline', y='legroom', color='airline',
                      color_discrete_map=airline_colors,
                      title='Legroom by Airline',
