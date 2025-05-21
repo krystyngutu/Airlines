@@ -53,12 +53,12 @@ def load_data():
         if 17 <= h < 22: return 'Evening'
         return 'Night'
     df['timeOfDay']       = df['hour'].apply(time_of_day)
-    # NEW: travel class
+    # travel class
     if 'travelClass' in df.columns:
         df['travelClass'] = df['travelClass'].fillna('Unknown').astype(str).str.title()
     else:
         df['travelClass'] = 'Unknown'
-    # NEW: layover parsing
+    # layover parsing
     if 'layovers' in df.columns:
         df['layovers'] = df['layovers'].fillna('').astype(str)
         df['numLayovers'] = df['layovers'].apply(
@@ -66,7 +66,7 @@ def load_data():
         )
     else:
         df['numLayovers'] = 0
-    # NEW: legroom parsing from 'extensions'
+    # legroom parsing from 'extensions'
     if 'extensions' in df.columns:
         df['legroom'] = df['extensions'] \
             .str.extract(r'Average legroom\((\d+)\s*in\)', expand=False)
@@ -161,7 +161,8 @@ fig_mo = px.line(
 >>>>>>> c51161fc2b738eeecdb1b7c18732b4bc29e92c26
 )
 fig_mo.update_xaxes(dtick="M1", tickformat="%m %Y")
-st.plotly_chart(fig_mo, use_container_width=True)
+st.plotly_chart(fig_mo, use_container_width=True, key="chart_layovers")
+
 
 # by season
 st.subheader("Average Price by Season")
@@ -177,7 +178,7 @@ fig_se = px.line(
     title="Average Price by Season & Airline",
     labels={'season':'Season','price':'Average Price (USD)'}
 )
-st.plotly_chart(fig_se, use_container_width=True)
+st.plotly_chart(fig_se, use_container_width=True, key="chart_layovers")
 
 # ----------------------
 # PRICE ANALYSIS
@@ -190,7 +191,7 @@ with col1:
     df_day = df.groupby('weekday')['price'].mean().reindex(day_order).reset_index()
     fig = px.bar(df_day, x='weekday', y='price', title='Average Price by Day of Week',
                  labels={'price': 'Average Price (USD)', 'weekday': 'Day'}, text_auto=True)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, key="chart_layovers")
     st.success(f"💰 Cheapest day to fly: **{df_day.loc[df_day['price'].idxmin(), 'weekday']}**")
 
 with col2:
@@ -198,7 +199,7 @@ with col2:
     df_tod = df.groupby('timeOfDay')['price'].mean().reindex(tod_order).reset_index()
     fig = px.bar(df_tod, x='timeOfDay', y='price', title='Average Price by Time of Day',
              labels={'price': 'Average Price (USD)', 'timeOfDay': 'Time'}, text_auto=True)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, key="chart_layovers")
     st.success(f"💰 Cheapest time to fly: **{df_tod.loc[df_tod['price'].idxmin(), 'timeOfDay']}**")
     st.caption("🕐 Morning: 5am–12pm, Afternoon: 12–5pm, Evening: 5–10pm, Night: 10pm–5am")
 
@@ -216,7 +217,7 @@ with col1:
         labels={'numLayovers':'# of Layovers','price':'Average Price (USD)'}
     )
     fig_lo.update_traces(texttemplate='$%{text:.2f}')
-    st.plotly_chart(fig_lo, use_container_width=True)
+    st.plotly_chart(fig_lo, use_container_width=True, key="chart_layovers")
 
 with col2:
     df_tc = df.groupby('travelClass')['price'].mean().reset_index().sort_values('price')
@@ -226,8 +227,8 @@ with col2:
         labels={'travelClass':'Class','price':'Average Price (USD)'}
     )
     fig_tc.update_layout(xaxis_tickangle=-45)
-    fig_lo.update_traces(texttemplate='$%{text:.2f}')
-    st.plotly_chart(fig_tc, use_container_width=True)
+    fig_tc.update_traces(texttemplate='$%{text:.2f}')
+    st.plotly_chart(fig_tc, use_container_width=True, key="chart_layovers")
 
 # ----------------------
 # AIRLINE PRICE ANALYSIS
@@ -239,7 +240,7 @@ fig = px.bar(df_airline, x='airline', y='price', color='airline',
              title='Average Price by Airline',
              labels={'price': 'Average Price (USD)'}, text_auto=True)
 fig.update_layout(xaxis_tickangle=-45)
-st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig, use_container_width=True, key="chart_layovers")
 
 st.header("Revenue Steering Models")
 st.markdown("""
@@ -436,7 +437,7 @@ try:
             title='Model Performance Comparison'
         )
         fig.update_traces(texttemplate='USD%{y:.2f}', textposition='outside')
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key="chart_layovers")
 
     # Optimal booking recommendations
     st.header("Revenue Optimization Insights")
@@ -493,7 +494,7 @@ try:
     )
     
     fig.update_layout(height=500)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, key="chart_layovers")
 
     # Find the optimal booking time
     min_idx = prediction_df['price'].idxmin()
@@ -531,14 +532,14 @@ with col3:
                      color_discrete_map=airline_colors,
                      title='Carbon Emissions by Airline',
                      labels={'carbonEmissionsThisFlight': 'Carbon Emissions (kg)'})
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key="chart_layovers")
 st.markdown('---')
 if 'airplane' in df.columns:
         df_aircraft = df.dropna(subset=['airplane'])
         fig = px.box(df_aircraft, x='airplane', y='price', title='Price by Aircraft Type',
                      labels={'price': 'Price (USD)', 'airplane': 'Aircraft'})
         fig.update_layout(xaxis_tickangle=-45)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key="chart_layovers")
     
 with col4:
     if 'legroom' in df.columns:
@@ -548,7 +549,7 @@ with col4:
                      color_discrete_map=airline_colors,
                      title='Legroom by Airline',
                      labels={'legroom': 'Legroom (in)'})
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key="chart_layovers")
 
     
 # ----------------------
@@ -608,7 +609,8 @@ fig = px.bar(
     color_discrete_sequence=['#1a75ff'] * len(model_results)
 )
 fig.update_traces(texttemplate='USD%{y:.2f}', textposition='outside')
-st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig, use_container_width=True, key="chart_layovers")
+
 
 # ----------------------
 # FEATURE IMPORTANCE VISUALIZATION
@@ -636,4 +638,5 @@ fig = px.bar(
     labels={'Importance': 'Relative Importance', 'Feature': 'Feature'},
     color_discrete_sequence=['#1a75ff']
 )
-st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig, use_container_width=True, key="chart_layovers")
+
