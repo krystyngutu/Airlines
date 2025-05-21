@@ -145,7 +145,6 @@ df = df[(df['price']>=price_range[0]) & (df['price']<=price_range[1])]
 # ----------------------
 st.header("Price Over Time")
 # by month
-st.subheader("Average Price by Month")
 df_mo = df.groupby(['month','airline'])['price'].mean().reset_index()
 fig_mo = px.line(
     df_mo, x='month', y='price',
@@ -158,7 +157,6 @@ fig_mo = px.line(
 st.plotly_chart(fig_mo, use_container_width=True)
 
 # by season
-st.subheader("Average Price by Season")
 df_se = df.groupby(['season','airline'])['price'].mean().reset_index()
 # ensure season ordering
 season_order = ['Winter','Spring','Summer','Fall']
