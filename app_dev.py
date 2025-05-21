@@ -152,8 +152,8 @@ fig_mo = px.line(
     color='airline',
     color_discrete_map=airline_colors,
     markers=True,
-    title="Avg Price by Month & Airline",
-    labels={'month':'Month','price':'Avg Price ($)'}
+    title="Average Price by Month & Airline",
+    labels={'month':'Month','price':'Average Price ($)'}
 )
 st.plotly_chart(fig_mo, use_container_width=True)
 
@@ -168,8 +168,8 @@ fig_se = px.line(
     category_orders={'season': season_order},
     color_discrete_map=airline_colors,
     markers=True,
-    title="Avg Price by Season & Airline",
-    labels={'season':'Season','price':'Avg Price ($)'}
+    title="Average Price by Season & Airline",
+    labels={'season':'Season','price':'Average Price ($)'}
 )
 st.plotly_chart(fig_se, use_container_width=True)
 
@@ -180,7 +180,7 @@ df_lo = df.groupby('numLayovers')['price'].mean().reset_index()
 fig_lo = px.bar(
     df_lo, x='numLayovers', y='price', text_auto=True,
     title="Average Price by Number of Layovers",
-    labels={'numLayovers':'# of Layovers','price':'Avg Price ($)'}
+    labels={'numLayovers':'# of Layovers','price':'Average Price ($)'}
 )
 st.plotly_chart(fig_lo, use_container_width=True)
 
@@ -191,7 +191,7 @@ df_tc = df.groupby('travelClass')['price'].mean().reset_index().sort_values('pri
 fig_tc = px.bar(
     df_tc, x='travelClass', y='price', text_auto=True,
     title="Average Price by Travel Class",
-    labels={'travelClass':'Class','price':'Avg Price ($)'}
+    labels={'travelClass':'Class','price':'Average Price ($)'}
 )
 fig_tc.update_layout(xaxis_tickangle=-45)
 st.plotly_chart(fig_tc, use_container_width=True)
@@ -207,7 +207,7 @@ with col1:
     day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
     df_day = df.groupby('weekday')['price'].mean().reindex(day_order).reset_index()
     fig = px.bar(df_day, x='weekday', y='price', title='Average Price by Day of Week',
-                 labels={'price': 'Avg Price ($)', 'weekday': 'Day'}, text_auto=True)
+                 labels={'price': 'Average Price ($)', 'weekday': 'Day'}, text_auto=True)
     st.plotly_chart(fig, use_container_width=True)
     st.success(f"💰 Cheapest day to fly: **{df_day.loc[df_day['price'].idxmin(), 'weekday']}**")
 
@@ -215,7 +215,7 @@ with col2:
     tod_order = ['Morning', 'Afternoon', 'Evening', 'Night']
     df_tod = df.groupby('timeOfDay')['price'].mean().reindex(tod_order).reset_index()
     fig = px.bar(df_tod, x='timeOfDay', y='price', title='Average Price by Time of Day',
-             labels={'price': 'Avg Price ($)', 'timeOfDay': 'Time'}, text_auto=True)
+             labels={'price': 'Average Price ($)', 'timeOfDay': 'Time'}, text_auto=True)
     st.plotly_chart(fig, use_container_width=True)
     st.success(f"💰 Cheapest time to fly: **{df_tod.loc[df_tod['price'].idxmin(), 'timeOfDay']}**")
     st.caption("🕐 Morning: 5am–12pm, Afternoon: 12–5pm, Evening: 5–10pm, Night: 10pm–5am")
