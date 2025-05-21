@@ -9,158 +9,195 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
 import datetime
+import calendar
 
 # ----------------------
 # PAGE SETUP
 # ----------------------
 st.set_page_config(layout="wide")
-st.title("Flight Price Exploration (NYC to CH): Revenue Steering Analysis")
+st.title("Aviation Revenue Steering Analysis: NYC → CH (May 2025 to March 2026)")
 
 # ----------------------
 # LOAD & CLEAN DATA
 # ----------------------
 @st.cache_data
 def load_data():
-    df = pd.read_csv("all_flights.csv")
+    df = pd.read_csv("allFlights.csv")
+    # parse datetime and price
     df['departureTime'] = pd.to_datetime(df['departureTime'], errors='coerce')
-    df['price'] = pd.to_numeric(df['price'], errors='coerce')
-    df['durationTime'] = pd.to_numeric(df['durationTime'], errors='coerce')
-    df['weekday'] = df['departureTime'].dt.day_name()
-    df['dayOfWeek'] = df['departureTime'].dt.weekday
+    df['price'] = np.ceil(pd.to_numeric(df['price'], errors='coerce'))
+    df['durationTime'] = pd.to_numeric(df.get('durationTime', np.nan), errors='coerce')
+
+    # wifi encoding: 1 = free wifi, 0 = none/unknown
+    if 'wifi' in df.columns:
+        df['wifiEncoded'] = np.where(
+            df['wifi'].fillna('').str.contains('free', case=False, na=False),
+            1,
+            0
+        )
+    else:
+        df['wifiEncoded'] = 0
+
+    # datetime features
     df['hour'] = df['departureTime'].dt.hour
+    df['weekday'] = df['departureTime'].dt.day_name()
     df['month'] = df['departureTime'].dt.month
-    df['airline'] = df['airline'].astype(str).str.strip()
-    if 'wifi' not in df.columns:
-        df['wifi'] = 'Unknown'
 
-    def time_of_day(hour):
-        if 5 <= hour < 12:
-            return 'Morning'
-        elif 12 <= hour < 17:
-            return 'Afternoon'
-        elif 17 <= hour < 22:
-            return 'Evening'
-        else:
-            return 'Night'
+    # season mapping
+    df['season'] = df['month'].apply(lambda m: (
+        'Winter' if m in [12,1,2] else
+        'Spring' if m in [3,4,5] else
+        'Summer' if m in [6,7,8] else
+        'Fall'
+    ))
 
-    df['timeOfDay'] = df['hour'].apply(time_of_day)
-    return df.dropna(subset=['price', 'airline'])
+    # travel class
+    df['travelClass'] = df.get('travelClass', '').fillna('Unknown').str.strip()
 
-# Load and filter data
-df = load_data()
+    # layover count
+    df['numLayovers'] = df.get('layovers', '').fillna('').apply(lambda s: 0 if s == '' else s.count(',') + 1)
 
-# ROUTE FILTERING: NYC to SWITZERLAND
-nyc_airports = ["LGA", "JFK", "EWR"]
-swiss_airports = ["ZRH", "BSL", "GVA"]
+    # time of day
+    df['timeOfDay'] = df['hour'].apply(lambda h: (
+        'Morning' if 5 <= h < 12 else
+        'Afternoon' if 12 <= h < 17 else
+        'Evening' if 17 <= h < 22 else
+        'Night'
+    ))
 
-# ----------------------
-# COLOR PALETTE
-# ----------------------
-airline_colors = {
-    'Lufthansa': '#ffd700',
-    'SWISS': '#d71920',
-    'Delta': '#00235f',
-    'United': '#1a75ff',
-    'Edelweiss Air': '#800080',
-    'Air Dolomiti': '#32cd32',
-    'Austrian': '#c3f550',
-    'ITA': '#fbaa3f',
-    'Brussels Airlines': '#00235f',
-    'Eurowings': '#1a75ff',
-    'Aegean': '#767676',
-    'Air Canada': '#00235f',
-    'Tap Air Portugal': '#fbaa3f',
-    'Turkish Airlines': '#800080'
-}
-custom_colors = ['#d71920', '#00235f', '#f9ba00', '#660000', '#800080', '#3366ff',
-                 '#c3f550', '#fbaa3f', '#000000']
+    # airline cleanup
+    df['airline'] = df.get('airline', '').fillna('Unknown').str.strip()
+
+    return df.dropna(subset=['departureTime', 'price', 'airline'])
+
+# load data
+try:
+    df = load_data()
+except Exception as e:
+    st.error(f"Error loading data: {e}")
+    st.stop()
+
+# determine top 5 busiest airlines by count
+top5_airlines = df['airline'].value_counts().nlargest(5).index.tolist()
+
 
 # ----------------------
-# SIDEBAR FILTERS
+# ROUTE FILTERING & COLOR PALETTE
 # ----------------------
 st.sidebar.header("Filters")
 direct_airlines = ['SWISS', 'United', 'Delta']
 lufthansa_group = ['Austrian', 'Brussels Airlines', 'Discover Airlines', 'Eurowings', 'Edelweiss Air', 'ITA', 'Air Dolomiti', 'Lufthansa', 'SWISS']
 star_alliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zealand', 'ANA', 'Asiana Airlines', 'Austrian', 'Avianca', 'Brussels Airlines', 'CopaAirlines', 'Croatia Airlines', 'Egyptair', 'Ethiopian Airlines', 'Eva Air', 'LOT Polish Airlines', 'Lufthansa', 'Shenzhen Airlines', 'Singapore Airlines', 'South African Airways', 'SWISS', 'Tap Air Portugal', 'Thai', 'Turkish Airlines', 'United']
 
-# Price slider
-min_price = int(df['price'].min())
-max_price = int(df['price'].max())
-
-
-# ----------------------
-# SIDEBAR FILTERS
-# ----------------------
-st.sidebar.header("Filters")
-
-# Airline-group picker
+price_range = st.sidebar.slider(
+    "Price Range ($)",
+    min_value=int(df['price'].min()),
+    max_value=int(df['price'].max()),
+    value=(int(df['price'].min()), int(df['price'].max()))
+)
 group_option = st.sidebar.radio(
     "Airline Group",
     ["All Airlines", "Direct Airlines", "Lufthansa Group", "Star Alliance"]
 )
+# apply price & group filters
+mask = (df['price'] >= price_range[0]) & (df['price'] <= price_range[1])
+if group_option == "Direct Airlines": mask &= df['airline'].isin(direct_airlines)
+elif group_option == "Lufthansa Group": mask &= df['airline'].isin(lufthansa_group)
+elif group_option == "Star Alliance": mask &= df['airline'].isin(star_alliance)
+df = df[mask]
 
-# Price slider (unchanged)
-min_price = int(df['price'].min())
-max_price = int(df['price'].max())
-price_range = st.sidebar.slider(
-    "Price Range ($)",
-    min_value=min_price,
-    max_value=max_price,
-    value=(min_price, max_price)
-)
-
-# Apply price filter
-df = df[
-    (df['price'] >= price_range[0]) &
-    (df['price'] <= price_range[1])
-]
-
-# Map the group choice to the actual airlines list
-if group_option == "Direct Airlines":
-    airline_filter = direct_airlines
-elif group_option == "Lufthansa Group":
-    airline_filter = lufthansa_group
-elif group_option == "Star Alliance":
-    airline_filter = star_alliance
-else:  # "All Airlines"
-    airline_filter = df['airline'].unique()
-
-# Filter your dataframe
-df = df[df['airline'].isin(airline_filter)]
+# consistent airline colors
+airline_colors = {
+    'Lufthansa': '#ffd700', 'SWISS': '#d71920', 'Delta': '#00235f', 'United': '#1a75ff',
+    'Edelweiss Air': '#800080', 'Air Dolomiti': '#32cd32', 'Austrian': '#c3f550', 'ITA': '#fbaa3f',
+    'Brussels Airlines': '#00235f', 'Eurowings': '#1a75ff', 'Aegean': '#767676', 'Air Canada': '#00235f',
+    'Tap Air Portugal': '#fbaa3f', 'Turkish Airlines': '#800080'
+}
 
 # ----------------------
 # PRICE ANALYSIS
 # ----------------------
 st.header("Price Analysis")
+
+# 1. Price over time (line plot)
+st.subheader("Price Over Time by Airline")
+fig_time = px.line(
+    df, x='departureTime', y='price', color='airline',
+    color_discrete_map=airline_colors,
+    labels={'price': 'Price ($)', 'departureTime': 'Departure Time'}
+)
+# hide airlines outside top 5 by default
+for tr in fig_time.data:
+    if tr.name not in top5_airlines:
+        tr.visible = 'legendonly'
+st.plotly_chart(fig_time, use_container_width=True)
+
+# 2. Average by month & season side by side
+st.header("Average Price by Month & Season")
 col1, col2 = st.columns(2)
-
 with col1:
-    day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-    df_day = df.groupby('weekday')['price'].mean().reindex(day_order).reset_index()
-    fig = px.bar(df_day, x='weekday', y='price', title='Average Price by Day of Week',
-                 labels={'price': 'Avg Price ($)', 'weekday': 'Day'}, text_auto=True)
-    st.plotly_chart(fig, use_container_width=True)
-    st.success(f"💰 Cheapest day to fly: **{df_day.loc[df_day['price'].idxmin(), 'weekday']}**")
-
+    st.subheader("By Month")
+    month_order = list(range(1,13))
+    df_month = df.groupby('month')['price'].mean().reindex(month_order).reset_index()
+    df_month['month_name'] = df_month['month'].apply(lambda m: calendar.month_name[m])
+    fig_month = px.bar(df_month, x='month_name', y='price', labels={'price':'Avg Price ($)','month_name':'Month'}, text_auto=True)
+    st.plotly_chart(fig_month, use_container_width=True)
+    cheapest_month = df_month.loc[df_month['price'].idxmin(), 'month_name']
+    st.success(f"💰 Cheapest month to fly: **{cheapest_month}**")
 with col2:
-    tod_order = ['Morning', 'Afternoon', 'Evening', 'Night']
-    df_tod = df.groupby('timeOfDay')['price'].mean().reindex(tod_order).reset_index()
-    fig = px.bar(df_tod, x='timeOfDay', y='price', title='Average Price by Time of Day',
-             labels={'price': 'Avg Price ($)', 'timeOfDay': 'Time'}, text_auto=True)
-    st.plotly_chart(fig, use_container_width=True)
-    st.success(f"💰 Cheapest time to fly: **{df_tod.loc[df_tod['price'].idxmin(), 'timeOfDay']}**")
-    st.caption("🕐 Morning: 5am–12pm, Afternoon: 12–5pm, Evening: 5–10pm, Night: 10pm–5am")
+    st.subheader("By Season")
+    season_order = ['Winter','Spring','Summer','Fall']
+    df_season = df.groupby('season')['price'].mean().reindex(season_order).reset_index()
+    fig_season = px.bar(df_season, x='season', y='price', labels={'price':'Avg Price ($)','season':'Season'}, text_auto=True)
+    st.plotly_chart(fig_season, use_container_width=True)
+    cheapest_season = df_season.loc[df_season['price'].idxmin(), 'season']
+    st.success(f"💰 Cheapest season to fly: **{cheapest_season}**")
 
+# 3. Average by day of week & time of day side by side
+st.header("Average Price by Day & Time of Day")
+col3, col4 = st.columns(2)
+with col3:
+    st.subheader("By Day of Week")
+    day_order = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
+    df_day = df.groupby('weekday')['price'].mean().reindex(day_order).reset_index()
+    fig_day = px.bar(df_day, x='weekday', y='price', labels={'price':'Avg Price ($)','weekday':'Day'}, text_auto=True)
+    st.plotly_chart(fig_day, use_container_width=True)
+    cheapest_day = df_day.loc[df_day['price'].idxmin(), 'weekday']
+    st.success(f"💰 Cheapest day to fly: **{cheapest_day}**")
+with col4:
+    st.subheader("By Time of Day")
+    tod_order = ['Morning','Afternoon','Evening','Night']
+    df_tod = df.groupby('timeOfDay')['price'].mean().reindex(tod_order).reset_index()
+    fig_tod = px.bar(df_tod, x='timeOfDay', y='price', labels={'price':'Avg Price ($)','timeOfDay':'Time of Day'}, text_auto=True)
+    st.plotly_chart(fig_tod, use_container_width=True)
+    cheapest_tod = df_tod.loc[df_tod['price'].idxmin(), 'timeOfDay']
+    st.success(f"💰 Cheapest time to fly: **{cheapest_tod}**")
+
+# 4. Layovers & Travel Class (unchanged layout)
+col5, col6 = st.columns(2)
+with col5:
+    df_lay = df.groupby('numLayovers')['price'].mean().reset_index()
+    fig_lay = px.bar(df_lay, x='numLayovers', y='price', labels={'numLayovers':'# of Layovers','price':'Avg Price ($)'}, text_auto=True)
+    st.plotly_chart(fig_lay, use_container_width=True)
+with col6:
+    df_tc = df.groupby('travelClass')['price'].mean().reset_index().sort_values('price')
+    fig_tc = px.bar(df_tc, x='travelClass', y='price', labels={'travelClass':'Class','price':'Avg Price ($)'}, text_auto=True)
+    fig_tc.update_layout(xaxis_tickangle=-45)
+    st.plotly_chart(fig_tc, use_container_width=True)
+
+# 5. Airline comparison (bar chart)
 st.subheader("Airline Price Comparison")
-df_airline = df.groupby('airline')['price'].mean().reset_index()
-fig = px.bar(df_airline, x='airline', y='price', color='airline',
-             color_discrete_map=airline_colors,
-             title='Average Price by Airline',
-             labels={'price': 'Average Price ($)'}, text_auto=True)
-fig.update_layout(xaxis_tickangle=-45)
-st.plotly_chart(fig, use_container_width=True)
+df_air = df.groupby('airline')['price'].mean().reset_index()
+fig_air = px.bar(df_air, x='airline', y='price', color='airline', labels={'price':'Avg Price ($)'}, text_auto=True)
+for tr in fig_air.data:
+    if tr.name not in top5_airlines:
+        tr.visible = 'legendonly'
+fig_air.update_layout(xaxis_tickangle=-45)
+st.plotly_chart(fig_air, use_container_width=True)
+
+# ... rest of modeling and advanced analysis unchanged ...
+
 
 st.header("Revenue Steering Models")
 st.markdown("""
