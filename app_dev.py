@@ -30,17 +30,12 @@ def load_data():
     df['price'] = np.ceil(pd.to_numeric(df['price'], errors='coerce'))
     df['durationTime'] = pd.to_numeric(df.get('durationTime', np.nan), errors='coerce')
     df['carbon'] = pd.to_numeric(df['carbonEmissionsThisFlight'], errors='coerce')
-    df['wifi'] = df['extensions'].apply(parse_wifi).astype('Int64')
-    df_wifi = df.dropna(subset=['wifi'])
-    df_wifi.groupby('wifi')['price'].mean()
-
 
     # datetime features
     df['hour'] = df['departureTime'].dt.hour
     df['weekday'] = df['departureTime'].dt.day_name()
     df['dayOfWeek'] = df['departureTime'].dt.weekday  # numeric for modeling
     df['month'] = df['departureTime'].dt.month
-
 
     # season mapping
     df['season'] = df['month'].apply(lambda m: (
@@ -68,16 +63,6 @@ def load_data():
     df['airline'] = df.get('airline', '').fillna('Unknown').str.strip()
 
     return df.dropna(subset=['departureTime', 'price', 'airline'])
-
-
-def parse_wifi(ext):
-    if not isinstance(ext, str):
-        return np.nan
-    m = re.search(r'Wi\W*Fi.*?(free|fee)', ext, flags=re.IGNORECASE)
-    if not m:
-        return np.nan
-    return 1 if m.group(1).lower() == 'free' else 0
-
 
 # load data
 try:
@@ -224,6 +209,35 @@ with col6:
     st.success(f"💰 Cheapest class: **{tc.loc[tc['price'].idxmin(),'travelClass']}**")
 
 # 5. Carbon & Wi-Fi Analysis
+# Wi-Fi analysis: 1 = free, 0 = fee; drop rows without either
+mask = (
+    df['extensions'].str.contains('free', case=False, na=False) |
+    df['extensions'].str.contains('fee',  case=False, na=False)
+)
+df_wifi = df.loc[mask].copy()
+df_wifi['wifi'] = df_wifi['extensions'] \
+    .str.contains('free', case=False, na=False) \
+    .astype(int)
+
+# Chart average price by Wi-Fi offering
+wf = (
+    df_wifi
+    .groupby('wifi')['price']
+    .mean()
+    .reset_index()
+)
+wf['price'] = np.ceil(wf['price'])
+wf['wifi']  = wf['wifi'].map({1: 'Free', 0: 'Paid'})
+
+fig_wf = px.bar(
+    wf,
+    x='wifi', y='price',
+    labels={'wifi':'Wi-Fi','price':'Avg Price ($)'},
+    text_auto=True
+)
+st.plotly_chart(fig_wf, use_container_width=True)
+
+
 col5, col6 = st.columns(2)
 
 with col5:
