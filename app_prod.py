@@ -29,16 +29,6 @@ def load_data():
     df['price'] = np.ceil(pd.to_numeric(df['price'], errors='coerce'))
     df['durationTime'] = pd.to_numeric(df.get('durationTime', np.nan), errors='coerce')
 
-    # wifi encoding: 1 = free wifi, 0 = none/unknown
-    if 'wifi' in df.columns:
-        df['wifiEncoded'] = np.where(
-            df['wifi'].fillna('').str.contains('free', case=False, na=False),
-            1,
-            0
-        )
-    else:
-        df['wifiEncoded'] = 0
-
     # datetime features
     df['hour'] = df['departureTime'].dt.hour
     df['weekday'] = df['departureTime'].dt.day_name()
@@ -78,10 +68,6 @@ except Exception as e:
     st.error(f"Error loading data: {e}")
     st.stop()
 
-# determine top 5 busiest airlines by count
-top5_airlines = df['airline'].value_counts().nlargest(5).index.tolist()
-
-
 # ----------------------
 # ROUTE FILTERING & COLOR PALETTE
 # ----------------------
@@ -91,7 +77,7 @@ lufthansa_group = ['Austrian', 'Brussels Airlines', 'Discover Airlines', 'Eurowi
 star_alliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zealand', 'ANA', 'Asiana Airlines', 'Austrian', 'Avianca', 'Brussels Airlines', 'CopaAirlines', 'Croatia Airlines', 'Egyptair', 'Ethiopian Airlines', 'Eva Air', 'LOT Polish Airlines', 'Lufthansa', 'Shenzhen Airlines', 'Singapore Airlines', 'South African Airways', 'SWISS', 'Tap Air Portugal', 'Thai', 'Turkish Airlines', 'United']
 
 price_range = st.sidebar.slider(
-    "Price Range ($)",
+    "Price Range (USD)",
     min_value=int(df['price'].min()),
     max_value=int(df['price'].max()),
     value=(int(df['price'].min()), int(df['price'].max()))
@@ -120,107 +106,141 @@ airline_colors = {
 # ----------------------
 st.header("Price Analysis")
 
-# 1. Price over time (line plot)
-st.subheader("Price Over Time by Airline")
-fig_time = px.line(
-    df, x='departureTime', y='price', color='airline',
-    color_discrete_map=airline_colors,
-    labels={'price': 'Price ($)', 'departureTime': 'Departure Time'}
+# 1. Weekly Avg Price Over Time by Airline
+st.subheader("Weekly Avg Price Over Time by Airline")
+weekly = (
+    df.groupby([pd.Grouper(key='departureTime', freq='W'), 'airline'])['price']
+      .mean()
+      .reset_index()
 )
-# hide airlines outside top 5 by default
-for tr in fig_time.data:
-    if tr.name not in top5_airlines:
-        tr.visible = 'legendonly'
+weekly['price'] = np.ceil(weekly['price'])
+fig_time = px.line(
+    weekly, x='departureTime', y='price', color='airline',
+    labels={'departureTime':'Week','price':'Price ($)'},
+    color_discrete_map=airline_colors
+)
 st.plotly_chart(fig_time, use_container_width=True)
 
-# 2. Average by month & season side by side
-st.header("Average Price by Month & Season")
+# 2. Avg Price by Month & Season
 col1, col2 = st.columns(2)
-with col1:
-    st.subheader("By Month")
-    month_order = list(range(1,13))
-    df_month = df.groupby('month')['price'].mean().reindex(month_order).reset_index()
-    df_month['month_name'] = df_month['month'].apply(lambda m: calendar.month_name[m])
-    fig_month = px.bar(df_month, x='month_name', y='price', labels={'price':'Avg Price ($)','month_name':'Month'}, text_auto=True)
-    st.plotly_chart(fig_month, use_container_width=True)
-    cheapest_month = df_month.loc[df_month['price'].idxmin(), 'month_name']
-    st.success(f"💰 Cheapest month to fly: **{cheapest_month}**")
-with col2:
-    st.subheader("By Season")
-    season_order = ['Winter','Spring','Summer','Fall']
-    df_season = df.groupby('season')['price'].mean().reindex(season_order).reset_index()
-    fig_season = px.bar(df_season, x='season', y='price', labels={'price':'Avg Price ($)','season':'Season'}, text_auto=True)
-    st.plotly_chart(fig_season, use_container_width=True)
-    cheapest_season = df_season.loc[df_season['price'].idxmin(), 'season']
-    st.success(f"💰 Cheapest season to fly: **{cheapest_season}**")
 
-# 3. Average by day of week & time of day side by side
-st.header("Average Price by Day & Time of Day")
+with col1:
+    st.subheader("Average Price by Month")
+    mon = (df.groupby('month')['price']
+             .mean()
+             .reindex(range(1,13))
+             .reset_index())
+    mon['price'] = np.ceil(mon['price'])
+    mon['month_name'] = mon['month'].map(lambda x: calendar.month_abbr[x])
+    fig_mon = px.bar(
+        mon, x='month_name', y='price',
+        labels={'month_name':'Month','price':'Avg Price ($)'}, text_auto=True
+    )
+    st.plotly_chart(fig_mon, use_container_width=True)
+    st.success(f"💰 Cheapest month: **{mon.loc[mon['price'].idxmin(),'month_name']}**")
+
+with col2:
+    st.subheader("Average Price by Season")
+    sea = (df.groupby('season')['price']
+             .mean()
+             .reindex(['Winter','Spring','Summer','Fall'])
+             .reset_index())
+    sea['price'] = np.ceil(sea['price'])
+    fig_sea = px.bar(
+        sea, x='season', y='price',
+        labels={'season':'Season','price':'Avg Price ($)'}, text_auto=True
+    )
+    st.plotly_chart(fig_sea, use_container_width=True)
+    st.success(f"💰 Cheapest season: **{sea.loc[sea['price'].idxmin(),'season']}**")
+
+
+# 3. Avg Price by Day & Time of Day
 col3, col4 = st.columns(2)
 with col3:
-    st.subheader("By Day of Week")
-    day_order = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
-    df_day = df.groupby('weekday')['price'].mean().reindex(day_order).reset_index()
-    fig_day = px.bar(df_day, x='weekday', y='price', labels={'price':'Avg Price ($)','weekday':'Day'}, text_auto=True)
-    st.plotly_chart(fig_day, use_container_width=True)
-    cheapest_day = df_day.loc[df_day['price'].idxmin(), 'weekday']
-    st.success(f"💰 Cheapest day to fly: **{cheapest_day}**")
+    st.subheader("Average Price by Day of Week")
+    dow = df.groupby('weekday')['price'].mean().reindex(
+        ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
+    ).reset_index()
+    dow['price'] = np.ceil(dow['price'])
+    fig_dow = px.bar(
+        dow, x='weekday', y='price',
+        labels={'weekday':'Day','price':'Avg Price ($)'}, text_auto=True
+    )
+    st.plotly_chart(fig_dow, use_container_width=True)
+    st.success(f"💰 Cheapest day: **{dow.loc[dow['price'].idxmin(),'weekday']}**")
 with col4:
-    st.subheader("By Time of Day")
-    tod_order = ['Morning','Afternoon','Evening','Night']
-    df_tod = df.groupby('timeOfDay')['price'].mean().reindex(tod_order).reset_index()
-    fig_tod = px.bar(df_tod, x='timeOfDay', y='price', labels={'price':'Avg Price ($)','timeOfDay':'Time of Day'}, text_auto=True)
+    st.subheader("Average Price by Time of Day")
+    tod = df.groupby('timeOfDay')['price'].mean().reindex(
+        ['Morning','Afternoon','Evening','Night']
+    ).reset_index()
+    tod['price'] = np.ceil(tod['price'])
+    fig_tod = px.bar(
+        tod, x='timeOfDay', y='price',
+        labels={'timeOfDay':'Time of Day','price':'Avg Price ($)'}, text_auto=True
+    )
     st.plotly_chart(fig_tod, use_container_width=True)
-    cheapest_tod = df_tod.loc[df_tod['price'].idxmin(), 'timeOfDay']
-    st.success(f"💰 Cheapest time to fly: **{cheapest_tod}**")
+    st.success(f"💰 Cheapest time: **{tod.loc[tod['price'].idxmin(),'timeOfDay']}**")
 
-# 4. Layovers & Travel Class (unchanged layout)
+# 4. Layovers & Travel Class Analysis
 col5, col6 = st.columns(2)
 with col5:
-    df_lay = df.groupby('numLayovers')['price'].mean().reset_index()
-    fig_lay = px.bar(df_lay, x='numLayovers', y='price', labels={'numLayovers':'# of Layovers','price':'Avg Price ($)'}, text_auto=True)
+    st.subheader("Average Price by Number of Layovers")
+    lay = df.groupby('numLayovers')['price'].mean().reset_index()
+    lay['price'] = np.ceil(lay['price'])
+    fig_lay = px.bar(
+        lay, x='numLayovers', y='price',
+        labels={'numLayovers':'# of Layovers','price':'Avg Price ($)'}, text_auto=True
+    )
     st.plotly_chart(fig_lay, use_container_width=True)
+    st.success(f"💰 Cheapest with **{int(lay.loc[lay['price'].idxmin(),'numLayovers'])}** layovers")
 with col6:
-    df_tc = df.groupby('travelClass')['price'].mean().reset_index().sort_values('price')
-    fig_tc = px.bar(df_tc, x='travelClass', y='price', labels={'travelClass':'Class','price':'Avg Price ($)'}, text_auto=True)
+    st.subheader("Average Price by Travel Class")
+    tc = df.groupby('travelClass')['price'].mean().reset_index().sort_values('price')
+    tc['price'] = np.ceil(tc['price'])
+    fig_tc = px.bar(
+        tc, x='travelClass', y='price',
+        labels={'travelClass':'Travel Class','price':'Avg Price ($)'}, text_auto=True
+    )
     fig_tc.update_layout(xaxis_tickangle=-45)
     st.plotly_chart(fig_tc, use_container_width=True)
+    st.success(f"💰 Cheapest class: **{tc.loc[tc['price'].idxmin(),'travelClass']}**")
 
-# 5. Airline comparison (bar chart)
-st.subheader("Airline Price Comparison")
-df_air = df.groupby('airline')['price'].mean().reset_index()
-fig_air = px.bar(df_air, x='airline', y='price', color='airline', labels={'price':'Avg Price ($)'}, text_auto=True)
-for tr in fig_air.data:
-    if tr.name not in top5_airlines:
-        tr.visible = 'legendonly'
+# 5. Airline Price Comparison
+st.subheader("Average Price by Airline")
+air = df.groupby('airline')['price'].mean().reset_index()
+air['price'] = np.ceil(air['price'])
+fig_air = px.bar(
+    air, x='airline', y='price', color='airline',
+    color_discrete_map=airline_colors,
+    labels={'airline':'Airline','price':'Avg Price ($)'}, text_auto=True
+)
 fig_air.update_layout(xaxis_tickangle=-45)
 st.plotly_chart(fig_air, use_container_width=True)
+cheapest_air = air.loc[air['price'].idxmin(),'airline']
+st.success(f"💰 Cheapest airline: **{cheapest_air}**")
 
-# ... rest of modeling and advanced analysis unchanged ...
-
-
+# ----------------------
+# REVENUE STEERING MODELS
+# ----------------------
 st.header("Revenue Steering Models")
-st.markdown("""
-Revenue management and pricing teams use these models to optimize flight pricing strategy:
-- **Linear models**: Baseline for understanding price drivers
-- **Regularized models (Ridge, Lasso, ElasticNet)**: Control for overfitting in dynamic pricing
-- **Ensemble models (Random Forest, Gradient Boosting)**: Capture complex patterns for demand forecasting
-""")
+st.markdown(
+    """
+    Revenue management and pricing teams use these models to optimize flight pricing strategy:
+    - **Linear models**: Baseline for understanding price drivers
+    - **Regularized models (Ridge, Lasso, ElasticNet)**: Control for overfitting in dynamic pricing
+    - **Ensemble models (Random Forest, Gradient Boosting)**: Capture complex patterns for demand forecasting
+    """
+)
 
-# Prepare modeling data
+# Prepare modeling data without wifi
 @st.cache_data
 def prepare_model_data(df):
-    df['wifiEncoded'] = df['wifi'].fillna('Unknown').astype('category').cat.codes
-    df['airplaneEncoded'] = df['airplane'].fillna('Unknown').astype('category').cat.codes
-    features = ['dayOfWeek', 'hour', 'month', 'airline', 'durationTime', 'carbonEmissionsThisFlight', 'wifiEncoded', 'airplaneEncoded']
-    target = 'price'
-    
-    # Convert categorical features to numeric
+    df['airplaneEncoded'] = df.get('airplane','Unknown').astype('category').cat.codes
+    features = ['dayOfWeek','hour','month','airline','durationTime','carbonEmissionsThisFlight','airplaneEncoded']
     X = df[features].copy()
-    y = df[target]
-    
+    y = df['price']
     return X, y
-
+    
 # Create models tab system
 model_tab1, model_tab2, model_tab3 = st.tabs(["Linear Models", "Regularized Models", "Ensemble Models"])
 
@@ -257,7 +277,7 @@ try:
         lr_rmse = np.sqrt(mean_squared_error(y_test, lr_preds))
         lr_r2 = r2_score(y_test, lr_preds)
         
-        st.metric("Linear Regression RMSE", f"${lr_rmse:.2f}")
+        st.metric("Linear Regression RMSE", f"USD{lr_rmse:.2f}")
         st.metric("Linear Regression R²", f"{lr_r2:.4f}")
         
         # Feature importance for linear model (using coefficients)
@@ -281,7 +301,7 @@ try:
             ridge_rmse = np.sqrt(mean_squared_error(y_test, ridge_preds))
             ridge_r2 = r2_score(y_test, ridge_preds)
             
-            st.metric("Ridge RMSE", f"${ridge_rmse:.2f}")
+            st.metric("Ridge RMSE", f"USD{ridge_rmse:.2f}")
             st.metric("Ridge R²", f"{ridge_r2:.4f}")
         
         # Lasso Regression
@@ -296,7 +316,7 @@ try:
             lasso_rmse = np.sqrt(mean_squared_error(y_test, lasso_preds))
             lasso_r2 = r2_score(y_test, lasso_preds)
             
-            st.metric("Lasso RMSE", f"${lasso_rmse:.2f}")
+            st.metric("Lasso RMSE", f"USD{lasso_rmse:.2f}")
             st.metric("Lasso R²", f"{lasso_r2:.4f}")
         
         # ElasticNet
@@ -311,7 +331,7 @@ try:
             en_rmse = np.sqrt(mean_squared_error(y_test, en_preds))
             en_r2 = r2_score(y_test, en_preds)
             
-            st.metric("ElasticNet RMSE", f"${en_rmse:.2f}")
+            st.metric("ElasticNet RMSE", f"USD{en_rmse:.2f}")
             st.metric("ElasticNet R²", f"{en_r2:.4f}")
         
         st.markdown("""
@@ -342,7 +362,7 @@ try:
             rf_rmse = np.sqrt(mean_squared_error(y_test, rf_preds))
             rf_r2 = r2_score(y_test, rf_preds)
             
-            st.metric("Random Forest RMSE", f"${rf_rmse:.2f}")
+            st.metric("Random Forest RMSE", f"USD{rf_rmse:.2f}")
             st.metric("Random Forest R²", f"{rf_r2:.4f}")
             
             st.markdown("""
@@ -363,7 +383,7 @@ try:
             gb_rmse = np.sqrt(mean_squared_error(y_test, gb_preds))
             gb_r2 = r2_score(y_test, gb_preds)
             
-            st.metric("Gradient Boosting RMSE", f"${gb_rmse:.2f}")
+            st.metric("Gradient Boosting RMSE", f"USD{gb_rmse:.2f}")
             st.metric("Gradient Boosting R²", f"{gb_r2:.4f}")
             
             st.markdown("""
@@ -384,7 +404,7 @@ try:
         
         best_model = min(models, key=models.get)
         
-        st.success(f"✅ Best performing model: **{best_model}** with RMSE ${models[best_model]:.2f}")
+        st.success(f"✅ Best performing model: **{best_model}** with RMSE USD{models[best_model]:.2f}")
         
         # Model comparison chart
         fig = px.bar(
@@ -393,7 +413,7 @@ try:
             labels={'x': 'Model', 'y': 'RMSE (lower is better)'},
             title='Model Performance Comparison'
         )
-        fig.update_traces(texttemplate='$%{y:.2f}', textposition='outside')
+        fig.update_traces(texttemplate='USD%{y:.2f}', textposition='outside')
         st.plotly_chart(fig, use_container_width=True)
 
     # Optimal booking recommendations
@@ -445,7 +465,7 @@ try:
     # Create heatmap
     fig = px.imshow(
         pivot_df,
-        labels=dict(x="Hour of Day", y="Day of Week", color="Predicted Price ($)"),
+        labels=dict(x="Hour of Day", y="Day of Week", color="Predicted Price (USD)"),
         title=f"Predicted Prices by Day and Hour (for {most_common_airline})",
         color_continuous_scale="RdBu_r"
     )
@@ -463,7 +483,7 @@ try:
     ### Revenue Steering Recommendations
     
     🎯 **For travelers seeking lowest fares**: 
-    Book on **{optimal_day}** at **{optimal_hour}:00** (predicted price: ${min_price:.2f})
+    Book on **{optimal_day}** at **{optimal_hour}:00** (predicted price: USD{min_price:.2f})
     
     💼 **For revenue management**:
     - Dynamic pricing should adjust for {optimal_day} bookings (lowest demand period)
@@ -495,7 +515,7 @@ st.markdown('---')
 if 'airplane' in df.columns:
         df_aircraft = df.dropna(subset=['airplane'])
         fig = px.box(df_aircraft, x='airplane', y='price', title='Price by Aircraft Type',
-                     labels={'price': 'Price ($)', 'airplane': 'Aircraft'})
+                     labels={'price': 'Price (USD)', 'airplane': 'Aircraft'})
         fig.update_layout(xaxis_tickangle=-45)
         st.plotly_chart(fig, use_container_width=True)
 
@@ -516,25 +536,21 @@ with col4:
 # ADVANCED MODELING WITH OPERATIONAL FEATURES
 # ----------------------
 st.header("Advanced Modeling with Operational Features")
-
-# Feature engineering
-df['wifiEncoded'] = df['wifi'].fillna('Unknown').astype('category').cat.codes
-df['airplaneEncoded'] = df['airplane'].fillna('Unknown').astype('category').cat.codes
+# Remove wifiEncoded entirely
+if 'airplane' in df.columns:
+    df['airplaneEncoded'] = df['airplane'].astype('category').cat.codes
 if 'legroom' in df.columns:
     df['legroom'] = pd.to_numeric(df['legroom'].str.extract(r'(\d+)')[0], errors='coerce')
 else:
     df['legroom'] = np.nan
 
-advanced_features = ['dayOfWeek', 'hour', 'month', 'durationTime', 'carbonEmissionsThisFlight',
-                     'wifiEncoded', 'airplaneEncoded', 'legroom']
-categorical_features = []
-numerical_features = ['dayOfWeek', 'hour', 'month', 'durationTime', 'carbonEmissionsThisFlight', 'wifiEncoded', 'airplaneEncoded', 'legroom']
+advanced_features = ['dayOfWeek','hour','month','durationTime','carbonEmissionsThisFlight','airplaneEncoded','legroom']
+numerical_features = advanced_features.copy()
 
-# Drop rows with missing advanced features
-df_model_ready = df.dropna(subset=numerical_features + ['price'])
-
-X_adv = df_model_ready[advanced_features]
-y_adv = df_model_ready['price']
+# Drop rows with missing data
+model_df = df.dropna(subset=advanced_features + ['price'])
+X_adv = model_df[advanced_features]
+y_adv = model_df['price']
 
 # Train/test split
 X_train_adv, X_test_adv, y_train_adv, y_test_adv = train_test_split(X_adv, y_adv, test_size=0.2, random_state=42)
@@ -557,7 +573,7 @@ for name, model in {
     rmse = np.sqrt(mean_squared_error(y_test_adv, preds))
     r2 = r2_score(y_test_adv, preds)
     model_results[name] = rmse
-    st.metric(f"{name} RMSE", f"${rmse:.2f}")
+    st.metric(f"{name} RMSE", f"USD{rmse:.2f}")
     st.caption(f"{name} R²: {r2:.4f}")
 
 # Summary plot
@@ -568,7 +584,7 @@ fig = px.bar(
     labels={'x': 'Model', 'y': 'RMSE'},
     color_discrete_sequence=['#1a75ff'] * len(model_results)
 )
-fig.update_traces(texttemplate='$%{y:.2f}', textposition='outside')
+fig.update_traces(texttemplate='USD%{y:.2f}', textposition='outside')
 st.plotly_chart(fig, use_container_width=True)
 
 
