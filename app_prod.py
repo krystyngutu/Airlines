@@ -102,6 +102,46 @@ df = df[
 ]
 
 # ----------------------
+# SIDEBAR FILTERS
+# ----------------------
+st.sidebar.header("Filters")
+
+# Airline-group picker
+group_option = st.sidebar.radio(
+    "Airline Group",
+    ["All Airlines", "Direct Airlines", "Lufthansa Group", "Star Alliance"]
+)
+
+# Price slider (unchanged)
+min_price = int(df['price'].min())
+max_price = int(df['price'].max())
+price_range = st.sidebar.slider(
+    "Price Range ($)",
+    min_value=min_price,
+    max_value=max_price,
+    value=(min_price, max_price)
+)
+
+# Apply price filter
+df = df[
+    (df['price'] >= price_range[0]) &
+    (df['price'] <= price_range[1])
+]
+
+# Map the group choice to the actual airlines list
+if group_option == "Direct Airlines":
+    airline_filter = direct_airlines
+elif group_option == "Lufthansa Group":
+    airline_filter = lufthansa_group
+elif group_option == "Star Alliance":
+    airline_filter = star_alliance
+else:  # "All Airlines"
+    airline_filter = df['airline'].unique()
+
+# Filter your dataframe
+df = df[df['airline'].isin(airline_filter)]
+
+# ----------------------
 # PRICE ANALYSIS
 # ----------------------
 st.header("Price Analysis")
