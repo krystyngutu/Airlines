@@ -223,15 +223,16 @@ with col6:
 # 5. Airline comparison (bar chart)
 st.subheader("Airline Price Comparison")
 df_air = df.groupby('airline')['price'].mean().reset_index()
-fig_air = px.bar(df_air, x='airline', y='price', color='airline', labels={'price':'Avg Price (USD)'}, text_auto=True)
+fig_air = px.bar(df_air, x='airline', y='price', color='airline', labels={'price':'Avg Price ($)'}, text_auto=True)
 for tr in fig_air.data:
     if tr.name not in top5_airlines:
         tr.visible = 'legendonly'
 fig_air.update_layout(xaxis_tickangle=-45)
 st.plotly_chart(fig_air, use_container_width=True)
 
-# ... rest of modeling and advanced analysis unchanged ...
-
+# ----------------------
+# REVENUE STEERING MODELS
+# ----------------------
 
 st.header("Revenue Steering Models")
 st.markdown("""
