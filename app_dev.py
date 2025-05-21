@@ -43,7 +43,7 @@ AIRLINE_COLORS = {
 # DATA LOADING & FEATURE ENGINEERING
 # ----------------------
 @st.cache_data
- def load_and_prepare(path=DATA_PATH):
+ def load_and_prepare(path="C:\Users\kryst\OneDrive\Desktop\Swiss Airlines\airlines"):
     df = pd.read_csv(path)
     # parse and clean
     df['departureTime'] = pd.to_datetime(df['departureTime'], errors='coerce')
