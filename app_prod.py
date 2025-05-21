@@ -16,8 +16,7 @@ import datetime
 # PAGE SETUP
 # ----------------------
 st.set_page_config(layout="wide")
-st.title("Flight Price Exploration: Revenue Steering Analysis")
-st.title("NYC to CH, May 2025 to March 2026")
+st.title("Price Exploration: Revenue Steering Analysis for Flights from NYC to CH, May 2025 to March 2026")
 
 # ----------------------
 # LOAD & CLEAN DATA
