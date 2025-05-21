@@ -176,11 +176,10 @@ st.plotly_chart(fig_se, use_container_width=True)
 # ----------------------
 # LAYOVER ANALYSIS
 # ----------------------
-st.header("Layover Analysis")
 df_lo = df.groupby('numLayovers')['price'].mean().reset_index()
 fig_lo = px.bar(
     df_lo, x='numLayovers', y='price', text_auto=True,
-    title="Avg Price by Number of Layovers",
+    title="Average Price by Number of Layovers",
     labels={'numLayovers':'# of Layovers','price':'Avg Price ($)'}
 )
 st.plotly_chart(fig_lo, use_container_width=True)
@@ -188,11 +187,10 @@ st.plotly_chart(fig_lo, use_container_width=True)
 # ----------------------
 # TRAVEL CLASS ANALYSIS
 # ----------------------
-st.header("Travel Class Analysis")
 df_tc = df.groupby('travelClass')['price'].mean().reset_index().sort_values('price')
 fig_tc = px.bar(
     df_tc, x='travelClass', y='price', text_auto=True,
-    title="Avg Price by Travel Class",
+    title="Average Price by Travel Class",
     labels={'travelClass':'Class','price':'Avg Price ($)'}
 )
 fig_tc.update_layout(xaxis_tickangle=-45)
