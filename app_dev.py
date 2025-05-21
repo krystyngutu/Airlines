@@ -29,12 +29,14 @@ def load_data():
     df['departureTime'] = pd.to_datetime(df['departureTime'], errors='coerce')
     df['price'] = np.ceil(pd.to_numeric(df['price'], errors='coerce'))
     df['durationTime'] = pd.to_numeric(df.get('durationTime', np.nan), errors='coerce')
+    df['carbon'] = pd.to_numeric(df['carbonEmissionsThisFlight'], errors='coerce')
 
     # datetime features
     df['hour'] = df['departureTime'].dt.hour
     df['weekday'] = df['departureTime'].dt.day_name()
     df['dayOfWeek'] = df['departureTime'].dt.weekday  # numeric for modeling
     df['month'] = df['departureTime'].dt.month
+
 
     # season mapping
     df['season'] = df['month'].apply(lambda m: (
@@ -62,6 +64,30 @@ def load_data():
     df['airline'] = df.get('airline', '').fillna('Unknown').str.strip()
 
     return df.dropna(subset=['departureTime', 'price', 'airline'])
+
+
+# ——— 2) WIFI ———
+def parse_wifi(ext):
+    """
+    From extensions text like
+      "Average legroom (31 in), Wi-Fi for a fee, Carbon emissions estimate: 351 kg"
+    returns:
+      1 if Wi-Fi is offered free,
+      0 if it’s offered “for a fee”,
+      NaN if no “Wi” substring is found.
+    """
+    if not isinstance(ext, str) or 'Wi' not in ext.lower():
+        return np.nan
+    low = ext.lower()
+    if 'free' in low:
+        return 1
+    if 'fee' in low:
+        return 0
+    return np.nan
+
+df['wifi'] = df['extensions'].apply(parse_wifi).astype('Int64')
+df_wifi = df.dropna(subset=['wifi'])
+df_wifi.groupby('wifi')['price'].mean()
 
 # load data
 try:
