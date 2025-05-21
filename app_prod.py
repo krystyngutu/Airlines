@@ -80,50 +80,15 @@ airline_colors = {
 custom_colors = ['#d71920', '#00235f', '#f9ba00', '#660000', '#800080', '#3366ff',
                  '#c3f550', '#fbaa3f', '#000000']
 
-
 # ----------------------
 # SIDEBAR FILTERS
 # ----------------------
-st.sidebar.header("Airline Filters")
-
-# Define airline groups
+st.sidebar.header("Filters")
 direct_airlines = ['SWISS', 'United', 'Delta']
 lufthansa_group = ['Austrian', 'Brussels Airlines', 'Discover Airlines', 'Eurowings', 'Edelweiss Air', 'ITA', 'Air Dolomiti', 'Lufthansa', 'SWISS']
-star_alliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zealand', 'ANA', 'Asiana Airlines',
-    'Austrian', 'Avianca', 'Brussels Airlines', 'CopaAirlines', 'Croatia Airlines', 'Egyptair',
-    'Ethiopian Airlines', 'Eva Air', 'LOT Polish Airlines', 'Lufthansa', 'Shenzhen Airlines',
-    'Singapore Airlines', 'South African Airways', 'SWISS', 'Tap Air Portugal', 'Thai',
-    'Turkish Airlines', 'United']
-
-# Radio button filter
-airline_group = st.sidebar.radio(
-    "Select Flight Group:",
-    options=["All Flights", "Direct Airlines", "Lufthansa Group", "Star Alliance"]
-)
-
-# Apply airline group filter
-if airline_group == "Direct Airlines":
-    df = df[df["airline"].isin(direct_airlines)]
-elif airline_group == "Lufthansa Group":
-    df = df[df["airline"].isin(lufthansa_group)]
-elif airline_group == "Star Alliance":
-    df = df[df["airline"].isin(star_alliance)]
+star_alliance = ['Aegean', 'Air Canada', 'Air China', 'Air India', 'Air New Zealand', 'ANA', 'Asiana Airlines', 'Austrian', 'Avianca', 'Brussels Airlines', 'CopaAirlines', 'Croatia Airlines', 'Egyptair', 'Ethiopian Airlines', 'Eva Air', 'LOT Polish Airlines', 'Lufthansa', 'Shenzhen Airlines', 'Singapore Airlines', 'South African Airways', 'SWISS', 'Tap Air Portugal', 'Thai', 'Turkish Airlines', 'United']
 
 # Price slider
-min_price = int(df['price'].min())
-max_price = int(df['price'].max())
-
-price_range = st.sidebar.slider(
-    "Price Range ($)",
-    min_value=min_price,
-    max_value=max_price,
-    value=(min_price, max_price)
-)
-
-# Apply price filter
-df = df[
-    (df['price'] >= price_range[0]) & (df['price'] <= price_range[1])
-]
 min_price = int(df['price'].min())
 max_price = int(df['price'].max())
 
