@@ -16,7 +16,7 @@ import calendar
 # PAGE SETUP
 # ----------------------
 st.set_page_config(layout="wide")
-st.title("Price Exploration: Revenue Steering Analysis for Flights from NYC to CH, May 2025 to March 2026")
+st.title("Aviation Revenue Steering Analysis: NYC → CH (May 2025 - March 2026)")
 
 # ----------------------
 # LOAD & CLEAN DATA
@@ -30,11 +30,9 @@ def load_data():
     df['price'] = np.ceil(df['price'])  # round up to next dollar
     df['durationTime'] = pd.to_numeric(df['durationTime'], errors='coerce')
 
-    # wifi encoding: 1=free wifi, 0=none/unknown
-    if 'wifi' in df.columns:
-        df['wifiEncoded'] = np.where(df['wifi'].str.contains('free', case=False, na=False), 1, 0)
-    else:
-        df['wifiEncoded'] = 0
+    # wifi encoding: 1=free, 0=none/unknown
+    df['wifiEncoded'] = np.where(
+        df.get('wifi', '').str.contains('free', case=False, na=False), 1, 0)
 
     # datetime features
     df['weekday'] = df['departureTime'].dt.day_name()
@@ -132,6 +130,7 @@ col1, col2 = st.columns(2)
 with col1:
     st.subheader("By Month")
     month_order = list(range(1,13))
+    df['price'] = np.ceil(df['price'])  # round up to next dollar
     df_month = df.groupby('month')['price'].mean().reindex(month_order).reset_index()
     df_month['month_name'] = df_month['month'].apply(lambda m: calendar.month_name[m])
     fig_month = px.bar(df_month, x='month_name', y='price', labels={'price':'Avg Price ($)','month_name':'Month'}, text_auto=True)
