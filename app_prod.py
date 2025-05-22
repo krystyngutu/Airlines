@@ -17,14 +17,14 @@ import calendar
 # PAGE SETUP
 # ----------------------
 st.set_page_config(layout="wide")
-st.title("Aviation Revenue Steering Analysis: NYC → CH (May 2025 to March 2026)")
+st.title("Aviation Revenue Steering Analysis: NYC → CH (May 2025 to April 2026)")
 
 # ----------------------
 # LOAD & CLEAN DATA
 # ----------------------
 @st.cache_data
 def load_data():
-    df = pd.read_csv("allFlights.csv")
+    df = pd.read_csv("flights.csv")
     # parse datetime and price
     df['departureTime'] = pd.to_datetime(df['departureTime'], errors='coerce')
     df['price'] = np.ceil(pd.to_numeric(df['price'], errors='coerce'))
