@@ -17,7 +17,7 @@ import calendar
 # PAGE SETUP
 # ----------------------
 st.set_page_config(layout="wide")
-st.title("Aviation Revenue Steering Analysis: NYC → CH (May 2025 to March 2026)")
+st.title("Aviation Revenue Steering Analysis: NYC → CH (May 2025 to April 2026)")
 
 # ----------------------
 # LOAD & CLEAN DATA
